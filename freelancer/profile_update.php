@@ -1,0 +1,267 @@
+<?php
+
+/**
+ * Profile Update Handler
+ * Processes POST from profile_edit.php with full validation and transactions.
+ */
+require_once '../config/helpers.php';
+require_once '../auth/auth.php';
+require_role('freelancer');
+require_once '../config/db.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    redirect('profile.php');
+}
+
+if (!verify_csrf_token()) {
+    set_flash('error', 'Invalid security token. Please try again.');
+    redirect('profile_edit.php');
+}
+
+$userId = $_SESSION['user_id'];
+
+$stmt = $conn->prepare('SELECT f.id AS freelancer_id, u.profile_image FROM freelancers f JOIN users u ON u.id = f.user_id WHERE u.id = ?');
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$row = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+if (!$row) {
+    set_flash('error', 'Profile not found.');
+    redirect('dashboard.php');
+}
+
+$freelancerId = $row['freelancer_id'];
+$currentProfileImage = $row['profile_image'];
+$currentResumeFile = null;
+
+$stmtResume = $conn->prepare('SELECT resume_file FROM freelancers WHERE id = ?');
+$stmtResume->bind_param('i', $freelancerId);
+$stmtResume->execute();
+$currentResumeFile = $stmtResume->get_result()->fetch_assoc()['resume_file'];
+$stmtResume->close();
+
+$name = trim($_POST['name'] ?? '');
+$phone = trim($_POST['phone'] ?? '');
+$title = trim($_POST['title'] ?? '');
+$bio = trim($_POST['bio'] ?? '');
+$hourlyRate = sanitize_float($_POST['hourly_rate'] ?? 0);
+$yearsOfExperience = sanitize_int($_POST['years_of_experience'] ?? 0);
+$availability = $_POST['availability'] ?? 'Available';
+$portfolioUrl = trim($_POST['portfolio_url'] ?? '');
+$skillIds = $_POST['skills'] ?? [];
+
+$errors = [];
+
+if (empty($name))
+    $errors[] = 'Name is required.';
+if (mb_strlen($name) > 100)
+    $errors[] = 'Name must be under 100 characters.';
+if (empty($title))
+    $errors[] = 'Professional title is required.';
+if (mb_strlen($title) > 100)
+    $errors[] = 'Title must be under 100 characters.';
+if (empty($bio))
+    $errors[] = 'Bio is required.';
+if (mb_strlen($bio) > 2000)
+    $errors[] = 'Bio must be under 2000 characters.';
+if ($hourlyRate < 0)
+    $errors[] = 'Hourly rate cannot be negative.';
+if ($hourlyRate > 99999.99)
+    $errors[] = 'Hourly rate is too high.';
+if ($yearsOfExperience < 0 || $yearsOfExperience > 50)
+    $errors[] = 'Years of experience must be between 0 and 50.';
+
+$allowedAvailability = ['Available', 'Busy', 'Unavailable'];
+if (!in_array($availability, $allowedAvailability))
+    $availability = 'Available';
+
+if (!empty($portfolioUrl) && !filter_var($portfolioUrl, FILTER_VALIDATE_URL)) {
+    $errors[] = 'Portfolio URL is invalid.';
+}
+
+if (!empty($phone) && mb_strlen($phone) > 20) {
+    $errors[] = 'Phone number must be under 20 characters.';
+}
+
+$validSkillIds = [];
+if (!empty($skillIds)) {
+    foreach ($skillIds as $sid) {
+        $sid = sanitize_int($sid);
+        if ($sid > 0)
+            $validSkillIds[] = $sid;
+    }
+    $validSkillIds = array_unique($validSkillIds);
+
+    if (!empty($validSkillIds)) {
+        $placeholders = implode(',', array_fill(0, count($validSkillIds), '?'));
+        $types = str_repeat('i', count($validSkillIds));
+        $stmtValid = $conn->prepare("SELECT id FROM skills WHERE id IN ($placeholders)");
+        $stmtValid->bind_param($types, ...$validSkillIds);
+        $stmtValid->execute();
+        $validResult = $stmtValid->get_result();
+        $validIds = [];
+        while ($vrow = $validResult->fetch_assoc()) {
+            $validIds[] = $vrow['id'];
+        }
+        $stmtValid->close();
+        $validSkillIds = $validIds;
+    }
+}
+
+$newProfileImage = $currentProfileImage;
+if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+    $file = $_FILES['profile_image'];
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $finfo->file($file['tmp_name']);
+
+    if (!in_array($mimeType, $allowedMimes)) {
+        $errors[] = 'Profile image must be JPG, PNG, or WebP.';
+    } elseif ($file['size'] > 2 * 1024 * 1024) {
+        $errors[] = 'Profile image must be under 2MB.';
+    } else {
+        $extMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        $ext = $extMap[$mimeType] ?? 'jpg';
+        $newFilename = 'profile_' . $userId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $uploadDir = __DIR__ . '/../assets/upload/profiles/';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        if (!is_writable($uploadDir)) {
+            $errors[] = 'Upload directory is not writable.';
+        } elseif (move_uploaded_file($file['tmp_name'], $uploadDir . $newFilename)) {
+            $oldImageFile = basename($currentProfileImage);
+            if ($oldImageFile && $oldImageFile !== 'profile.png') {
+                $oldPath = $uploadDir . $oldImageFile;
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+            $newProfileImage = $newFilename;
+        } else {
+            $errors[] = 'Failed to upload profile image.';
+        }
+    }
+}
+
+$newResumeFile = $currentResumeFile;
+if (isset($_FILES['resume_file']) && $_FILES['resume_file']['error'] === UPLOAD_ERR_OK) {
+    $file = $_FILES['resume_file'];
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $finfo->file($file['tmp_name']);
+
+    if ($mimeType !== 'application/pdf') {
+        $errors[] = 'Resume must be a PDF file.';
+    } elseif ($file['size'] > 10 * 1024 * 1024) {
+        $errors[] = 'Resume must be under 10MB.';
+    } else {
+        $newFilename = 'resume_' . $userId . '_' . bin2hex(random_bytes(8)) . '.pdf';
+        $uploadDir = __DIR__ . '/../assets/upload/resumes/';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        if (move_uploaded_file($file['tmp_name'], $uploadDir . $newFilename)) {
+            $oldResumeFile = basename($currentResumeFile);
+            if ($oldResumeFile) {
+                $oldPath = $uploadDir . $oldResumeFile;
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+            $newResumeFile = $newFilename;
+        } else {
+            $errors[] = 'Failed to upload resume.';
+        }
+    }
+}
+
+if (!empty($errors)) {
+    set_flash('error', implode(' ', $errors));
+    redirect('profile_edit.php');
+}
+
+$skillsVector = json_encode([
+    'skill_ids' => $validSkillIds,
+    'skill_names' => []
+]);
+
+if (!empty($validSkillIds)) {
+    $placeholders = implode(',', array_fill(0, count($validSkillIds), '?'));
+    $types = str_repeat('i', count($validSkillIds));
+    $stmtNames = $conn->prepare("SELECT id, skill_name FROM skills WHERE id IN ($placeholders)");
+    $stmtNames->bind_param($types, ...$validSkillIds);
+    $stmtNames->execute();
+    $namesResult = $stmtNames->get_result();
+    $skillNames = [];
+    while ($nrow = $namesResult->fetch_assoc()) {
+        $skillNames[$nrow['id']] = $nrow['skill_name'];
+    }
+    $stmtNames->close();
+
+    $orderedNames = [];
+    foreach ($validSkillIds as $sid) {
+        if (isset($skillNames[$sid])) {
+            $orderedNames[] = $skillNames[$sid];
+        }
+    }
+    $skillsVector = json_encode([
+        'skill_ids' => $validSkillIds,
+        'skill_names' => $orderedNames
+    ]);
+}
+
+$conn->begin_transaction();
+
+try {
+    $updateUser = $conn->prepare('UPDATE users SET name = ?, profile_image = ?, phone = ? WHERE id = ?');
+    $updateUser->bind_param('sssi', $name, $newProfileImage, $phone, $userId);
+    $updateUser->execute();
+    $updateUser->close();
+
+    $updateFreelancer = $conn->prepare('
+        UPDATE freelancers
+        SET title = ?, bio = ?, hourly_rate = ?, years_of_experience = ?,
+            availability = ?, portfolio_url = ?, resume_file = ?,
+            skills_vector = ?, updated_at = NOW()
+        WHERE id = ?
+    ');
+    $updateFreelancer->bind_param(
+        'ssdissssi',
+        $title, $bio, $hourlyRate, $yearsOfExperience,
+        $availability, $portfolioUrl, $newResumeFile,
+        $skillsVector, $freelancerId
+    );
+    $updateFreelancer->execute();
+    $updateFreelancer->close();
+
+    $deleteSkills = $conn->prepare('DELETE FROM freelancer_skills WHERE freelancer_id = ?');
+    $deleteSkills->bind_param('i', $freelancerId);
+    $deleteSkills->execute();
+    $deleteSkills->close();
+
+    if (!empty($validSkillIds)) {
+        $insertSkill = $conn->prepare('INSERT INTO freelancer_skills (freelancer_id, skill_id) VALUES (?, ?)');
+        foreach ($validSkillIds as $sid) {
+            $insertSkill->bind_param('ii', $freelancerId, $sid);
+            $insertSkill->execute();
+        }
+        $insertSkill->close();
+    }
+
+    $conn->commit();
+
+    $_SESSION['user_name'] = $name;
+    $_SESSION['profile_image'] = $newProfileImage;
+
+    set_flash('success', 'Profile updated successfully.');
+    redirect('profile.php');
+} catch (Exception $e) {
+    $conn->rollback();
+    set_flash('error', 'Update failed: ' . $e->getMessage());
+    redirect('profile_edit.php');
+}
