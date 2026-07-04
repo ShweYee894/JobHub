@@ -59,7 +59,7 @@ $pageTitle = 'Edit Profile';
 $pageSubtitle = 'Update your professional information';
 $activePage = 'profile';
 $user = ['name' => $profile['name'], 'profile_image' => $profile['profile_image']];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'freelancer');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>

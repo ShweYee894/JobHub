@@ -77,8 +77,6 @@ $stmt->execute();
 $clientJobs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-$conn->close();
-
 $proposalColors = [
     'pending' => 'bg-amber-50 text-amber-600 border border-amber-200',
     'accepted' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
@@ -96,7 +94,9 @@ $navItems = [
     ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
     ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
     ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
+    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
     ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
+    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
     ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
     ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
 ];
@@ -104,7 +104,7 @@ $pageTitle = 'Proposals Received';
 $pageSubtitle = 'Review and manage proposals from freelancers';
 $activePage = 'proposals';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
@@ -234,6 +234,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                             <i class="fas fa-chevron-left text-xs"></i>
                         </a>
                     <?php endif; ?>
+                    <?php $conn->close(); ?>
                     <?php
                     $startPage = max(1, $pagination['current_page'] - 2);
                     $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);

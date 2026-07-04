@@ -1,8 +1,11 @@
 <?php
-$currentPage = 'payment_history';
+/**
+ * Client Payments - Redirects to payment_history.php
+ */
 require_once __DIR__ . '/../auth/auth.php';
 require_role('client');
-require_once __DIR__ . '/../config/db.php';
+header('Location: payment_history.php');
+exit;
 
 $userId = $_SESSION['user_id'];
 
@@ -187,7 +190,9 @@ $navItems = [
     ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
     ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
     ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
+    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
     ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
+    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
     ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
     ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
 ];
@@ -195,7 +200,7 @@ $pageTitle = 'Payments';
 $pageSubtitle = 'Track your spending, invoices, and transaction history';
 $activePage = 'payment_history';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = 0;
+$unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
@@ -626,8 +631,8 @@ require_once __DIR__ . '/../components/layout_start.php';
                 + '<div style="font-size:12px;color:#94a3b8;">Total Transactions</div>'
                 + '<div style="font-size:20px;font-weight:800;color:#1e293b;">$' + total.toFixed(2) + '</div></div>'
                 + '<div style="margin-top:30px;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;text-align:center;">'
-                + '<div style="font-size:11px;color:#94a3b8;">This invoice was generated from FreelanceHub on ' + dateStr + '</div>'
-                + '<div style="font-size:10px;color:#cbd5e1;margin-top:4px;">FreelanceHub - Trusted Freelance Marketplace</div></div></div>';
+                + '<div style="font-size:11px;color:#94a3b8;">This invoice was generated from JobHub on ' + dateStr + '</div>'
+                + '<div style="font-size:10px;color:#cbd5e1;margin-top:4px;">JobHub - Trusted Freelance Marketplace</div></div></div>';
 
             document.getElementById('invoiceContent').innerHTML = html;
         }
@@ -646,7 +651,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         function downloadInvoiceHTML() {
             var content = document.getElementById('printableInvoice');
             if (!content) return;
-            var html = '<!DOCTYPE html><html><head><title>FreelanceHub Invoice</title>'
+            var html = '<!DOCTYPE html><html><head><title>JobHub Invoice</title>'
                 + '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />'
                 + '<style>body{font-family:Inter,sans-serif;padding:40px;max-width:900px;margin:0 auto;background:#fff;color:#1e293b;}</style>'
                 + '</head><body>' + content.innerHTML + '</body></html>';
@@ -654,7 +659,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url;
-            a.download = 'FreelanceHub-Invoice-' + new Date().toISOString().slice(0,10) + '.html';
+            a.download = 'JobHub-Invoice-' + new Date().toISOString().slice(0,10) + '.html';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

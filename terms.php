@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terms of Service – FreelanceHub</title>
+  <title>Terms of Service – JobHub</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -48,7 +48,7 @@
     <div class="w-full mx-auto px-4 sm:px-6 flex items-center justify-between">
       <a href="index.php" class="flex items-center gap-2 group">
         <span class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25"><i class="fi fi-brands-artstation text-white text-sm"></i></span>
-        <span class="text-xl font-extrabold tracking-tight"><span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span></span>
+        <span class="text-xl font-extrabold tracking-tight"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
       </a>
       <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-500">
         <a href="index.php" class="nav-link hover:text-gray-900 transition-colors">Home</a>
@@ -116,12 +116,12 @@
         <!-- Main Content -->
         <div class="lg:col-span-3">
           <div class="bg-white rounded-3xl p-8 sm:p-12 border border-gray-100 shadow-sm max-w-none">
-            <p class="text-gray-500 leading-relaxed mb-8">Welcome to FreelanceHub. These Terms of Service ("Terms") govern your access to and use of the FreelanceHub platform, website, and services. By creating an account or using our services, you agree to be bound by these Terms.</p>
+            <p class="text-gray-500 leading-relaxed mb-8">Welcome to JobHub. These Terms of Service ("Terms") govern your access to and use of the JobHub platform, website, and services. By creating an account or using our services, you agree to be bound by these Terms.</p>
 
             <div id="acceptance" class="mb-10">
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-handshake text-blue-600 text-sm"></i></span>1. Acceptance of Terms</h2>
-              <p class="text-gray-500 leading-relaxed mb-3">By accessing or using FreelanceHub, you acknowledge that you have read, understood, and agree to be bound by these Terms and our <a href="privacy.php" class="text-primary hover:underline">Privacy Policy</a>.</p>
-              <p class="text-gray-500 leading-relaxed mb-3">If you are using FreelanceHub on behalf of an organization, you represent that you have the authority to bind that organization to these Terms.</p>
+              <p class="text-gray-500 leading-relaxed mb-3">By accessing or using JobHub, you acknowledge that you have read, understood, and agree to be bound by these Terms and our <a href="privacy.php" class="text-primary hover:underline">Privacy Policy</a>.</p>
+              <p class="text-gray-500 leading-relaxed mb-3">If you are using JobHub on behalf of an organization, you represent that you have the authority to bind that organization to these Terms.</p>
               <p class="text-gray-500 leading-relaxed">You must be at least 18 years old to create an account and use our services.</p>
             </div>
 
@@ -173,7 +173,7 @@
 
             <div id="payments" class="mb-10">
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-credit-card text-yellow-600 text-sm"></i></span>6. Payments & Fees</h2>
-              <p class="text-gray-500 leading-relaxed mb-3">FreelanceHub uses an escrow payment system to protect both clients and freelancers:</p>
+              <p class="text-gray-500 leading-relaxed mb-3">JobHub uses an escrow payment system to protect both clients and freelancers:</p>
               <div class="space-y-2 text-gray-500">
                 <div class="flex items-start gap-2"><i class="fas fa-dollar-sign text-green-500 mt-1 flex-shrink-0"></i><strong class="text-gray-900">Service Fee:</strong> Freelancers pay a 10% service fee on earnings (5% for Pro members).</div>
                 <div class="flex items-start gap-2"><i class="fas fa-dollar-sign text-green-500 mt-1 flex-shrink-0"></i><strong class="text-gray-900">Processing Fee:</strong> Clients pay a 2.5% payment processing fee per transaction.</div>
@@ -188,7 +188,7 @@
               <ol class="space-y-2 text-gray-500 list-decimal pl-5">
                 <li>Both parties should first attempt to resolve the issue through direct communication on the platform.</li>
                 <li>If unresolved, either party may open a formal dispute through the project dashboard.</li>
-                <li>FreelanceHub's resolution team will review evidence from both sides within 5 business days.</li>
+                <li>JobHub's resolution team will review evidence from both sides within 5 business days.</li>
                 <li>A binding decision will be made based on the evidence provided, project requirements, and platform Terms.</li>
                 <li>Funds in escrow remain frozen during the dispute process and will be released based on the resolution outcome.</li>
               </ol>
@@ -206,12 +206,12 @@
 
             <div id="liability" class="mb-10">
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-shield-alt text-gray-600 text-sm"></i></span>9. Limitation of Liability</h2>
-              <p class="text-gray-500 leading-relaxed">FreelanceHub acts as a marketplace connecting clients and freelancers. We are not a party to contracts between users. Our liability is limited to the maximum extent permitted by law. We do not guarantee the quality, safety, or legality of services offered on the platform. Users are responsible for their own compliance with applicable laws and regulations.</p>
+              <p class="text-gray-500 leading-relaxed">JobHub acts as a marketplace connecting clients and freelancers. We are not a party to contracts between users. Our liability is limited to the maximum extent permitted by law. We do not guarantee the quality, safety, or legality of services offered on the platform. Users are responsible for their own compliance with applicable laws and regulations.</p>
             </div>
 
             <div id="termination">
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-power-off text-orange-600 text-sm"></i></span>10. Termination</h2>
-              <p class="text-gray-500 leading-relaxed mb-3">Either party may terminate their account at any time through the account settings. FreelanceHub may suspend or terminate accounts for:</p>
+              <p class="text-gray-500 leading-relaxed mb-3">Either party may terminate their account at any time through the account settings. JobHub may suspend or terminate accounts for:</p>
               <ul class="space-y-2 text-gray-500">
                 <li class="flex items-start gap-2"><i class="fas fa-arrow-right text-primary mt-1 flex-shrink-0"></i>Violation of these Terms of Service</li>
                 <li class="flex items-start gap-2"><i class="fas fa-arrow-right text-primary mt-1 flex-shrink-0"></i>Fraudulent or illegal activity</li>
@@ -232,7 +232,7 @@
         <div class="lg:col-span-2">
           <a href="index.php" class="flex items-center gap-2 mb-5">
             <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25"><i class="fi fi-brands-artstation text-white text-sm"></i></div>
-            <span class="text-xl font-extrabold"><span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span></span>
+            <span class="text-xl font-extrabold"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
           </a>
           <p class="text-gray-400 text-sm leading-relaxed mb-6 max-w-xs">The world's most trusted marketplace for top freelancers and innovative clients. Work smarter, together.</p>
           <div class="flex gap-3">
@@ -264,14 +264,14 @@
         <div>
           <h4 class="text-gray-900 font-bold text-sm uppercase tracking-widest mb-5">Contact</h4>
           <ul class="space-y-3 text-gray-400 text-sm">
-            <li class="flex items-start gap-2"><i class="fas fa-envelope text-blue-500 mt-0.5"></i><a href="mailto:hello@freelancehub.io" class="hover:text-gray-900 transition-colors">hello@freelancehub.io</a></li>
+            <li class="flex items-start gap-2"><i class="fas fa-envelope text-blue-500 mt-0.5"></i><a href="mailto:hello@jobhub.io" class="hover:text-gray-900 transition-colors">hello@jobhub.io</a></li>
             <li class="flex items-start gap-2"><i class="fas fa-phone text-cyan-500 mt-0.5"></i><span>+95 9 757 889806</span></li>
             <li class="flex items-start gap-2"><i class="fas fa-map-marker-alt text-purple-500 mt-0.5"></i><span>Myanmar, Yangon 11041</span></li>
           </ul>
         </div>
       </div>
       <div class="border-t border-gray-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-gray-400 text-xs">
-        <p>&copy; 2026 FreelanceHub. All rights reserved.</p>
+        <p>&copy; 2026 JobHub. All rights reserved.</p>
         <div class="flex gap-4">
           <a href="privacy.php" class="hover:text-gray-600 transition-colors">Privacy</a>
           <a href="terms.php" class="hover:text-gray-600 transition-colors">Terms</a>

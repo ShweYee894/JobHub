@@ -58,8 +58,6 @@ $stmt->execute();
 $contractsResult = $stmt->get_result();
 $stmt->close();
 
-$conn->close();
-
 $statusColors = [
     'active' => 'bg-blue-50 text-blue-600 border border-blue-200',
     'completed' => 'bg-green-50 text-green-600 border border-green-200',
@@ -93,7 +91,7 @@ $pageTitle = 'Contracts';
 $pageSubtitle = 'View and manage your contracts';
 $activePage = 'contracts';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'freelancer');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
@@ -193,5 +191,5 @@ require_once __DIR__ . '/../components/layout_start.php';
                 </div>
             </div>
             <?php endif; ?>
-
+<?php $conn->close(); ?>
 <?php require_once __DIR__ . '/../components/layout_end.php'; ?>

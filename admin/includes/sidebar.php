@@ -34,6 +34,12 @@ $_sideAvatar = get_profile_image($_sideUser['profile_image'] ?? null);
         <a href="/finalproject/admin/payments.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition <?= $currentPage === 'payments' ? 'bg-blue-600 text-white' : 'hover:bg-gray-800 hover:text-white' ?>">
             <i class="fas fa-credit-card w-5 text-center"></i> Payments
         </a>
+        <a href="/finalproject/admin/milestones.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition <?= $currentPage === 'milestones' ? 'bg-blue-600 text-white' : 'hover:bg-gray-800 hover:text-white' ?>">
+            <i class="fas fa-tasks w-5 text-center"></i> Milestones
+        </a>
+        <a href="/finalproject/admin/disputes.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition <?= $currentPage === 'disputes' ? 'bg-blue-600 text-white' : 'hover:bg-gray-800 hover:text-white' ?>">
+            <i class="fas fa-gavel w-5 text-center"></i> Disputes
+        </a>
         <a href="/finalproject/admin/fraud_detection.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition <?= $currentPage === 'fraud' ? 'bg-blue-600 text-white' : 'hover:bg-gray-800 hover:text-white' ?>">
             <i class="fas fa-exclamation-triangle w-5 text-center"></i> Fraud Detection
         </a>

@@ -37,7 +37,7 @@ $navItems = [
 $pageTitle = 'Messages';
 $pageSubtitle = 'Communicate with your clients';
 $user = ['name' => $userName ?? 'Freelancer', 'profile_image' => null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'freelancer');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>

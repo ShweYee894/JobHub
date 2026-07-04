@@ -189,7 +189,7 @@ $navItems = [
 $pageTitle = 'Recommended Jobs';
 $pageSubtitle = 'Jobs matched to your skills and experience';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'freelancer');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>

@@ -22,14 +22,14 @@ $errors = $_SESSION['job_errors'] ?? [];
 $form = $_SESSION['job_form'] ?? [];
 unset($_SESSION['job_errors'], $_SESSION['job_form']);
 
-$conn->close();
-
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
     ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
     ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
     ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
+    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
     ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
+    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
     ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
     ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
 ];
@@ -55,7 +55,7 @@ $pageTitle = 'Post a Job';
 $pageSubtitle = 'Describe your project and find the best freelancers.';
 $activePage = 'post_job';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
@@ -296,38 +296,6 @@ display_flash('error'); ?>
         });
         syncSkillCount()
     });
-
-    //     document.addEventListener("DOMContentLoaded", function () {
-    //     // 1. Target the category vertical pills
-    //     const bluePills = document.querySelectorAll(".skill-container span.w-1\\.5.h-3");
-
-    //     bluePills.forEach(pill => {
-    //         // Generate an vibrant color for the pills
-    //         const r = Math.floor(Math.random() * 120) + 50;  // 50-170 range for rich color
-    //         const g = Math.floor(Math.random() * 120) + 50;
-    //         const b = Math.floor(Math.random() * 120) + 50;
-
-    //         // Remove Tailwind's static bg class and override directly with maximum importance
-    //         pill.classList.remove('bg-blue-600');
-    //         pill.style.setProperty('background-color', `rgb(${r}, ${g}, ${b})`, 'important');
-    //     });
-
-    //     // 2. Target individual unselected skill tags
-    //     const skillTags = document.querySelectorAll(".skill-tag");
-
-    //     skillTags.forEach(tag => {
-    //         // Verify it isn't an active selected item
-    //         if (!tag.classList.contains('skill-tag-active')) {
-    //             // Generate clean pastel variations for readable text contrast
-    //             const r = Math.floor(Math.random() * 20) + 235; // 235-255 pastel range
-    //             const g = Math.floor(Math.random() * 20) + 235;
-    //             const b = Math.floor(Math.random() * 20) + 235;
-
-    //             // Overwrite background layer
-    //             tag.classList.remove('bg-white');
-    //             tag.style.setProperty('background-color', `rgb(${r}, ${g}, ${b})`, 'important');
-    //         }
-    //     });
-    // });
 </script>
+<?php $conn->close(); ?>
 <?php require_once __DIR__ . '/../components/layout_end.php'; ?>

@@ -29,8 +29,8 @@ unset($_SESSION['form_data']);
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login – FreelanceHub</title>
-  <meta name="description" content="Sign in to your FreelanceHub account to manage jobs, contracts, and payments." />
+  <title>Login – JobHub</title>
+  <meta name="description" content="Sign in to your JobHub account to manage jobs, contracts, and payments." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -195,7 +195,7 @@ unset($_SESSION['form_data']);
           <i class="fas fa-sign-in-alt text-white text-lg"></i>
         </div>
         <h1 class="text-3xl font-black text-gray-900 mb-2">Welcome Back</h1>
-        <p class="text-gray-500 text-sm">Sign in to your FreelanceHub account</p>
+        <p class="text-gray-500 text-sm">Sign in to your JobHub account</p>
       </div>
 
       <!-- Flash: Error -->
@@ -278,7 +278,7 @@ unset($_SESSION['form_data']);
       </p>
 
       <p class="text-center text-gray-400 text-[11px] mt-4">
-        &copy; 2026 FreelanceHub. All rights reserved.
+        &copy; 2026 JobHub. All rights reserved.
       </p>
     </div>
   </main>

@@ -42,14 +42,14 @@ $mSC = ['pending' => 'bg-gray-100 text-gray-600 border border-gray-200', 'funded
 $mIC = ['pending' => 'fa-clock', 'funded_in_escrow' => 'fa-shield-halved', 'submitted' => 'fa-paper-plane', 'released' => 'fa-check-circle', 'disputed' => 'fa-exclamation-triangle'];
 $cC = ['active' => 'bg-emerald-50 text-emerald-600 border border-emerald-200', 'completed' => 'bg-blue-50 text-blue-600 border border-blue-200', 'cancelled' => 'bg-gray-100 text-gray-500 border border-gray-200', 'disputed' => 'bg-red-50 text-red-500 border border-red-200'];
 
-$conn->close();
-
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
     ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
     ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
     ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
+    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
     ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
+    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
     ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
     ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
 ];
@@ -57,7 +57,7 @@ $pageTitle = sanitize_string($contract['job_title']) . ' - Contract Details';
 $pageSubtitle = 'Manage milestones and payments';
 $activePage = 'contracts';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
@@ -96,6 +96,11 @@ require_once __DIR__ . '/../components/layout_start.php';
                     <p class="text-lg font-black text-blue-600"><?= format_currency($walletBalance) ?></p>
                 </div>
             </div>
+            <?php if ($contract['status'] === 'active' || $contract['status'] === 'disputed'): ?>
+            <div class="mt-4">
+                <button onclick="openDisputeModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold rounded-lg transition-all border border-red-200"><i class="fas fa-gavel text-[9px]"></i> File Dispute</button>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in" style="animation-delay:.1s">
@@ -127,6 +132,33 @@ require_once __DIR__ . '/../components/layout_start.php';
                                         <span class="font-bold text-gray-700 text-sm"><?= format_currency((float) $m['amount']) ?></span>
                                         <span><?= date('M d, Y', strtotime($m['created_at'])) ?></span>
                                     </div>
+                                    <?php if (in_array($m['status'], ['submitted', 'released', 'disputed']) && !empty($m['submission_github_url'])): ?>
+                                        <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                            <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Submission Details</p>
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center gap-2 text-xs">
+                                                    <i class="fab fa-github text-gray-400"></i>
+                                                    <a href="<?= sanitize_string($m['submission_github_url']) ?>" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-medium"><?= sanitize_string($m['submission_github_url']) ?></a>
+                                                </div>
+                                                <?php if (!empty($m['submission_note'])): ?>
+                                                    <div class="flex items-start gap-2 text-xs text-gray-600">
+                                                        <i class="fas fa-comment-dots text-gray-400 mt-0.5"></i>
+                                                        <span><?= nl2br(sanitize_string($m['submission_note'])) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <?php if (!empty($m['submission_file'])): ?>
+                                                    <div class="flex items-center gap-2 text-xs">
+                                                        <i class="fas fa-paperclip text-gray-400"></i>
+                                                        <a href="../assets/upload/submissions/<?= sanitize_string($m['submission_file']) ?>" target="_blank" class="text-blue-600 hover:underline font-medium">View attached file</a>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="flex items-center gap-2 text-[11px] text-gray-400">
+                                                    <i class="fas fa-clock"></i>
+                                                    <span>Submitted <?= time_ago($m['submission_date']) ?></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
                                     <?php if ($m['status'] === 'pending'): ?>
@@ -135,6 +167,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                     <?php endif; ?>
                                     <?php if ($m['status'] === 'submitted'): ?>
                                         <button onclick="approveMilestone(<?= (int) $m['id'] ?>)" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-emerald-500/20"><i class="fas fa-check text-[9px]"></i> Approve &amp; Release</button>
+                                        <button onclick="requestRevision(<?= (int) $m['id'] ?>)" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-amber-500/20"><i class="fas fa-undo text-[9px]"></i> Request Changes</button>
                                     <?php endif; ?>
                                     <?php if ($m['status'] !== 'released' && $m['status'] !== 'disputed'): ?>
                                         <button onclick="disputeMilestone(<?= (int) $m['id'] ?>)" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold rounded-lg transition-all border border-red-200"><i class="fas fa-flag text-[9px]"></i> Dispute</button>
@@ -207,7 +240,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         </div>
     </div>
 </div>
-
+<?php $conn->close(); ?>
 <div id="fundModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-overlay absolute inset-0" onclick="closeModal('fundModal')"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
@@ -243,10 +276,88 @@ require_once __DIR__ . '/../components/layout_start.php';
     </div>
 </div>
 
+<div id="revisionModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay absolute inset-0" onclick="closeModal('revisionModal')"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-gray-900">Request Changes</h3>
+                    <button onclick="closeModal('revisionModal')" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"><i class="fas fa-times text-sm"></i></button>
+                </div>
+            </div>
+            <form id="revisionForm" onsubmit="return submitRevision(event)">
+                <div class="p-6 space-y-4">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="request_revision">
+                    <input type="hidden" name="milestone_id" id="revision_milestone_id">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Reason for Revision</label>
+                        <textarea name="revision_note" id="revision_note" required rows="4" placeholder="Describe what needs to be changed..." class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white resize-none"></textarea>
+                    </div>
+                </div>
+                <div class="px-6 pb-6 flex gap-3">
+                    <button type="button" onclick="closeModal('revisionModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-lg shadow-amber-500/25"><span id="revisionBtnText">Send Revision</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div id="loadingOverlay" class="fixed inset-0 z-[60] hidden modal-overlay flex items-center justify-center">
     <div class="bg-white rounded-2xl p-8 shadow-2xl text-center">
         <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
         <p class="text-sm font-semibold text-gray-700">Processing...</p>
+    </div>
+</div>
+
+<div id="disputeModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay absolute inset-0 bg-black/40" onclick="closeDisputeModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-gray-900">File a Dispute</h3>
+                    <button onclick="closeDisputeModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"><i class="fas fa-times text-sm"></i></button>
+                </div>
+            </div>
+            <form id="disputeForm" onsubmit="return submitDispute(event)">
+                <div class="p-6 space-y-4">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="contract_id" value="<?= (int) $contract['id'] ?>">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Related Milestone (optional)</label>
+                        <select name="milestone_id" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                            <option value="">None - Contract-level dispute</option>
+                            <?php foreach ($milestones as $m): ?>
+                                <option value="<?= (int) $m['id'] ?>"><?= sanitize_string($m['title']) ?> (<?= format_currency((float) $m['amount']) ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Reason</label>
+                        <select name="reason" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                            <option value="">Select a reason...</option>
+                            <option value="non_delivery">Non-Delivery</option>
+                            <option value="quality_issue">Quality Issue</option>
+                            <option value="scope_dispute">Scope Dispute</option>
+                            <option value="payment_issue">Payment Issue</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Description</label>
+                        <textarea name="description" required rows="4" minlength="20" maxlength="5000" placeholder="Provide a detailed description of the issue (min 20 characters)..." class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white resize-none"></textarea>
+                    </div>
+                </div>
+                <div class="px-6 pb-6 flex gap-3">
+                    <button type="button" onclick="closeDisputeModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold shadow-lg shadow-red-500/25">Submit Dispute</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -433,6 +544,46 @@ require_once __DIR__ . '/../components/layout_start.php';
         btn.disabled = false;
         txt.textContent = 'Approve'
     }
+
+    var currentRevisionMilestoneId = null;
+    function requestRevision(id) {
+        currentRevisionMilestoneId = id;
+        document.getElementById('revision_milestone_id').value = id;
+        document.getElementById('revision_note').value = '';
+        openModal('revisionModal')
+    }
+    async function submitRevision(e) {
+        e.preventDefault();
+        var btn = document.querySelector('#revisionForm button[type="submit"]'),
+            txt = document.getElementById('revisionBtnText');
+        btn.disabled = true;
+        txt.textContent = 'Sending...';
+        showLoading();
+        try {
+            var fd = new FormData(document.getElementById('revisionForm'));
+            fd.append('csrf_token', CSRF_TOKEN);
+            var r = await fetch(BASE_URL + '/api/milestones_api.php', {
+                method: 'POST',
+                body: fd
+            });
+            var j = await r.json();
+            hideLoading();
+            if (j.success) {
+                showToast('success', j.message);
+                closeModal('revisionModal');
+                reloadPage()
+            } else {
+                showToast('error', j.message)
+            }
+        } catch (err) {
+            hideLoading();
+            showToast('error', 'Network error.')
+        }
+        btn.disabled = false;
+        txt.textContent = 'Send Revision';
+        return false
+    }
+
     async function disputeMilestone(id) {
         if (!confirm('Dispute this milestone? An admin will review.')) return;
         showLoading();
@@ -457,6 +608,35 @@ require_once __DIR__ . '/../components/layout_start.php';
             hideLoading();
             showToast('error', 'Network error.')
         }
+    }
+
+    function openDisputeModal() {
+        document.getElementById('disputeModal').classList.remove('hidden');
+    }
+    function closeDisputeModal() {
+        document.getElementById('disputeModal').classList.add('hidden');
+    }
+    async function submitDispute(e) {
+        e.preventDefault();
+        var fd = new FormData(document.getElementById('disputeForm'));
+        fd.append('csrf_token', CSRF_TOKEN);
+        showLoading();
+        try {
+            var r = await fetch(BASE_URL + '/api/dispute_api.php', { method: 'POST', body: fd });
+            var j = await r.json();
+            hideLoading();
+            if (j.success) {
+                showToast('success', j.message);
+                closeDisputeModal();
+                reloadPage();
+            } else {
+                showToast('error', j.message);
+            }
+        } catch (err) {
+            hideLoading();
+            showToast('error', 'Network error.');
+        }
+        return false;
     }
 </script>
 <?php require_once __DIR__ . '/../components/layout_end.php'; ?>

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Freelancer Dashboard – FreelanceHub
+ * Freelancer Dashboard – JobHub
  * Modern card-based dashboard with top navigation.
  * Uses Tailwind CSS utility classes. No external CSS files.
  */

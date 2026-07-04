@@ -83,15 +83,15 @@ switch ($action) {
         $reviewerId = $userId;
         $revieweeId = $isClient ? (int) $contract['freelancer_id'] : (int) $contract['client_id'];
 
-        // Check if a review already exists for this contract (UNIQUE constraint pre-check)
-        $stmt = $conn->prepare('SELECT id FROM reviews WHERE contract_id = ?');
-        $stmt->bind_param('i', $contractId);
+        // Check if this user already reviewed this contract (both parties can review)
+        $stmt = $conn->prepare('SELECT id FROM reviews WHERE contract_id = ? AND reviewer_id = ?');
+        $stmt->bind_param('ii', $contractId, $reviewerId);
         $stmt->execute();
         $existing = $stmt->get_result()->fetch_assoc();
         $stmt->close();
 
         if ($existing) {
-            json_response(['success' => false, 'message' => 'A review has already been submitted for this contract.'], 409);
+            json_response(['success' => false, 'message' => 'You have already submitted a review for this contract.'], 409);
         }
 
         // Insert the review
@@ -178,34 +178,36 @@ switch ($action) {
 
         $stmt = $conn->prepare('
             SELECT r.id, r.rating, r.comment, r.created_at,
-                   u.name AS reviewer_name, u.profile_image AS reviewer_image
+                   u.name AS reviewer_name, u.profile_image AS reviewer_image,
+                   CASE WHEN r.reviewer_id = c.client_id THEN \'client\' ELSE \'freelancer\' END AS reviewer_role
             FROM reviews r
             JOIN users u ON r.reviewer_id = u.id
+            JOIN contracts c ON r.contract_id = c.id
             WHERE r.contract_id = ?
+            ORDER BY r.created_at DESC
         ');
         $stmt->bind_param('i', $contractId);
         $stmt->execute();
-        $review = $stmt->get_result()->fetch_assoc();
+        $result = $stmt->get_result();
+
+        $reviews = [];
+        while ($row = $result->fetch_assoc()) {
+            $reviews[] = [
+                'id'             => (int) $row['id'],
+                'rating'         => (int) $row['rating'],
+                'comment'        => $row['comment'],
+                'created_at'     => $row['created_at'],
+                'reviewer_name'  => $row['reviewer_name'],
+                'reviewer_image' => $row['reviewer_image'],
+                'reviewer_role'  => $row['reviewer_role'],
+            ];
+        }
         $stmt->close();
 
-        if ($review) {
-            json_response([
-                'success' => true,
-                'review'  => [
-                    'id'             => (int) $review['id'],
-                    'rating'         => (int) $review['rating'],
-                    'comment'        => $review['comment'],
-                    'created_at'     => $review['created_at'],
-                    'reviewer_name'  => $review['reviewer_name'],
-                    'reviewer_image' => $review['reviewer_image'],
-                ],
-            ]);
-        } else {
-            json_response([
-                'success' => true,
-                'review'  => null,
-            ]);
-        }
+        json_response([
+            'success' => true,
+            'reviews' => $reviews,
+        ]);
         break;
 
     default:

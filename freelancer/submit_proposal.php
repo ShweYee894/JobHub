@@ -101,7 +101,7 @@ $statusColors = [
     'disputed'    => 'bg-red-50 text-red-600 border border-red-200',
 ];
 
-$page_title = 'Submit Proposal – FreelanceHub';
+$page_title = 'Submit Proposal – JobHub';
 
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
@@ -116,7 +116,7 @@ $pageTitle = 'Submit Proposal';
 $pageSubtitle = 'Submit your proposal for this job';
 $activePage = 'browse_jobs';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'freelancer');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>

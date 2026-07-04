@@ -16,6 +16,9 @@ $_sidebarPages = [
     'contracts' => ['url' => 'contracts.php', 'icon' => 'fa-handshake', 'label' => 'Contracts'],
     'reviews' => ['url' => 'reviews.php', 'icon' => 'fa-star', 'label' => 'Reviews'],
     'earnings' => ['url' => 'earnings.php', 'icon' => 'fa-wallet', 'label' => 'Earnings'],
+    'payments' => ['url' => 'payments.php', 'icon' => 'fa-credit-card', 'label' => 'Payments'],
+    'withdraw' => ['url' => 'withdraw.php', 'icon' => 'fa-money-bill-wave', 'label' => 'Withdraw'],
+    'submission_history' => ['url' => 'submission_history.php', 'icon' => 'fa-paper-plane', 'label' => 'Submissions'],
     'recommended_jobs' => ['url' => 'recommended_jobs.php', 'icon' => 'fa-brain', 'label' => 'Recommended Jobs'],
     'messages' => ['url' => 'messages.php', 'icon' => 'fa-comment-dots', 'label' => 'Messages'],
 ];

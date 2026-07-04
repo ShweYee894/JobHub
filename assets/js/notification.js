@@ -223,7 +223,7 @@ class NotificationBell {
         if (this.unreadCount > 0) {
             this.badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
             this.badge.classList.remove('hidden');
-            document.title = `(${this.unreadCount}) FreelanceHub`;
+            document.title = `(${this.unreadCount}) JobHub`;
         } else {
             this.badge.classList.add('hidden');
             document.title = document.title.replace(/^\(\d+\)\s*/, '');

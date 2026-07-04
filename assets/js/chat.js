@@ -1,5 +1,5 @@
 /**
- * Chat – Real-time messaging for FreelanceHub
+ * Chat – Real-time messaging for JobHub
  * Shared class used by both client/messages.php and freelancer/messages.php.
  *
  * Fixes applied:

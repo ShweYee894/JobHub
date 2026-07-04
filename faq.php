@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FAQ – FreelanceHub</title>
+  <title>FAQ – JobHub</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -65,7 +65,7 @@
           <i class="fi fi-brands-artstation text-white text-sm"></i>
         </span>
         <span class="text-xl font-extrabold tracking-tight">
-          <span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span>
+          <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
         </span>
       </a>
       <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-500">
@@ -105,7 +105,7 @@
     <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center">
       <span class="text-xs font-bold uppercase tracking-widest text-blue-600/70 bg-blue-50 px-3 py-1 rounded-full">Help Center</span>
       <h1 class="text-4xl sm:text-5xl font-black mt-4 mb-4 text-gray-900">Frequently Asked <span class="grad-text">Questions</span></h1>
-      <p class="text-gray-500 max-w-2xl mx-auto mb-8">Find answers to common questions about FreelanceHub. Can't find what you're looking for? <a href="contact.php" class="text-blue-600 hover:underline">Contact our support team.</a></p>
+      <p class="text-gray-500 max-w-2xl mx-auto mb-8">Find answers to common questions about JobHub. Can't find what you're looking for? <a href="contact.php" class="text-blue-600 hover:underline">Contact our support team.</a></p>
       <div class="max-w-2xl mx-auto relative">
         <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
         <input id="faq-search" type="text" placeholder="Search questions..." class="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-200 bg-white shadow-lg shadow-gray-200/50 text-gray-900 placeholder-gray-400 outline-none focus:border-primary transition-colors text-sm" />
@@ -130,11 +130,11 @@
         <!-- GENERAL -->
         <div class="faq-item bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-category="general">
           <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left">
-            <span class="font-semibold text-gray-900 text-sm pr-4">What is FreelanceHub?</span>
+            <span class="font-semibold text-gray-900 text-sm pr-4">What is JobHub?</span>
             <i class="fas fa-chevron-down text-gray-400 faq-icon flex-shrink-0"></i>
           </button>
           <div class="faq-answer px-6 pb-5">
-            <p class="text-gray-500 text-sm leading-relaxed">FreelanceHub is an online marketplace connecting talented freelancers with clients worldwide. We provide a secure platform for posting jobs, submitting proposals, collaborating on projects, and processing payments — all with built-in escrow protection.</p>
+            <p class="text-gray-500 text-sm leading-relaxed">JobHub is an online marketplace connecting talented freelancers with clients worldwide. We provide a secure platform for posting jobs, submitting proposals, collaborating on projects, and processing payments — all with built-in escrow protection.</p>
           </div>
         </div>
 
@@ -150,11 +150,11 @@
 
         <div class="faq-item bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-category="general">
           <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left">
-            <span class="font-semibold text-gray-900 text-sm pr-4">Is FreelanceHub available worldwide?</span>
+            <span class="font-semibold text-gray-900 text-sm pr-4">Is JobHub available worldwide?</span>
             <i class="fas fa-chevron-down text-gray-400 faq-icon flex-shrink-0"></i>
           </button>
           <div class="faq-answer px-6 pb-5">
-            <p class="text-gray-500 text-sm leading-relaxed">Yes! FreelanceHub operates in over 180 countries. Freelancers and clients can connect across time zones. We support multiple currencies and local payment methods to make transactions seamless globally.</p>
+            <p class="text-gray-500 text-sm leading-relaxed">Yes! JobHub operates in over 180 countries. Freelancers and clients can connect across time zones. We support multiple currencies and local payment methods to make transactions seamless globally.</p>
           </div>
         </div>
 
@@ -164,7 +164,7 @@
             <i class="fas fa-chevron-down text-gray-400 faq-icon flex-shrink-0"></i>
           </button>
           <div class="faq-answer px-6 pb-5">
-            <p class="text-gray-500 text-sm leading-relaxed">FreelanceHub covers 50+ skill categories including Web Development, Mobile Development, UI/UX Design, Data Science, AI/ML, Cybersecurity, DevOps, Game Development, Content Writing, Digital Marketing, and more.</p>
+            <p class="text-gray-500 text-sm leading-relaxed">JobHub covers 50+ skill categories including Web Development, Mobile Development, UI/UX Design, Data Science, AI/ML, Cybersecurity, DevOps, Game Development, Content Writing, Digital Marketing, and more.</p>
           </div>
         </div>
 
@@ -222,7 +222,7 @@
 
         <div class="faq-item bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-category="freelancers">
           <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left">
-            <span class="font-semibold text-gray-900 text-sm pr-4">How do I get verified on FreelanceHub?</span>
+            <span class="font-semibold text-gray-900 text-sm pr-4">How do I get verified on JobHub?</span>
             <i class="fas fa-chevron-down text-gray-400 faq-icon flex-shrink-0"></i>
           </button>
           <div class="faq-answer px-6 pb-5">
@@ -267,7 +267,7 @@
             <i class="fas fa-chevron-down text-gray-400 faq-icon flex-shrink-0"></i>
           </button>
           <div class="faq-answer px-6 pb-5">
-            <p class="text-gray-500 text-sm leading-relaxed">No hidden fees. FreelanceHub charges a transparent service fee: 10% for free accounts and 5% for Pro members on the freelancer side. Clients pay a small payment processing fee (2.5%) per transaction. All fees are clearly displayed before you confirm any payment.</p>
+            <p class="text-gray-500 text-sm leading-relaxed">No hidden fees. JobHub charges a transparent service fee: 10% for free accounts and 5% for Pro members on the freelancer side. Clients pay a small payment processing fee (2.5%) per transaction. All fees are clearly displayed before you confirm any payment.</p>
           </div>
         </div>
 
@@ -284,7 +284,7 @@
 
         <div class="faq-item bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-category="security">
           <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left">
-            <span class="font-semibold text-gray-900 text-sm pr-4">What is FreelanceHub's fraud prevention system?</span>
+            <span class="font-semibold text-gray-900 text-sm pr-4">What is JobHub's fraud prevention system?</span>
             <i class="fas fa-chevron-down text-gray-400 faq-icon flex-shrink-0"></i>
           </button>
           <div class="faq-answer px-6 pb-5">
@@ -319,7 +319,7 @@
             <a href="contact.php" class="bg-white text-blue-600 font-semibold px-8 py-4 rounded-full hover:bg-blue-50 transition-all inline-flex items-center justify-center gap-2">
               <i class="fas fa-envelope"></i> Contact Support
             </a>
-            <a href="mailto:hello@freelancehub.io" class="bg-white/10 backdrop-blur-md text-white font-semibold px-8 py-4 rounded-full border border-white/30 hover:bg-white/20 transition-all inline-flex items-center justify-center gap-2">
+            <a href="mailto:hello@jobhub.io" class="bg-white/10 backdrop-blur-md text-white font-semibold px-8 py-4 rounded-full border border-white/30 hover:bg-white/20 transition-all inline-flex items-center justify-center gap-2">
               <i class="fas fa-paper-plane"></i> Email Us
             </a>
           </div>
@@ -337,7 +337,7 @@
             <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25">
               <i class="fi fi-brands-artstation text-white text-sm"></i>
             </div>
-            <span class="text-xl font-extrabold"><span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span></span>
+            <span class="text-xl font-extrabold"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
           </a>
           <p class="text-gray-400 text-sm leading-relaxed mb-6 max-w-xs">The world's most trusted marketplace for top freelancers and innovative clients. Work smarter, together.</p>
           <div class="flex gap-3">
@@ -369,14 +369,14 @@
         <div>
           <h4 class="text-gray-900 font-bold text-sm uppercase tracking-widest mb-5">Contact</h4>
           <ul class="space-y-3 text-gray-400 text-sm">
-            <li class="flex items-start gap-2"><i class="fas fa-envelope text-blue-500 mt-0.5"></i><a href="mailto:hello@freelancehub.io" class="hover:text-gray-900 transition-colors">hello@freelancehub.io</a></li>
+            <li class="flex items-start gap-2"><i class="fas fa-envelope text-blue-500 mt-0.5"></i><a href="mailto:hello@jobhub.io" class="hover:text-gray-900 transition-colors">hello@jobhub.io</a></li>
             <li class="flex items-start gap-2"><i class="fas fa-phone text-cyan-500 mt-0.5"></i><span>+95 9 757 889806</span></li>
             <li class="flex items-start gap-2"><i class="fas fa-map-marker-alt text-purple-500 mt-0.5"></i><span>Myanmar, Yangon 11041</span></li>
           </ul>
         </div>
       </div>
       <div class="border-t border-gray-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-gray-400 text-xs">
-        <p>&copy; 2026 FreelanceHub. All rights reserved.</p>
+        <p>&copy; 2026 JobHub. All rights reserved.</p>
         <div class="flex gap-4">
           <a href="privacy.php" class="hover:text-gray-600 transition-colors">Privacy</a>
           <a href="terms.php" class="hover:text-gray-600 transition-colors">Terms</a>

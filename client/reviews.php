@@ -48,8 +48,6 @@ $stmtSubmitted->execute();
 $submittedReviews = $stmtSubmitted->get_result();
 $stmtSubmitted->close();
 
-$conn->close();
-
 $revieweeIdMap = [];
 
 $navItems = [
@@ -57,21 +55,23 @@ $navItems = [
     ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
     ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
     ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
+    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
     ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
+    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
     ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
     ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
 ];
 $pageTitle = 'Reviews';
-$pageSubtitle = 'Rate freelancers you\'ve worked with';
+$pageSubtitle = "Rate freelancers you've worked with";
 $activePage = 'reviews';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = 0;
+$unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
 
-    <?= display_flash('success') ?>
-    <?= display_flash('error') ?>
+    <?php display_flash('success') ?>
+    <?php display_flash('error') ?>
 
     <!-- ═══ PENDING REVIEWS ═══════════════════════════════════════ -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in">
@@ -89,7 +89,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         <?php if ($pendingContracts->num_rows > 0): ?>
             <div class="space-y-4">
             <?php while ($pc = $pendingContracts->fetch_assoc()): ?>
-                <div class="p-4 rounded-xl border border-amber-100 bg-amber-50/50" id="pending-<?= (int)$pc['id'] ?>">
+                <div class="p-4 rounded-xl border border-amber-100 bg-amber-50/50" id="pending-<?= (int) $pc['id'] ?>">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                         <div class="flex-1 min-w-0">
                             <h3 class="text-sm font-bold text-gray-900 mb-1"><?= sanitize_string($pc['job_title']) ?></h3>
@@ -100,7 +100,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                 </span>
                                 <span class="flex items-center gap-1.5">
                                     <i class="fas fa-dollar-sign text-emerald-500"></i>
-                                    <?= format_currency((float)$pc['total_budget']) ?>
+                                    <?= format_currency((float) $pc['total_budget']) ?>
                                 </span>
                                 <span class="flex items-center gap-1.5">
                                     <i class="fas fa-calendar text-gray-400"></i>
@@ -108,7 +108,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                 </span>
                             </div>
                         </div>
-                        <button onclick="openReviewModal(<?= (int)$pc['id'] ?>, <?= (int)$pc['freelancer_user_id'] ?>, '<?= sanitize_string(addslashes($pc['freelancer_name'])) ?>', '<?= sanitize_string(addslashes($pc['job_title'])) ?>')"
+                        <button onclick="openReviewModal(<?= (int) $pc['id'] ?>, <?= (int) $pc['freelancer_user_id'] ?>, '<?= sanitize_string(addslashes($pc['freelancer_name'])) ?>', '<?= sanitize_string(addslashes($pc['job_title'])) ?>')"
                                 class="btn-grad inline-flex items-center gap-2 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/25 flex-shrink-0">
                             <i class="fas fa-star text-[10px]"></i> Leave Review
                         </button>
@@ -231,7 +231,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                         <p class="text-[11px] text-gray-400 ml-auto"><span id="charCount">0</span>/2000</p>
                     </div>
                 </div>
-
+                <?php $conn->close(); ?>
                 <button type="submit" id="submitReviewBtn"
                         class="w-full btn-grad text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                     <i class="fas fa-paper-plane text-xs"></i>
@@ -262,8 +262,6 @@ require_once __DIR__ . '/../components/layout_start.php';
 
 <script src="/finalproject/assets/js/reviews.js"></script>
 <script>
-const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
-
 function openReviewModal(contractId, revieweeId, revieweeName, jobTitle) {
     document.getElementById('modalContractId').value = contractId;
     document.getElementById('modalRevieweeId').value = revieweeId;

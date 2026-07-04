@@ -232,6 +232,7 @@ $stmt->bind_param($finalTypes, ...$finalParams);
 $stmt->execute();
 $jobsResult = $stmt->get_result();
 $stmt->close();
+
 $jobIds = [];
 $jobs = [];
 while ($row = $jobsResult->fetch_assoc()) {
@@ -296,8 +297,6 @@ $statusColors = [
     'cancelled' => 'bg-gray-100 text-gray-500 border border-gray-200',
 ];
 
-$conn->close();
-
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
     ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
@@ -311,9 +310,11 @@ $pageTitle = 'Browse Jobs';
 $pageSubtitle = 'Find new opportunities and submit proposals';
 $activePage = 'browse_jobs';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'freelancer');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
+$conn->close();
+
 ?>
 
                 <form method="GET" id="filterForm" class="space-y-6">
@@ -358,7 +359,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                         'disputed' => ['Disputed', 'fa-exclamation-triangle', 'text-red-500'],
                                     ];
                                     foreach ($statusOptions as $val => $info):
-                                    ?>
+                                        ?>
                                         <label class="flex items-center gap-2.5 cursor-pointer group p-2 rounded-lg hover:bg-gray-50 transition-colors <?= $statusFilter === $val ? 'bg-blue-50' : '' ?>">
                                             <input type="radio" name="status" value="<?= $val ?>" <?= $statusFilter === $val ? 'checked' : '' ?>
                                                 class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" onchange="this.form.submit()">
@@ -408,7 +409,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                     }
                                     foreach ($grouped as $category => $skills):
                                         $col = getSkillColor($category, $skillColors, $defaultColor);
-                                    ?>
+                                        ?>
                                         <div>
                                             <p class="text-[10px] font-bold uppercase tracking-wider <?= $col['text'] ?> mb-2"><?= sanitize_string($category) ?></p>
                                             <div class="space-y-1.5">
@@ -443,7 +444,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                         'month' => 'Last Month',
                                     ];
                                     foreach ($dateOptions as $val => $label):
-                                    ?>
+                                        ?>
                                         <label class="flex items-center gap-2.5 cursor-pointer group p-2 rounded-lg hover:bg-gray-50 transition-colors <?= $datePosted === $val ? 'bg-blue-50' : '' ?>">
                                             <input type="radio" name="date_posted" value="<?= $val ?>" <?= $datePosted === $val ? 'checked' : '' ?>
                                                 class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" onchange="this.form.submit()">
@@ -576,7 +577,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                                                 <?php
                                                                 foreach ($job['skills'] as $skill):
                                                                     $col = getSkillColor($skill['category'] ?? 'General', $skillColors, $defaultColor);
-                                                                ?>
+                                                                    ?>
                                                                     <span class="skill-tag inline-flex items-center px-2.5 py-1 <?= $col['bg'] ?> <?= $col['text'] ?> text-[11px] font-medium rounded-lg border <?= $col['border'] ?>">
                                                                         <?= sanitize_string($skill['skill_name']) ?>
                                                                     </span>
@@ -647,7 +648,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                             $startPage = max(1, $pagination['current_page'] - 2);
                                             $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
                                             if ($startPage > 1):
-                                            ?>
+                                                ?>
                                                 <a href="<?= $baseUrl ?>&page=1" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all">1</a>
                                                 <?php if ($startPage > 2): ?><span class="text-gray-300 px-1">...</span><?php endif; ?>
                                             <?php endif; ?>

@@ -39,15 +39,112 @@ if ($job_id) {
 
         if (empty($embedding)) {
             $STOP_WORDS = [
-                'the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'but', 'in', 'with', 'to', 'for', 'of',
-                'not', 'no', 'can', 'had', 'has', 'was', 'were', 'are', 'be', 'been', 'being', 'have', 'having',
-                'do', 'does', 'did', 'doing', 'will', 'would', 'could', 'should', 'may', 'might', 'shall', 'must',
-                'that', 'this', 'these', 'those', 'it', 'its', 'from', 'by', 'as', 'if', 'then', 'than', 'so',
-                'just', 'also', 'about', 'into', 'over', 'after', 'before', 'between', 'under', 'above', 'out',
-                'off', 'up', 'down', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some',
-                'such', 'any', 'only', 'same', 'own', 'too', 'very', 'here', 'there', 'when', 'where', 'why',
-                'how', 'what', 'who', 'whom', 'whose', 'through', 'during', 'until', 'while', 'again', 'further',
-                'once', 'because', 'nor', 'against', 'during', 'once', 'twice',
+                'the',
+                'is',
+                'at',
+                'which',
+                'on',
+                'a',
+                'an',
+                'and',
+                'or',
+                'but',
+                'in',
+                'with',
+                'to',
+                'for',
+                'of',
+                'not',
+                'no',
+                'can',
+                'had',
+                'has',
+                'was',
+                'were',
+                'are',
+                'be',
+                'been',
+                'being',
+                'have',
+                'having',
+                'do',
+                'does',
+                'did',
+                'doing',
+                'will',
+                'would',
+                'could',
+                'should',
+                'may',
+                'might',
+                'shall',
+                'must',
+                'that',
+                'this',
+                'these',
+                'those',
+                'it',
+                'its',
+                'from',
+                'by',
+                'as',
+                'if',
+                'then',
+                'than',
+                'so',
+                'just',
+                'also',
+                'about',
+                'into',
+                'over',
+                'after',
+                'before',
+                'between',
+                'under',
+                'above',
+                'out',
+                'off',
+                'up',
+                'down',
+                'all',
+                'each',
+                'every',
+                'both',
+                'few',
+                'more',
+                'most',
+                'other',
+                'some',
+                'such',
+                'any',
+                'only',
+                'same',
+                'own',
+                'too',
+                'very',
+                'here',
+                'there',
+                'when',
+                'where',
+                'why',
+                'how',
+                'what',
+                'who',
+                'whom',
+                'whose',
+                'through',
+                'during',
+                'until',
+                'while',
+                'again',
+                'further',
+                'once',
+                'because',
+                'nor',
+                'against',
+                'during',
+                'once',
+                'twice',
             ];
 
             $title_words = [];
@@ -164,14 +261,14 @@ if ($job_id) {
     }
 }
 
-$conn->close();
-
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
     ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
     ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
     ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
+    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
     ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
+    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
     ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
     ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
 ];
@@ -179,7 +276,7 @@ $pageTitle = 'Recommended Freelancers';
 $pageSubtitle = 'AI-matched freelancers for your jobs';
 $activePage = 'recommended_freelancers';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = 0;
+$unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
@@ -256,6 +353,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <?php if (count($match['skill_names']) > 5): ?>
                     <span class="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-semibold">+<?= count($match['skill_names']) - 5 ?></span>
                 <?php endif; ?>
+                <?php $conn->close(); ?>
             </div>
 
             <div class="grid grid-cols-2 gap-2 text-[11px] mb-4">

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Admin Dashboard – FreelanceHub
+ * Admin Dashboard – JobHub
  * Modern card-based dashboard with top navigation.
  */
 require_once __DIR__ . '/../auth/auth.php';

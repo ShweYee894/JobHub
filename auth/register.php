@@ -33,8 +33,8 @@ unset($_SESSION['form_data']);
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Create Account – FreelanceHub</title>
-  <meta name="description" content="Join FreelanceHub — create your account as a freelancer or client and start collaborating on projects worldwide." />
+  <title>Create Account – JobHub</title>
+  <meta name="description" content="Join JobHub — create your account as a freelancer or client and start collaborating on projects worldwide." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -147,7 +147,7 @@ unset($_SESSION['form_data']);
         <div class="w-14 h-14 rounded-2xl btn-grad flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
           <i class="fas fa-user-plus text-white text-lg"></i>
         </div>
-        <h1 class="text-3xl font-black text-gray-900 mb-2">Join FreelanceHub</h1>
+        <h1 class="text-3xl font-black text-gray-900 mb-2">Join JobHub</h1>
         <p class="text-gray-500 text-sm">Create your account and start your journey</p>
       </div>
 
@@ -372,7 +372,7 @@ unset($_SESSION['form_data']);
       </p>
 
       <p class="text-center text-gray-400 text-[11px] mt-4">
-        &copy; 2026 FreelanceHub. All rights reserved.
+        &copy; 2026 JobHub. All rights reserved.
       </p>
     </div>
   </main>

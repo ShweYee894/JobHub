@@ -57,8 +57,6 @@ $stmt->execute();
 $proposals = $stmt->get_result();
 $stmt->close();
 
-$conn->close();
-
 $proposalColors = [
     'pending' => 'bg-amber-50 text-amber-600 border border-amber-200',
     'accepted' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
@@ -71,7 +69,7 @@ function buildQueryString(array $overrides = []): string
     return http_build_query($params);
 }
 
-$page_title = 'My Proposals – FreelanceHub';
+$page_title = 'My Proposals – JobHub';
 
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
@@ -86,7 +84,7 @@ $pageTitle = 'My Proposals';
 $pageSubtitle = 'Track all your submitted proposals';
 $activePage = 'proposals';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($userId, 'freelancer');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
@@ -218,5 +216,5 @@ require_once __DIR__ . '/../components/layout_start.php';
                 </div>
             </div>
             <?php endif; ?>
-
+<?php $conn->close(); ?>
 <?php require_once __DIR__ . '/../components/layout_end.php'; ?>

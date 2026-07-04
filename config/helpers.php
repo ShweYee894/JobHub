@@ -220,3 +220,23 @@ function render_pagination(array $pagination, string $base_url): void
     }
     echo '</nav>';
 }
+
+/**
+ * Get unread message count for a user.
+ * Works for both clients and freelancers.
+ */
+function get_unread_message_count(int $userId, string $role): int
+{
+    global $conn;
+    if ($role === 'freelancer') {
+        $stmt = $conn->prepare('SELECT COUNT(*) AS cnt FROM chat_messages cm JOIN chat_rooms cr ON cm.room_id = cr.id JOIN contracts c ON cr.contract_id = c.id WHERE c.freelancer_id = ? AND cm.sender_id != ? AND cm.is_read = 0');
+        $stmt->bind_param('ii', $userId, $userId);
+    } else {
+        $stmt = $conn->prepare('SELECT COUNT(*) AS cnt FROM chat_messages cm JOIN chat_rooms cr ON cm.room_id = cr.id JOIN contracts c ON cr.contract_id = c.id WHERE c.client_id = ? AND cm.sender_id != ? AND cm.is_read = 0');
+        $stmt->bind_param('ii', $userId, $userId);
+    }
+    $stmt->execute();
+    $count = (int) $stmt->get_result()->fetch_assoc()['cnt'];
+    $stmt->close();
+    return $count;
+}

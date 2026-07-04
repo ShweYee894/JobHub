@@ -1,5 +1,5 @@
 /**
- * FreelanceHub – Dark Mode Toggle
+ * JobHub – Dark Mode Toggle
  * Include this script in every page. It reads/writes localStorage
  * and toggles the 'dark' class on <html>.
  */

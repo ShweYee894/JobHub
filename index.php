@@ -4,12 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreelanceHub – Hire Top Freelancers & Find Great Work</title>
-  <meta name="description" content="FreelanceHub connects talented freelancers with clients worldwide. Post a job, receive proposals, and get your project done by the best professionals." />
+  <title>JobHub – Hire Top Freelancers & Find Great Work</title>
+  <meta name="description" content="JobHub connects talented freelancers with clients worldwide. Post a job, receive proposals, and get your project done by the best professionals." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons@3.3.1/css/all/all.min.css" rel="stylesheet">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/upload/logos/logo.png">
   <script>
     tailwind.config = {
       theme: {
@@ -239,6 +240,16 @@
       border: 1px solid #e2e8f0;
       box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
     }
+
+    /* ── Search dropdown styles ── */
+    #searchBar {
+      background: #ffffff;
+    }
+
+    #nav-search::placeholder,
+    #hero-search::placeholder {
+      color: #9ca3af;
+    }
   </style>
 </head>
 
@@ -250,49 +261,62 @@
   <!-- ═══════════════════════ 1. NAVBAR ═══════════════════════════════ -->
   <nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 py-3 bg-white/80 backdrop-blur-md">
     <div class="w-full mx-auto px-4 sm:px-6 flex items-center justify-between">
+      <div class="flex gap-16">
+        <!-- Logo -->
+        <a href="#" class="flex items-center gap-1.5 group">
+          <img src="assets/upload/logos/logo.png" alt="Logo" class="w-[40px] h-[40px] rounded-2xl ">
+          <span class="text-xl font-extrabold tracking-tight">
+            <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
+          </span>
+        </a>
 
-      <!-- Logo -->
-      <a href="#" class="flex items-center gap-2 group">
-        <span class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25">
-          <!-- <i class="fas fa-bolt text-white text-sm"></i> -->
-          <i class="fi fi-brands-artstation text-white text-sm"></i>
-          <!-- <i class="fi fi-br-f  text-white text-lg"></i> -->
-        </span>
-        <span class="text-xl font-extrabold tracking-tight">
-          <span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span>
-        </span>
-      </a>
-
-      <!-- Desktop links -->
-      <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-500">
-        <a href="#hero" class="nav-link hover:text-gray-900 transition-colors">Home</a>
-        <a href="#jobs" class="nav-link hover:text-gray-900 transition-colors">Find Work</a>
-        <a href="#freelancers" class="nav-link hover:text-gray-900 transition-colors">Find Freelancers</a>
-        <a href="#howitworks" class="nav-link hover:text-gray-900 transition-colors">How It Works</a>
-        <a href="#about" class="nav-link hover:text-gray-900 transition-colors">About Us</a>
-        <a href="#pricing" class="nav-link hover:text-gray-900 transition-colors">Pricing</a>
+        <!-- Desktop links -->
+        <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-500">
+          <a href="#hero" class="nav-link hover:text-gray-900 transition-colors">Home</a>
+          <a href="#jobs" class="nav-link hover:text-gray-900 transition-colors">Find Work</a>
+          <a href="#freelancers" class="nav-link hover:text-gray-900 transition-colors">Find Freelancers</a>
+          <a href="#howitworks" class="nav-link hover:text-gray-900 transition-colors">How It Works</a>
+          <a href="#about" class="nav-link hover:text-gray-900 transition-colors">About Us</a>
+          <a href="#pricing" class="nav-link hover:text-gray-900 transition-colors">Pricing</a>
+        </div>
       </div>
 
-      <!--Search-->
-      <div id="searchBar" class="bg-white/20  rounded-3xl flex flex-col sm:flex-row max-w-2xl mx-auto lg:mx-0 border border-gray-300 hidden">
-        <div class="flex items-center gap-3 flex-1  rounded-3xl  px-4 py-2">
+      <div class="flex gap-3 items-center">
+        <!--Search with Dropdown-->
+        <div id="" class="relative flex items-center border border-gray-300 rounded-full bg-white overflow-visible">
+          <div class="flex items-center gap-2 px-4 py-2">
+            <i class="fas fa-search text-gray-400 text-sm"></i>
+            <input id="nav-search" type="text" placeholder="Search"
+              class="bg-transparent w-32 sm:w-48 text-gray-900 placeholder-gray-400 outline-none text-sm" />
+          </div>
 
-          <input id="hero-search" type="text" placeholder="Search for any skill or job..."
-            class="bg-transparent flex-1 text-gray-900 placeholder-gray-400 outline-none text-sm" />
+          <!-- Divider -->
+          <div class="w-px h-6 bg-gray-300"></div>
+
+          <!-- Dropdown Button -->
+          <button id="navSearchDropdownBtn" type="button" class="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors rounded-r-full">
+            <span id="navSearchType" class="text-sm font-medium text-gray-700">Talent</span>
+            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div id="navSearchDropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+            <button type="button" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors font-medium" data-type="talent" data-placeholder="Search for talent...">
+              Talent
+            </button>
+            <button type="button" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors font-medium" data-type="jobs" data-placeholder="Search for jobs...">
+              Jobs
+            </button>
+          </div>
         </div>
 
-        <button class="font-bold px-7 py-3 cursor-pointer">
-          <i class="fas fa-search text-gray-500"></i>
-        </button>
+
+        <!-- Auth buttons -->
+        <div class="hidden lg:flex items-center gap-3">
+          <a href="auth/login.php" class="text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-primary px-4 py-2 rounded-lg transition-all">Log In</a>
+          <a href="auth/register.php" class="btn-grad text-sm font-semibold text-white px-5 py-2 rounded-lg shadow-lg shadow-blue-500/25">Sign Up</a>
+        </div>
       </div>
-
-
-      <!-- Auth buttons -->
-      <div class="hidden lg:flex items-center gap-3">
-        <a href="auth/login.php" class="text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-primary px-4 py-2 rounded-lg transition-all">Log In</a>
-        <a href="auth/register.php" class="btn-grad text-sm font-semibold text-white px-5 py-2 rounded-lg shadow-lg shadow-blue-500/25">Sign Up</a>
-      </div>
-
       <!-- Hamburger -->
       <button id="hamburger" class="lg:hidden text-gray-600 hover:text-gray-900 p-2" aria-label="Toggle menu">
         <i class="fas fa-bars text-xl"></i>
@@ -318,7 +342,7 @@
 
 
   <!-- ═══════════════════════ 2. HERO ══════════════════════════════════ -->
-  <section id="hero" class="relative min-h-[85vh] flex items-center overflow-hidden pt-24 bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+  <section id="hero" class="relative min-h-[85vh] flex items-center overflow-hidden pt-32 bg-gradient-to-br from-blue-50 via-white to-cyan-50">
     <!-- Background decorations -->
     <div class="orb w-[500px] h-[500px] bg-blue-400 top-0 -right-40" style="animation-delay:0s"></div>
     <div class="orb w-[400px] h-[400px] bg-cyan-300 bottom-0 -left-32" style="animation-delay:2s"></div>
@@ -334,28 +358,43 @@
         <div class="text-center lg:text-left">
 
           <!-- Headline -->
-          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight mb-6 text-gray-900">
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black leading-relaxed mb-8 text-gray-900">
             Find the Perfect
             <span class="grad-text"> Freelancer</span>
             <br />for Your Project
           </h1>
 
           <!-- Subtitle -->
-          <p class="text-lg sm:text-xl text-gray-500 max-w-xl mb-8 leading-relaxed">
+          <p class="text-md sm:text-lg text-gray-500 max-w-xl mb-10 leading-relaxed">
             Connect with top-tier professionals across 50+ skills. Post your project, receive proposals in hours, and hire with confidence.
           </p>
 
           <!-- Search Bar -->
-          <div class="bg-white/20 rounded-3xl flex flex-col sm:flex-row max-w-2xl mx-auto lg:mx-0 mb-8 shadow-lg shadow-gray-200/50 border border-gray-200">
-            <div class="flex items-center gap-3 flex-1  rounded-3xl  px-4 py-3">
-
-              <input id="hero-search" type="text" placeholder="Search for any skill or job..."
+          <div class="relative flex items-center max-w-2xl mx-auto lg:mx-0 mb-10 shadow-lg shadow-gray-200/50 border border-gray-200 rounded-full bg-white overflow-visible">
+            <div class="flex items-center gap-2 px-4 py-3 flex-1">
+              <i class="fas fa-search text-gray-400 text-sm"></i>
+              <input id="hero-search" type="text" placeholder="Search for talent..."
                 class="bg-transparent flex-1 text-gray-900 placeholder-gray-400 outline-none text-sm" />
             </div>
 
-            <button class="font-bold px-7 py-3 cursor-pointer">
-              <i class="fas fa-search text-gray-500"></i>
+            <!-- Divider -->
+            <div class="w-px h-6 bg-gray-300"></div>
+
+            <!-- Dropdown Button -->
+            <button id="heroSearchDropdownBtn" type="button" class="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-r-full">
+              <span id="heroSearchType" class="text-sm font-medium text-gray-700">Talent</span>
+              <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
             </button>
+
+            <!-- Dropdown Menu -->
+            <div id="heroSearchDropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+              <button type="button" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors font-medium" data-type="talent" data-placeholder="Search for talent...">
+                Talent
+              </button>
+              <button type="button" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors font-medium" data-type="jobs" data-placeholder="Search for jobs...">
+                Jobs
+              </button>
+            </div>
           </div>
 
           <!-- CTA Buttons -->
@@ -367,111 +406,101 @@
               Find Work
             </a>
           </div>
-
-          <!-- Stats row -->
-          <div class="flex items-center justify-center lg:justify-start gap-8 mt-10 pt-8 border-t border-gray-100">
-            <div>
-              <p class="text-2xl font-black text-gray-900">5,000+</p>
-              <p class="text-xs text-gray-400 font-medium">Freelancers</p>
-            </div>
-            <div class="w-px h-10 bg-gray-200"></div>
-            <div>
-              <p class="text-2xl font-black text-gray-900">12,000+</p>
-              <p class="text-xs text-gray-400 font-medium">Projects Done</p>
-            </div>
-            <div class="w-px h-10 bg-gray-200"></div>
-            <div>
-              <p class="text-2xl font-black text-gray-900">$8M+</p>
-              <p class="text-xs text-gray-400 font-medium">Paid to Freelancers</p>
-            </div>
-          </div>
         </div>
 
         <!-- Right Column - Visual -->
-        <div class="hidden lg:block relative">
-          <!-- Main card -->
-          <div class="bg-white rounded-3xl p-8 shadow-2xl shadow-gray-200/60 border border-gray-100 relative">
-            <!-- Top bar -->
-            <div class="flex items-center gap-2 mb-6">
-              <div class="w-3 h-3 rounded-full bg-red-400"></div>
-              <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
-              <div class="w-3 h-3 rounded-full bg-green-400"></div>
-            </div>
+        <div class="hidden lg:block relative w-full max-w-xl mx-auto">
 
-            <!-- Job preview -->
-            <div class="bg-gradient-to-br from-blue-50 to-cyan-50  rounded-2xl p-6 mb-6">
-              <div class="flex items-start justify-between mb-4">
-                <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                  <i class="fas fa-shopping-cart text-blue-600 text-lg"></i>
-                </div>
-                <span class="text-xs font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full">Open</span>
-              </div>
-              <h3 class="font-bold text-gray-900 text-lg mb-2">E-Commerce Website</h3>
-              <p class="text-gray-500 text-sm mb-4">Full-featured online store with payment integration</p>
-              <div class="flex gap-2">
-                <span class="text-xs bg-white/80 text-blue-600 px-2 py-1 rounded-md font-medium">React</span>
-                <span class="text-xs bg-white/80 text-blue-600 px-2 py-1 rounded-md font-medium">Node.js</span>
-                <span class="text-xs bg-white/80 text-blue-600 px-2 py-1 rounded-md font-medium">Stripe</span>
-              </div>
-            </div>
+          <!-- Main image asset -->
+          <img src="assets/upload/logos/download.png" alt="Freelancer" class="w-full h-auto object-contain block mx-auto">
 
-            <!-- Freelancer profiles -->
-            <div class="space-y-4">
-              <div class="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm"><img src="assets/upload/profile1.png" alt=""></div>
-                <div class="flex-1">
-                  <p class="font-semibold text-gray-900 text-sm">Arjun P.</p>
-                  <p class="text-gray-400 text-xs">Full Stack Developer</p>
+          <!-- Left Side Badge ($4,500 Deposited) -->
+          <!-- Shifted down to "top-[45%]" to sit right next to her arm/elbow exactly like your layout image -->
+          <div class="absolute top-[45%] left-2 bg-white rounded-2xl p-3 shadow-xl border border-gray-100 flex items-center gap-3 max-w-[210px] transform -translate-y-1/2">
+            <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-credit-card text-blue-600 text-xs"></i>
+            </div>
+            <div>
+              <p class="font-bold text-gray-900 text-xs tracking-tight leading-none mb-1">
+                $4,500 Deposited
+              </p>
+              <p class="text-gray-400 text-[10px] leading-tight font-medium">
+                Escrow secured for frontend build
+              </p>
+            </div>
+          </div>
+
+          <!-- Bottom Right Card (Find your next big contract) -->
+          <!-- Locked precisely to the bottom right zone overlapping the lower legs/feet area -->
+          <div class="absolute bottom-6 -right-6 bg-white rounded-2xl p-3.5 shadow-xl border border-gray-100 max-w-[240px]">
+            <div class="flex flex-col gap-2">
+              <!-- Top Row: Icon & Headline -->
+              <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                  <i class="fas fa-briefcase text-emerald-600 text-[9px]"></i>
                 </div>
-                <div class="text-right">
-                  <p class="font-bold text-gray-900 text-sm">$45/hr</p>
-                  <p class="text-yellow-500 text-xs">★★★★★</p>
-                </div>
+                <h4 class="font-bold text-gray-900 text-xs tracking-tight leading-tight">
+                  Find your next big contract
+                </h4>
               </div>
-              <div class="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center text-white font-bold text-sm"><img src="assets/upload/profile.png" alt=""></div>
-                <div class="flex-1">
-                  <p class="font-semibold text-gray-900 text-sm">Amara O.</p>
-                  <p class="text-gray-400 text-xs">UI/UX Designer</p>
-                </div>
-                <div class="text-right">
-                  <p class="font-bold text-gray-900 text-sm">$60/hr</p>
-                  <p class="text-yellow-500 text-xs">★★★★★</p>
-                </div>
+
+              <!-- Middle Row: Sub-text -->
+              <p class="text-gray-400 text-[10px] leading-normal pl-7">
+                Connect with top global companies hiring now.
+              </p>
+
+              <!-- Bottom Row: Avatar Row + Milestone Tag Stacked -->
+              <div class="pl-7 pt-1 flex flex-col gap-2 border-t border-gray-50 mt-1">
+
+                <!-- milestone text badge -->
+                <span class="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-600">
+                  <span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Paid via milestones
+                </span>
               </div>
             </div>
           </div>
 
-          <!-- Floating elements -->
-          <div class="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-lg border border-gray-100 animate-float">
-            <div class="flex items-center gap-2">
-              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <i class="fas fa-check text-green-600"></i>
-              </div>
-              <div>
-                <p class="font-bold text-gray-900 text-sm">$2,500</p>
-                <p class="text-gray-400 text-xs">Payment Released</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="absolute -bottom-4 -left-4 bg-white rounded-2xl p-4 shadow-lg border border-gray-100 animate-float" style="animation-delay:1s">
-            <div class="flex items-center gap-2">
-              <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <i class="fas fa-file-contract text-blue-600"></i>
-              </div>
-              <div>
-                <p class="font-bold text-gray-900 text-sm">New Proposal</p>
-                <p class="text-gray-400 text-xs">Just received</p>
-              </div>
-            </div>
-          </div>
         </div>
+
       </div>
     </div>
   </section>
 
+  <section id="stats" class="py-10 px-4 reveal w-full flex justify-center items-center">
+    <!-- Stats row -->
+    <div class="flex items-center justify-center lg:justify-start gap-8 mt-8 pt-8 border-t border-gray-100">
+      <div>
+        <p class="text-2xl font-black text-gray-900">5,000+</p>
+        <p class="text-xs text-gray-400 font-medium">Freelancers</p>
+      </div>
+      <div class="w-px h-10 bg-gray-200"></div>
+      <div>
+        <p class="text-2xl font-black text-gray-900">12,000+</p>
+        <p class="text-xs text-gray-400 font-medium">Projects Done</p>
+      </div>
+      <div class="w-px h-10 bg-gray-200"></div>
+      <div>
+        <p class="text-2xl font-black text-gray-900">$8M+</p>
+        <p class="text-xs text-gray-400 font-medium">Paid to Freelancers</p>
+      </div>
+      <div>
+        <p class="text-2xl font-black text-gray-900">5,000+</p>
+        <p class="text-xs text-gray-400 font-medium">Freelancers</p>
+      </div>
+      <div class="w-px h-10 bg-gray-200"></div>
+      <div>
+        <p class="text-2xl font-black text-gray-900">12,000+</p>
+        <p class="text-xs text-gray-400 font-medium">Projects Done</p>
+      </div>
+      <div class="w-px h-10 bg-gray-200"></div>
+      <div>
+        <p class="text-2xl font-black text-gray-900">$8M+</p>
+        <p class="text-xs text-gray-400 font-medium">Paid to Freelancers</p>
+      </div>
+    </div>
 
+  </section>
   <!-- ═══════════════════════ 3. CATEGORIES ════════════════════════════ -->
   <section id="categories" class="py-20 px-4 reveal">
     <div class="max-w-7xl mx-auto">
@@ -1036,7 +1065,7 @@
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
         <div class="testi-card bg-white rounded-2xl p-7 border border-gray-100 shadow-sm">
-          <p class="text-gray-600 text-sm leading-relaxed mb-6">"FreelanceHub transformed how we hire. We built our entire e-commerce platform in 3 weeks — from shortlisting to delivery. Absolutely incredible platform."</p>
+          <p class="text-gray-600 text-sm leading-relaxed mb-6">"JobHub transformed how we hire. We built our entire e-commerce platform in 3 weeks — from shortlisting to delivery. Absolutely incredible platform."</p>
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">JM</div>
             <div>
@@ -1084,7 +1113,7 @@
         </div>
 
         <div class="testi-card bg-white rounded-2xl p-7 border border-gray-100 shadow-sm">
-          <p class="text-gray-600 text-sm leading-relaxed mb-6">"I replaced my full-time office job with freelancing through FreelanceHub. In 6 months I hit $8K/month — more than I ever earned in a 9-to-5."</p>
+          <p class="text-gray-600 text-sm leading-relaxed mb-6">"I replaced my full-time office job with freelancing through JobHub. In 6 months I hit $8K/month — more than I ever earned in a 9-to-5."</p>
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white font-bold text-sm">CH</div>
             <div>
@@ -1141,7 +1170,7 @@
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-14">
         <span class="text-xs font-bold uppercase tracking-widest text-blue-600/70 bg-blue-50 px-3 py-1 rounded-full">Our Story</span>
-        <h2 class="text-4xl font-extrabold mt-4 mb-3 text-gray-900">About <span class="grad-text">FreelanceHub</span></h2>
+        <h2 class="text-4xl font-extrabold mt-4 mb-3 text-gray-900">About <span class="grad-text">JobHub</span></h2>
       </div>
 
       <div class="grid lg:grid-cols-3 gap-6">
@@ -1152,7 +1181,7 @@
             <i class="fas fa-users text-blue-600 text-xl"></i>
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-4">Who We Are</h3>
-          <p class="text-gray-500 leading-relaxed text-sm">FreelanceHub was founded in 2023 by a team of engineers and entrepreneurs who experienced the friction of freelancing first-hand. We set out to build the most transparent, secure, and talent-rich marketplace in the world — connecting skilled professionals with innovative businesses across every time zone.</p>
+          <p class="text-gray-500 leading-relaxed text-sm">JobHub was founded in 2023 by a team of engineers and entrepreneurs who experienced the friction of freelancing first-hand. We set out to build the most transparent, secure, and talent-rich marketplace in the world — connecting skilled professionals with innovative businesses across every time zone.</p>
           <div class="mt-6 flex items-center gap-4">
             <div class="text-center">
               <p class="text-lg font-black text-gray-900">50+</p>
@@ -1178,7 +1207,7 @@
             <i class="fas fa-rocket text-cyan-600 text-xl"></i>
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-4">Our Mission</h3>
-          <p class="text-gray-500 leading-relaxed text-sm">Our mission is to democratise work — giving every skilled individual on the planet access to great projects and fair pay, regardless of geography. We believe talent is equally distributed; opportunity is not. FreelanceHub exists to fix that imbalance through technology, trust, and a community-first approach to freelancing.</p>
+          <p class="text-gray-500 leading-relaxed text-sm">Our mission is to democratise work — giving every skilled individual on the planet access to great projects and fair pay, regardless of geography. We believe talent is equally distributed; opportunity is not. JobHub exists to fix that imbalance through technology, trust, and a community-first approach to freelancing.</p>
           <ul class="mt-6 space-y-2">
             <li class="flex items-center gap-2 text-sm text-gray-600"><i class="fas fa-check-circle text-cyan-600"></i> Zero barriers to entry</li>
             <li class="flex items-center gap-2 text-sm text-gray-600"><i class="fas fa-check-circle text-cyan-600"></i> Fair & transparent fees</li>
@@ -1369,7 +1398,7 @@
       </div>
 
       <div class="border-t border-gray-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-gray-400 text-xs">
-        <p>© 2026 FreelanceHub. All rights reserved.</p>
+        <p>© 2026 JobHub. All rights reserved.</p>
         <div class="flex gap-4">
           <a href="privacy.php" class="hover:text-gray-600 transition-colors">Privacy</a>
           <a href="terms.php" class="hover:text-gray-600 transition-colors">Terms</a>
@@ -1458,11 +1487,68 @@
     });
     statsObserver.observe(statsSection);
 
+    // ── Search Dropdown Logic ──
+    function setupSearchDropdown(dropdownId, btnId, inputId, typeSpanId) {
+      const dropdown = document.getElementById(dropdownId);
+      const btn = document.getElementById(btnId);
+      const input = document.getElementById(inputId);
+      const typeSpan = document.getElementById(typeSpanId);
+
+      // Toggle dropdown
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+      });
+
+      // Handle option selection
+      dropdown.querySelectorAll('button').forEach(option => {
+        option.addEventListener('click', () => {
+          const type = option.dataset.type;
+          const placeholder = option.dataset.placeholder;
+          typeSpan.textContent = type === 'talent' ? 'Talent' : 'Jobs';
+          input.placeholder = placeholder;
+          input.dataset.searchType = type;
+          dropdown.classList.add('hidden');
+          input.focus();
+        });
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', () => {
+        dropdown.classList.add('hidden');
+      });
+    }
+
+    setupSearchDropdown('navSearchDropdown', 'navSearchDropdownBtn', 'nav-search', 'navSearchType');
+    setupSearchDropdown('heroSearchDropdown', 'heroSearchDropdownBtn', 'hero-search', 'heroSearchType');
+
     // ── Hero search ──
     document.getElementById('hero-search').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         const q = this.value.trim();
-        if (q) window.location.href = 'jobs/browse.php?q=' + encodeURIComponent(q);
+        const type = this.dataset.searchType || 'talent';
+        if (q) {
+          if (type === 'talent') {
+            window.location.href = 'freelancers/browse.php?q=' + encodeURIComponent(q);
+          } else {
+            window.location.href = 'jobs/browse.php?q=' + encodeURIComponent(q);
+          }
+        }
+      }
+    });
+
+    // ── Nav search ──
+    document.getElementById('nav-search').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const q = this.value.trim();
+        const type = this.dataset.searchType || 'talent';
+        if (q) {
+          if (type === 'talent') {
+            window.location.href = 'freelancers/browse.php?q=' + encodeURIComponent(q);
+          } else {
+            window.location.href = 'jobs/browse.php?q=' + encodeURIComponent(q);
+          }
+        }
       }
     });
 
@@ -1472,7 +1558,7 @@
     });
 
 
-    // ── Nav search bar ──
+    // ── Nav search bar visibility on scroll ──
 
     const categories = document.getElementById("categories");
     const searchBar = document.getElementById("searchBar");

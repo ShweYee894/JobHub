@@ -1,10 +1,11 @@
 <?php
+
 /**
  * Common Header Component
  * Included at the top of every page. Outputs <!DOCTYPE>, <head>, opening <body>, and navbar.
  */
-
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE)
+    session_start();
 require_once __DIR__ . '/../config/db.php';
 
 $_base = '/finalproject';
@@ -13,14 +14,14 @@ $_user_role = $_SESSION['user_role'] ?? null;
 $_user_name = $_SESSION['user_name'] ?? '';
 $_user_email = $_SESSION['user_email'] ?? '';
 $_profile_img = $_SESSION['profile_image'] ?? '';
-$_page_title = $page_title ?? 'FreelanceHub';
+$_page_title = $page_title ?? 'JobHub';
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title><?= sanitize_string($_page_title) ?> – FreelanceHub</title>
+    <title><?= sanitize_string($_page_title) ?> – JobHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -39,6 +40,6 @@ $_page_title = $page_title ?? 'FreelanceHub';
     .sidebar-link{transition:all .2s}
     .sidebar-link:hover,.sidebar-link.active{background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(14,165,233,.08));color:#2563eb;border-left:3px solid #2563eb}
     </style>
-    <?php if(isset($extra_head)) echo $extra_head; ?>
+    <?php if (isset($extra_head)) echo $extra_head; ?>
 </head>
 <body>

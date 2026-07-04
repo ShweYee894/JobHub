@@ -21,7 +21,7 @@ $_navItems = $navItems ?? [];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title><?= htmlspecialchars($pageTitle ?? 'Dashboard') ?> – FreelanceHub</title>
+    <title><?= htmlspecialchars($pageTitle ?? 'Dashboard') ?> – JobHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -134,10 +134,8 @@ $_navItems = $navItems ?? [];
         <!-- Left -->
         <div class="flex items-center gap-8">
             <a href="../index.php" class="flex items-center gap-2.5 no-underline">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                    <i class="fas fa-bolt text-white text-sm"></i>
-                </div>
-                <span class="text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">Freelance<span class="text-blue-600">Hub</span></span>
+                <img src="../assets/upload/logos/logo.png" alt="Logo" class="w-9 h-9 rounded-xl">
+                <span class="text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">Job<span class="text-blue-600">Hub</span></span>
             </a>
             <div class="hidden lg:flex items-center gap-1">
                 <?php foreach ($_navItems as $item): ?>

@@ -1,4 +1,4 @@
-# FreelanceHub - Deployment Checklist
+# JobHub - Deployment Checklist
 
 ## Pre-Deployment Verification
 

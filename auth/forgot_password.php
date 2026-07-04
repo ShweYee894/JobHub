@@ -22,8 +22,8 @@ if (isset($_SESSION['flash']['error'])) {
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Forgot Password – FreelanceHub</title>
-  <meta name="description" content="Reset your FreelanceHub account password." />
+  <title>Forgot Password – JobHub</title>
+  <meta name="description" content="Reset your JobHub account password." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -186,7 +186,7 @@ if (isset($_SESSION['flash']['error'])) {
       </p>
 
       <p class="text-center text-gray-400 text-[11px] mt-4">
-        &copy; 2026 FreelanceHub. All rights reserved.
+        &copy; 2026 JobHub. All rights reserved.
       </p>
     </div>
   </main>

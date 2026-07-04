@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy – FreelanceHub</title>
+  <title>Privacy Policy – JobHub</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -48,7 +48,7 @@
     <div class="w-full mx-auto px-4 sm:px-6 flex items-center justify-between">
       <a href="index.php" class="flex items-center gap-2 group">
         <span class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25"><i class="fi fi-brands-artstation text-white text-sm"></i></span>
-        <span class="text-xl font-extrabold tracking-tight"><span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span></span>
+        <span class="text-xl font-extrabold tracking-tight"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
       </a>
       <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-500">
         <a href="index.php" class="nav-link hover:text-gray-900 transition-colors">Home</a>
@@ -113,7 +113,7 @@
         <!-- Main Content -->
         <div class="lg:col-span-3">
           <div class="bg-white rounded-3xl p-8 sm:p-12 border border-gray-100 shadow-sm prose prose-sm max-w-none">
-            <p class="text-gray-500 leading-relaxed mb-8">This Privacy Policy describes how FreelanceHub ("we", "our", or "us") collects, uses, and protects your personal information when you use our platform and services. By using FreelanceHub, you agree to the collection and use of information in accordance with this policy.</p>
+            <p class="text-gray-500 leading-relaxed mb-8">This Privacy Policy describes how JobHub ("we", "our", or "us") collects, uses, and protects your personal information when you use our platform and services. By using JobHub, you agree to the collection and use of information in accordance with this policy.</p>
 
             <div id="collection" class="mb-10">
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-database text-blue-600 text-sm"></i></span>Information We Collect</h2>
@@ -155,7 +155,7 @@
 
             <div id="cookies" class="mb-10">
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-cookie text-yellow-600 text-sm"></i></span>Cookies</h2>
-              <p class="text-gray-500 leading-relaxed mb-4">We use cookies and similar technologies to enhance your experience on FreelanceHub:</p>
+              <p class="text-gray-500 leading-relaxed mb-4">We use cookies and similar technologies to enhance your experience on JobHub:</p>
               <div class="space-y-3">
                 <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Essential Cookies</strong><p class="text-gray-400 text-xs mt-1">Required for the platform to function (authentication, security, session management).</p></div>
                 <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Analytics Cookies</strong><p class="text-gray-400 text-xs mt-1">Help us understand how users interact with the platform (Google Analytics, Mixpanel).</p></div>
@@ -193,7 +193,7 @@
               <p class="text-gray-500 leading-relaxed mb-4">If you have any questions about this Privacy Policy or wish to exercise your data rights, please contact our Data Protection Officer:</p>
               <div class="bg-gray-50 rounded-2xl p-6">
                 <div class="space-y-2 text-sm">
-                  <p class="text-gray-900"><i class="fas fa-envelope text-primary mr-2"></i>privacy@freelancehub.io</p>
+                  <p class="text-gray-900"><i class="fas fa-envelope text-primary mr-2"></i>privacy@jobhub.io</p>
                   <p class="text-gray-900"><i class="fas fa-phone text-cyan-500 mr-2"></i>+95 9 757 889806</p>
                   <p class="text-gray-900"><i class="fas fa-map-marker-alt text-purple-500 mr-2"></i>42 Tech Street, Innovation Tower, Yangon 11041, Myanmar</p>
                 </div>
@@ -212,7 +212,7 @@
         <div class="lg:col-span-2">
           <a href="index.php" class="flex items-center gap-2 mb-5">
             <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25"><i class="fi fi-brands-artstation text-white text-sm"></i></div>
-            <span class="text-xl font-extrabold"><span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span></span>
+            <span class="text-xl font-extrabold"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
           </a>
           <p class="text-gray-400 text-sm leading-relaxed mb-6 max-w-xs">The world's most trusted marketplace for top freelancers and innovative clients. Work smarter, together.</p>
           <div class="flex gap-3">
@@ -244,14 +244,14 @@
         <div>
           <h4 class="text-gray-900 font-bold text-sm uppercase tracking-widest mb-5">Contact</h4>
           <ul class="space-y-3 text-gray-400 text-sm">
-            <li class="flex items-start gap-2"><i class="fas fa-envelope text-blue-500 mt-0.5"></i><a href="mailto:hello@freelancehub.io" class="hover:text-gray-900 transition-colors">hello@freelancehub.io</a></li>
+            <li class="flex items-start gap-2"><i class="fas fa-envelope text-blue-500 mt-0.5"></i><a href="mailto:hello@jobhub.io" class="hover:text-gray-900 transition-colors">hello@jobhub.io</a></li>
             <li class="flex items-start gap-2"><i class="fas fa-phone text-cyan-500 mt-0.5"></i><span>+95 9 757 889806</span></li>
             <li class="flex items-start gap-2"><i class="fas fa-map-marker-alt text-purple-500 mt-0.5"></i><span>Myanmar, Yangon 11041</span></li>
           </ul>
         </div>
       </div>
       <div class="border-t border-gray-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-gray-400 text-xs">
-        <p>&copy; 2026 FreelanceHub. All rights reserved.</p>
+        <p>&copy; 2026 JobHub. All rights reserved.</p>
         <div class="flex gap-4">
           <a href="privacy.php" class="hover:text-gray-600 transition-colors">Privacy</a>
           <a href="terms.php" class="hover:text-gray-600 transition-colors">Terms</a>

@@ -101,8 +101,6 @@ while ($row = $reviewsResult->fetch_assoc()) {
 }
 $stmtReviews->close();
 
-$conn->close();
-
 $availabilityColors = [
     'Available' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
     'Busy' => 'bg-amber-50 text-amber-600 border border-amber-200',
@@ -134,7 +132,7 @@ $pageTitle = 'Freelancer Profile';
 $pageSubtitle = 'Public professional profile';
 $activePage = 'profile';
 $user = ['name' => $profile['name'], 'profile_image' => $profile['profile_image']];
-$unreadCount = $unreadMessages ?? 0;
+$unreadCount = get_unread_message_count($viewerId, 'freelancer');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../components/layout_start.php';
 ?>
@@ -360,5 +358,5 @@ require_once __DIR__ . '/../components/layout_start.php';
                         </div>
                     </div>
                 <?php endif; ?>
-
+<?php $conn->close(); ?>
 <?php require_once __DIR__ . '/../components/layout_end.php'; ?>

@@ -195,7 +195,7 @@ try {
     exit;
 } catch (Exception $e) {
     $conn->rollback();
-    error_log('[FreelanceHub] Registration error: ' . $e->getMessage());
+    error_log('[JobHub] Registration error: ' . $e->getMessage());
 
     $_SESSION['errors'] = ['A database error occurred during registration. Please try again.'];
     header('Location: register.php');

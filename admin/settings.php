@@ -8,6 +8,16 @@ require_once __DIR__ . '/../auth/auth.php';
 require_role('admin');
 require_once __DIR__ . '/../config/db.php';
 
+function format_bytes(float $bytes, int $precision = 2): string
+{
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $bytes = max($bytes, 0);
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+    $pow = min($pow, count($units) - 1);
+    $bytes /= (1 << (10 * $pow));
+    return round($bytes, $precision) . ' ' . $units[$pow];
+}
+
 $currentPage = 'settings';
 
 $settingsFile = __DIR__ . '/../config/platform_settings.json';
@@ -54,7 +64,7 @@ function upload_image(string $fieldName, string $uploadDir): ?string
 }
 
 $defaults = [
-    'platform_name' => 'FreelanceHub',
+    'platform_name' => 'JobHub',
     'platform_email' => 'admin@freelancehub.com',
     'support_email' => 'support@freelancehub.com',
     'platform_phone' => '',
@@ -94,22 +104,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $settings['platform_fee_percentage'] = max(0, min(100, (float) ($_POST['platform_fee_percentage'] ?? 10)));
     $settings['default_wallet_balance'] = max(0, (float) ($_POST['default_wallet_balance'] ?? 0));
-    $settings['escrow_enabled'] = isset($_POST['escrow_enabled']) ? 1 : 0;
+    $settings['escrow_enabled'] = (($_POST['escrow_enabled'] ?? '0') === '1') ? 1 : 0;
 
-    $settings['registration_enabled'] = isset($_POST['registration_enabled']) ? 1 : 0;
-    $settings['freelancer_registration'] = isset($_POST['freelancer_registration']) ? 1 : 0;
-    $settings['client_registration'] = isset($_POST['client_registration']) ? 1 : 0;
+    $settings['registration_enabled'] = (($_POST['registration_enabled'] ?? '0') === '1') ? 1 : 0;
+    $settings['freelancer_registration'] = (($_POST['freelancer_registration'] ?? '0') === '1') ? 1 : 0;
+    $settings['client_registration'] = (($_POST['client_registration'] ?? '0') === '1') ? 1 : 0;
 
     $settings['session_timeout'] = max(5, min(1440, (int) ($_POST['session_timeout'] ?? 30)));
     $settings['password_min_length'] = max(4, min(64, (int) ($_POST['password_min_length'] ?? 8)));
-    $settings['password_require_uppercase'] = isset($_POST['password_require_uppercase']) ? 1 : 0;
-    $settings['password_require_number'] = isset($_POST['password_require_number']) ? 1 : 0;
-    $settings['two_factor_enabled'] = isset($_POST['two_factor_enabled']) ? 1 : 0;
-    $settings['maintenance_mode'] = isset($_POST['maintenance_mode']) ? 1 : 0;
+    $settings['password_require_uppercase'] = (($_POST['password_require_uppercase'] ?? '0') === '1') ? 1 : 0;
+    $settings['password_require_number'] = (($_POST['password_require_number'] ?? '0') === '1') ? 1 : 0;
+    $settings['two_factor_enabled'] = (($_POST['two_factor_enabled'] ?? '0') === '1') ? 1 : 0;
+    $settings['maintenance_mode'] = (($_POST['maintenance_mode'] ?? '0') === '1') ? 1 : 0;
 
-    $settings['smtp_enabled'] = isset($_POST['smtp_enabled']) ? 1 : 0;
+    $settings['smtp_enabled'] = (($_POST['smtp_enabled'] ?? '0') === '1') ? 1 : 0;
 
-    $settings['dark_mode'] = isset($_POST['dark_mode']) ? 1 : 0;
+    $settings['dark_mode'] = (($_POST['dark_mode'] ?? '0') === '1') ? 1 : 0;
     $settings['theme_color'] = sanitize_string($_POST['theme_color'] ?? '#2563eb');
 
     if (!empty($_FILES['platform_logo']['name'])) {
@@ -659,23 +669,10 @@ require_once __DIR__ . '/../components/layout_start.php';
 
         function toggleSwitch(el) {
             const checkbox = el.querySelector('input[type=checkbox]');
-            const hiddenInput = el.querySelector('input[type=hidden]');
             checkbox.checked = !checkbox.checked;
-            hiddenInput.value = checkbox.checked ? '0' : '1';
             el.classList.toggle('active');
         }
 
         showTab('general');
     </script>
 <?php require_once __DIR__ . '/../components/layout_end.php'; ?>
-<?php
-
-function format_bytes(float $bytes, int $precision = 2): string
-{
-    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    $bytes = max($bytes, 0);
-    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-    $pow = min($pow, count($units) - 1);
-    $bytes /= (1 << (10 * $pow));
-    return round($bytes, $precision) . ' ' . $units[$pow];
-}
