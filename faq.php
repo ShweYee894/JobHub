@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,59 +13,188 @@
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { inter: ['Inter', 'sans-serif'] },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif']
+          },
           colors: {
-            primary: { DEFAULT: '#2563eb', dark: '#1d4ed8', light: '#3b82f6' },
-            accent: { DEFAULT: '#0ea5e9', dark: '#0284c7' },
-            surface: { DEFAULT: '#f8fafc', card: '#ffffff', border: '#e2e8f0' },
+            primary: {
+              DEFAULT: '#2563eb',
+              dark: '#1d4ed8',
+              light: '#3b82f6'
+            },
+            accent: {
+              DEFAULT: '#0ea5e9',
+              dark: '#0284c7'
+            },
+            surface: {
+              DEFAULT: '#f8fafc',
+              card: '#ffffff',
+              border: '#e2e8f0'
+            },
           },
           animation: {
             'fade-up': 'fadeUp 0.6s ease forwards',
             'float': 'float 3s ease-in-out infinite',
           },
           keyframes: {
-            fadeUp: { '0%': { opacity: 0, transform: 'translateY(24px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
-            float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+            fadeUp: {
+              '0%': {
+                opacity: 0,
+                transform: 'translateY(24px)'
+              },
+              '100%': {
+                opacity: 1,
+                transform: 'translateY(0)'
+              }
+            },
+            float: {
+              '0%,100%': {
+                transform: 'translateY(0)'
+              },
+              '50%': {
+                transform: 'translateY(-10px)'
+              }
+            },
           }
         }
       }
     }
   </script>
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f8fafc; color: #1e293b; }
-    .grad-text { background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 60%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .glass { background: rgba(255,255,255,.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(226,232,240,.8); }
-    .nav-link { position: relative; }
-    .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, #2563eb, #0ea5e9); transition: width .3s ease; }
-    .nav-link:hover::after { width: 100%; }
-    .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .15; animation: float 6s ease-in-out infinite; }
-    .btn-grad { background: linear-gradient(135deg, #2563eb, #0ea5e9); transition: opacity .25s, transform .2s; }
-    .btn-grad:hover { opacity: .88; transform: translateY(-2px); }
-    #progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #2563eb, #0ea5e9, #6366f1); z-index: 9999; transition: width .1s; }
-    #mobile-menu { transition: max-height .35s ease, opacity .3s ease; max-height: 0; opacity: 0; overflow: hidden; }
-    #mobile-menu.open { max-height: 600px; opacity: 1; }
-    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s ease, transform .7s ease; }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    #navbar.scrolled { background: rgba(255,255,255,.95); backdrop-filter: blur(16px); box-shadow: 0 2px 20px rgba(0,0,0,.08); }
-    .white-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
-    .faq-answer { max-height: 0; overflow: hidden; transition: max-height .35s ease, padding .35s ease; }
-    .faq-answer.open { max-height: 500px; }
-    .faq-item.active .faq-icon { transform: rotate(180deg); }
-    .faq-icon { transition: transform .3s ease; }
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: #f8fafc;
+      color: #1e293b;
+    }
+
+    .grad-text {
+      background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 60%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, .85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(226, 232, 240, .8);
+    }
+
+    .nav-link {
+      position: relative;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #2563eb, #0ea5e9);
+      transition: width .3s ease;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: .15;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .btn-grad {
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      transition: opacity .25s, transform .2s;
+    }
+
+    .btn-grad:hover {
+      opacity: .88;
+      transform: translateY(-2px);
+    }
+
+    #progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #2563eb, #0ea5e9, #6366f1);
+      z-index: 9999;
+      transition: width .1s;
+    }
+
+    #mobile-menu {
+      transition: max-height .35s ease, opacity .3s ease;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    #mobile-menu.open {
+      max-height: 600px;
+      opacity: 1;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #navbar.scrolled {
+      background: rgba(255, 255, 255, .95);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 2px 20px rgba(0, 0, 0, .08);
+    }
+
+    .white-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .35s ease, padding .35s ease;
+    }
+
+    .faq-answer.open {
+      max-height: 500px;
+    }
+
+    .faq-item.active .faq-icon {
+      transform: rotate(180deg);
+    }
+
+    .faq-icon {
+      transition: transform .3s ease;
+    }
   </style>
 </head>
+
 <body>
   <div id="progress"></div>
 
   <!-- NAVBAR -->
   <nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 py-3 bg-white/80 backdrop-blur-md">
     <div class="w-full mx-auto px-4 sm:px-6 flex items-center justify-between">
-      <a href="index.php" class="flex items-center gap-2 group">
-        <span class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25">
-          <i class="fi fi-brands-artstation text-white text-sm"></i>
-        </span>
-        <span class="text-xl font-extrabold tracking-tight">
+      <a href="index.php" class="flex items-center gap-1.5 group shrink-0">
+        <img src="assets/upload/logos/logo.png" alt="Logo" class="w-[36px] h-[36px] rounded-xl">
+        <span class="text-lg font-extrabold tracking-tight">
           <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
         </span>
       </a>
@@ -333,11 +463,11 @@
     <div class="max-w-7xl mx-auto">
       <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-14">
         <div class="lg:col-span-2">
-          <a href="index.php" class="flex items-center gap-2 mb-5">
-            <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <i class="fi fi-brands-artstation text-white text-sm"></i>
-            </div>
-            <span class="text-xl font-extrabold"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
+          <a href="index.php" class="flex items-center gap-1.5 group shrink-0">
+            <img src="assets/upload/logos/logo.png" alt="Logo" class="w-[36px] h-[36px] rounded-xl">
+            <span class="text-lg font-extrabold tracking-tight">
+              <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
+            </span>
           </a>
           <p class="text-gray-400 text-sm leading-relaxed mb-6 max-w-xs">The world's most trusted marketplace for top freelancers and innovative clients. Work smarter, together.</p>
           <div class="flex gap-3">
@@ -418,9 +548,16 @@
       const item = btn.closest('.faq-item');
       const answer = item.querySelector('.faq-answer');
       const isOpen = answer.classList.contains('open');
-      document.querySelectorAll('.faq-answer.open').forEach(a => { a.classList.remove('open'); });
-      document.querySelectorAll('.faq-item.active').forEach(i => { i.classList.remove('active'); });
-      if (!isOpen) { answer.classList.add('open'); item.classList.add('active'); }
+      document.querySelectorAll('.faq-answer.open').forEach(a => {
+        a.classList.remove('open');
+      });
+      document.querySelectorAll('.faq-item.active').forEach(i => {
+        i.classList.remove('active');
+      });
+      if (!isOpen) {
+        answer.classList.add('open');
+        item.classList.add('active');
+      }
     }
 
     // Category filter
@@ -451,6 +588,7 @@
 
     // Scroll reveal
     const reveals = document.querySelectorAll('.reveal');
+
     function checkReveal() {
       reveals.forEach(el => {
         const top = el.getBoundingClientRect().top;
@@ -460,4 +598,5 @@
     checkReveal();
   </script>
 </body>
+
 </html>

@@ -30,36 +30,27 @@ $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
-    ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-];
 $pageTitle = 'Messages';
 $pageSubtitle = 'Communicate with your freelancers';
 $activePage = 'messages';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden fade-in" style="height: calc(100vh - 120px);">
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden fade-in" style="height: calc(100vh - 120px);">
         <div class="flex h-full">
 
             <!-- ═══ ROOMS LIST ════════════════════════════════ -->
-            <div id="roomsPanel" class="w-full sm:w-80 border-r border-gray-100 flex flex-col">
-                <div class="p-4 border-b border-gray-100">
-                    <h2 class="text-sm font-bold text-gray-900 mb-3">Conversations</h2>
+            <div id="roomsPanel" class="w-full sm:w-80 border-r border-gray-100 dark:border-slate-700 flex flex-col">
+                <div class="p-4 border-b border-gray-100 dark:border-slate-700">
+                    <h2 class="text-sm font-bold text-gray-900 dark:text-white mb-3">Conversations</h2>
                     <div class="relative">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                         <input type="text" id="conversationSearch" placeholder="Search by name, job..."
-                            class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all">
+                            class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all">
                     </div>
                 </div>
                 <div id="roomList" class="flex-1 overflow-y-auto">
@@ -76,15 +67,23 @@ require_once __DIR__ . '/../components/layout_start.php';
 
         </div>
     </div>
-
+</main>
 <script src="/finalproject/shared/dark-toggle.js"></script>
 <script>
-const emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😗','😙','😚','🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','🥱','😴','😌','😛','😜','🤪','😝','🤑','🤓','😎','🥳','🥺','🤩','💕','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💯','💢','💥','💫','💦','👍','👎','👊','✊','🤛','🤜','👏','🙌','👐','🤝','🙏','✌️','🤞','🤟','🤘','👌','🔥','⭐','🌟','✨','💪','🎉','🎊','✅','❌','⏰','📎','📝','💼','📁','🗂️','📊','📈','🗓️','✏️','🖊️','📌','🔗','💰','🎁','🏆','🎯'];
+
+const emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😗','😙','😚','🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','🥱','😴','😌','😛','😜','🤪','😝','🤑','🤓','😎','🥳','🥺','🤩','💕','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💯','💢','💥','💫','💦','👍','👎','👊','✊','🤛','🤜','👏','🙌','👐','🤝','🙏','✌️','🤞','🤟','🤘','👌','🔥','⭐','🌟','✨','💪','🎉','🎊','✅','❌','⏰','📎','📝','💼','📁','🗂️','📊','📈','🗓️','✏️','🖊️','📌','🔗','💰','🎁','🏆','🎯']; // abbreviated for readability
 const emojiGrid = document.getElementById('emojiGrid');
+
 if (emojiGrid) {
+    // 1. Add Tailwind classes to the grid container for sizing and layout
+    emojiGrid.className = "grid grid-cols-6 gap-3 p-4 bg-gray-50 rounded-xl max-h-64 overflow-y-auto shadow-inner";
+    
     emojis.forEach(emoji => {
         const btn = document.createElement('span');
-        btn.className = 'emoji-btn';
+        
+        // 2. Modern styling for the individual buttons to match the image spacing
+        btn.className = 'emoji-btn text-3xl cursor-pointer flex items-center justify-center p-2 rounded-xl hover:bg-gray-200 transition-all duration-150 transform hover:scale-110 active:scale-95 select-none';
+        
         btn.textContent = emoji;
         btn.addEventListener('click', () => chat._insertEmoji(emoji));
         emojiGrid.appendChild(btn);
@@ -103,4 +102,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <?php $conn->close(); ?>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

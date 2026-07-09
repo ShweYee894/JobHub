@@ -225,15 +225,7 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
 
-            // f. Log platform fee transaction
-            $stmt = $conn->prepare('
-                INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at)
-                VALUES (0, \'platform_fee\', ?, 0, ?, \'milestone\', ?, NOW())
-            ');
-            $feeDesc = 'Platform fee from milestone #' . $milestoneId;
-            $stmt->bind_param('dis', $platformFee, $milestoneId, $feeDesc);
-            $stmt->execute();
-            $stmt->close();
+            // f. Platform fee is recorded in the payments table; no separate wallet transaction needed
 
             $conn->commit();
 

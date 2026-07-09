@@ -261,28 +261,17 @@ if ($job_id) {
     }
 }
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
-    ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-];
 $pageTitle = 'Recommended Freelancers';
 $pageSubtitle = 'AI-matched freelancers for your jobs';
 $activePage = 'recommended_freelancers';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
-
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
     <!-- Job Selector -->
-    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <div class="">
         <h2 class="text-lg font-bold text-gray-900 mb-3">Select a Job</h2>
         <p class="text-sm text-gray-400 mb-4">Choose a job to see AI-recommended freelancers matched to its requirements.</p>
         <form method="GET" class="flex items-center gap-3">
@@ -397,5 +386,5 @@ require_once __DIR__ . '/../components/layout_start.php';
         <p class="text-gray-400 text-xs">Our AI analyzes skill requirements, budget, and experience to find the best matches.</p>
     </div>
     <?php endif; ?>
-
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+</main>
+<?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

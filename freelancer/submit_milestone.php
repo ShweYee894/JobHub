@@ -34,27 +34,17 @@ if ($milestone['status'] !== 'funded_in_escrow') {
     redirect('contract_detail.php?id=' . $milestone['contract_id']);
 }
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
 $pageTitle = 'Submit Milestone Work';
 $pageSubtitle = 'Submit your completed work for review';
 $activePage = 'contracts';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
     <div class="max-w-2xl mx-auto w-full">
 
         <!-- Milestone Summary -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6 fade-in">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 mb-6 fade-in">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
                     <i class="fas fa-paper-plane text-white"></i>
@@ -63,7 +53,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                     <a href="contract_detail.php?id=<?= $milestone['contract_id'] ?>" class="text-xs text-blue-600 hover:text-blue-700 font-medium mb-1 inline-flex items-center gap-1">
                         <i class="fas fa-arrow-left text-[10px]"></i> Back to Contract
                     </a>
-                    <h3 class="text-sm font-bold text-gray-900 truncate"><?= sanitize_string($milestone['title']) ?></h3>
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white truncate"><?= sanitize_string($milestone['title']) ?></h3>
                     <div class="flex items-center gap-4 text-xs text-gray-400 mt-1">
                         <span class="flex items-center gap-1">
                             <i class="fas fa-briefcase text-blue-400"></i>
@@ -77,16 +67,16 @@ require_once __DIR__ . '/../components/layout_start.php';
                 </div>
             </div>
             <?php if (!empty($milestone['description'])): ?>
-                <div class="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <div class="mt-4 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-100 dark:border-slate-600">
                     <p class="text-xs text-gray-400 font-semibold mb-1">Milestone Description</p>
-                    <p class="text-sm text-gray-600"><?= nl2br(sanitize_string($milestone['description'])) ?></p>
+                    <p class="text-sm text-gray-600 dark:text-slate-300"><?= nl2br(sanitize_string($milestone['description'])) ?></p>
                 </div>
             <?php endif; ?>
         </div>
 
         <!-- Submission Form -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.1s">
-            <h3 class="text-base font-bold text-gray-900 mb-6 flex items-center gap-2">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 fade-in" style="animation-delay:.1s">
+            <h3 class="text-base font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                 <i class="fas fa-upload text-blue-500"></i> Submission Details
             </h3>
 
@@ -103,29 +93,29 @@ require_once __DIR__ . '/../components/layout_start.php';
 
                 <!-- GitHub URL -->
                 <div>
-                    <label for="github_url" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="github_url" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                         GitHub Repository URL <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
                         <i class="fab fa-github absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="url" id="github_url" name="github_url" required
                                placeholder="https://github.com/username/repo"
-                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white">
+                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
                     </div>
                     <p class="text-xs text-gray-400 mt-1.5">Link to your repository containing the completed work</p>
                 </div>
 
                 <!-- File Attachment -->
                 <div>
-                    <label for="submission_file" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="submission_file" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                         File Attachment <span class="text-gray-400 font-normal">(optional)</span>
                     </label>
                     <div class="relative">
                         <input type="file" id="submission_file" name="submission_file"
                                accept=".zip,.rar,.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif"
                                class="hidden" onchange="updateFileName(this)">
-                        <label for="submission_file" class="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 hover:bg-white hover:border-blue-400 cursor-pointer transition-all">
-                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                        <label for="submission_file" class="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 hover:bg-white dark:hover:bg-slate-600 hover:border-blue-400 cursor-pointer transition-all">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                                 <i class="fas fa-cloud-upload-alt text-blue-500"></i>
                             </div>
                             <div class="flex-1 min-w-0">
@@ -139,11 +129,11 @@ require_once __DIR__ . '/../components/layout_start.php';
 
                 <!-- Submission Note -->
                 <div>
-                    <label for="submission_note" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="submission_note" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
                         Submission Note <span class="text-gray-400 font-normal">(optional)</span>
                     </label>
                     <textarea id="submission_note" name="submission_note" rows="5" maxlength="2000"
-                              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-gray-50 focus:bg-white"
+                              class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white"
                               placeholder="Describe what you've completed, any setup instructions, or notes for the client..."></textarea>
                     <div class="flex justify-between mt-1.5">
                         <p class="text-xs text-gray-400">Include any relevant details about your submission</p>
@@ -153,7 +143,7 @@ require_once __DIR__ . '/../components/layout_start.php';
 
                 <!-- Submit Buttons -->
                 <div class="flex items-center gap-3 pt-2">
-                    <a href="contract_detail.php?id=<?= $milestone['contract_id'] ?>" class="px-6 py-3 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+                    <a href="contract_detail.php?id=<?= $milestone['contract_id'] ?>" class="px-6 py-3 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                         Cancel
                     </a>
                     <button type="submit" id="submitBtn" class="btn-grad px-6 py-3 text-white rounded-xl text-sm font-bold flex items-center gap-2">
@@ -254,4 +244,4 @@ function showToast(type, message) {
     setTimeout(function() { t.classList.add('translate-x-full'); setTimeout(function() { t.remove(); }, 300); }, 3500);
 }
 </script>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

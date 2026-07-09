@@ -1,7 +1,7 @@
 <?php
 /**
  * Freelancer Chat SSE Stream
- * 
+ *
  * Server-Sent Events endpoint for real-time message streaming.
  * GET Parameters: room_id, last_id (optional)
  * Events: connected, message, typing, heartbeat
@@ -44,11 +44,12 @@ if ($result->num_rows === 0) {
 }
 $stmt->close();
 
-ignore_user_abort(false);
+ignore_user_abort(true);
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('Connection: keep-alive');
 header('X-Accel-Buffering: no');
+header('Access-Control-Allow-Origin: *');
 set_time_limit(0);
 
 echo "event: connected\ndata: {\"status\":\"connected\",\"room_id\":$roomId}\n\n";
@@ -60,53 +61,53 @@ $updateAct->execute();
 $updateAct->close();
 
 $heartbeatCount = 0;
+$lastTypingState = false;
 
 while (true) {
     if (connection_aborted()) break;
 
-    // Poll for new messages
     $msgStmt = $conn->prepare("
         SELECT cm.id, cm.sender_id, cm.message_text, cm.is_read, cm.created_at, cm.payload,
                u.name AS sender_name, u.profile_image AS sender_image
         FROM chat_messages cm
         JOIN users u ON cm.sender_id = u.id
         WHERE cm.room_id = ? AND cm.id > ?
-        ORDER BY cm.created_at ASC
+        ORDER BY cm.id ASC
     ");
     $msgStmt->bind_param('ii', $roomId, $lastId);
     $msgStmt->execute();
     $msgResult = $msgStmt->get_result();
 
-    if ($msgResult->num_rows > 0) {
-        while ($row = $msgResult->fetch_assoc()) {
-            $payload = null;
-            if (!empty($row['payload'])) {
-                $decoded = json_decode($row['payload'], true);
-                $payload = $decoded ?: null;
-            }
-
-            $message = [
-                'id'            => (int) $row['id'],
-                'sender_id'     => (int) $row['sender_id'],
-                'sender_name'   => htmlspecialchars($row['sender_name'], ENT_QUOTES, 'UTF-8'),
-                'sender_image'  => $row['sender_image'] ? htmlspecialchars($row['sender_image'], ENT_QUOTES, 'UTF-8') : null,
-                'message_text'  => htmlspecialchars($row['message_text'], ENT_QUOTES, 'UTF-8'),
-                'is_read'       => (int) $row['is_read'],
-                'created_at'    => $row['created_at'],
-                'payload'       => $payload
-            ];
-
-            echo "id: " . $row['id'] . "\n";
-            echo "event: message\n";
-            echo "data: " . json_encode($message) . "\n\n";
-            flush();
-
-            $lastId = (int) $row['id'];
+    $newMessages = [];
+    while ($row = $msgResult->fetch_assoc()) {
+        $payload = null;
+        if (!empty($row['payload'])) {
+            $decoded = json_decode($row['payload'], true);
+            $payload = $decoded ?: null;
         }
+
+        $newMessages[] = [
+            'id'           => (int) $row['id'],
+            'sender_id'    => (int) $row['sender_id'],
+            'sender_name'  => htmlspecialchars($row['sender_name'], ENT_QUOTES, 'UTF-8'),
+            'sender_image' => $row['sender_image'] ? htmlspecialchars($row['sender_image'], ENT_QUOTES, 'UTF-8') : null,
+            'message_text' => htmlspecialchars($row['message_text'], ENT_QUOTES, 'UTF-8'),
+            'is_read'      => (int) $row['is_read'],
+            'created_at'   => $row['created_at'],
+            'payload'      => $payload
+        ];
     }
     $msgStmt->close();
 
-    // Check typing indicators from client
+    if (!empty($newMessages)) {
+        foreach ($newMessages as $msg) {
+            echo "event: message\n";
+            echo "data: " . json_encode($msg) . "\n\n";
+            $lastId = $msg['id'];
+        }
+        flush();
+    }
+
     $typingStmt = $conn->prepare("
         SELECT ti.user_id, u.name AS user_name
         FROM typing_indicators ti
@@ -117,21 +118,25 @@ while (true) {
     $typingStmt->bind_param('ii', $roomId, $freelancerId);
     $typingStmt->execute();
     $typingResult = $typingStmt->get_result();
-
-    if ($typingRow = $typingResult->fetch_assoc()) {
-        echo "event: typing\n";
-        echo "data: " . json_encode([
-            'user_id'   => (int) $typingRow['user_id'],
-            'user_name' => htmlspecialchars($typingRow['user_name'], ENT_QUOTES, 'UTF-8'),
-            'is_typing' => true
-        ]) . "\n\n";
-        flush();
-    } else {
-        echo "event: typing\n";
-        echo "data: " . json_encode(['is_typing' => false]) . "\n\n";
-        flush();
-    }
+    $typingRow = $typingResult->fetch_assoc();
     $typingStmt->close();
+
+    $isTyping = ($typingRow !== null);
+    if ($isTyping !== $lastTypingState) {
+        if ($isTyping) {
+            echo "event: typing\n";
+            echo "data: " . json_encode([
+                'user_id'   => (int) $typingRow['user_id'],
+                'user_name' => htmlspecialchars($typingRow['user_name'], ENT_QUOTES, 'UTF-8'),
+                'is_typing' => true
+            ]) . "\n\n";
+        } else {
+            echo "event: typing\n";
+            echo "data: {\"is_typing\":false}\n\n";
+        }
+        flush();
+        $lastTypingState = $isTyping;
+    }
 
     $heartbeatCount++;
     if ($heartbeatCount >= 5) {

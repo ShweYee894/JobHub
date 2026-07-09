@@ -66,18 +66,6 @@ if ($result->num_rows === 0) {
 }
 $stmt->close();
 
-// Ensure typing_indicators table exists
-$conn->query("CREATE TABLE IF NOT EXISTS typing_indicators (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    room_id INT UNSIGNED NOT NULL,
-    user_id INT UNSIGNED NOT NULL,
-    is_typing TINYINT(1) DEFAULT 0,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_room_user (room_id, user_id),
-    FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
 // Upsert typing indicator
 $typingStmt = $conn->prepare("
     INSERT INTO typing_indicators (room_id, user_id, is_typing, updated_at)

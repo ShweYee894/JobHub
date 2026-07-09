@@ -103,7 +103,7 @@ function get_dashboard_url(string $role): string
     return match ($role) {
         'admin'      => '/finalproject/admin/dashboard.php',
         'client'     => '/finalproject/client/dashboard.php',
-        'freelancer' => '/finalproject/freelancer/dashboard.php',
+        'freelancer' => '/finalproject/freelancer/home.php',
         default      => '/finalproject/auth/login.php',
     };
 }

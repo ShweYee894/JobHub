@@ -78,54 +78,45 @@ function buildQueryString(array $overrides = []): string
     return http_build_query($params);
 }
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
 $pageTitle = 'Contracts';
 $pageSubtitle = 'View and manage your contracts';
 $activePage = 'contracts';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
-    <?php display_flash('success') ?>
-    <?php display_flash('error') ?>
+<?php display_flash('success') ?>
+<?php display_flash('error') ?>
 
-            <!-- STATUS FILTER -->
-            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in">
-                <div class="flex flex-wrap gap-2">
-                    <?php
-                    $filters = [
-                        'all' => ['All', 'fa-layer-group', 'text-gray-600', 'bg-gray-100'],
-                        'active' => ['Active', 'fa-check-circle', 'text-blue-600', 'bg-blue-50'],
-                        'completed' => ['Completed', 'fa-trophy', 'text-green-600', 'bg-green-50'],
-                        'disputed' => ['Disputed', 'fa-exclamation-triangle', 'text-red-500', 'bg-red-50'],
-                        'terminated' => ['Terminated', 'fa-ban', 'text-gray-500', 'bg-gray-100'],
-                    ];
-                    foreach ($filters as $key => $label):
-                        $isActive = $statusFilter === $key;
-                        ?>
-                    <a href="?status=<?= $key ?>"
-                       class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all <?= $isActive ? $label[3] . ' ' . $label[2] . ' border border-current/20' : 'text-gray-500 bg-gray-50 hover:bg-gray-100 border border-transparent' ?>">
-                        <i class="fas <?= $label[1] ?> text-[10px]"></i> <?= $label[0] ?>
-                    </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
+<div class="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <!-- STATUS FILTER -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm fade-in">
+        <div class="flex flex-wrap gap-2">
+            <?php
+            $filters = [
+                'all' => ['All', 'fa-layer-group', 'text-gray-600', 'bg-gray-100'],
+                'active' => ['Active', 'fa-check-circle', 'text-blue-600', 'bg-blue-50'],
+                'completed' => ['Completed', 'fa-trophy', 'text-green-600', 'bg-green-50'],
+                'disputed' => ['Disputed', 'fa-exclamation-triangle', 'text-red-500', 'bg-red-50'],
+                'terminated' => ['Terminated', 'fa-ban', 'text-gray-500', 'bg-gray-100'],
+            ];
+            foreach ($filters as $key => $label):
+                $isActive = $statusFilter === $key;
+            ?>
+                <a href="?status=<?= $key ?>"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all <?= $isActive ? $label[3] . ' ' . $label[2] . ' border border-current/20' : 'text-gray-500 bg-gray-50 hover:bg-gray-100 border border-transparent' ?>">
+                    <i class="fas <?= $label[1] ?> text-[10px]"></i> <?= $label[0] ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
 
-            <!-- CONTRACTS LIST -->
-            <?php if ($contractsResult->num_rows > 0): ?>
-            <div class="space-y-4">
-                <?php while ($c = $contractsResult->fetch_assoc()): ?>
+    <!-- CONTRACTS LIST -->
+    <?php if ($contractsResult->num_rows > 0): ?>
+        <div class="space-y-4">
+            <?php while ($c = $contractsResult->fetch_assoc()): ?>
                 <a href="contract_detail.php?id=<?= (int) $c['id'] ?>"
-                   class="block bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all fade-in">
+                    class="block bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-all fade-in">
                     <div class="p-6">
                         <div class="flex flex-col lg:flex-row lg:items-center gap-4">
                             <div class="flex items-center gap-4 flex-1 min-w-0">
@@ -166,30 +157,31 @@ require_once __DIR__ . '/../components/layout_start.php';
                         </div>
                     </div>
                 </a>
-                <?php endwhile; ?>
-            </div>
+            <?php endwhile; ?>
+        </div>
 
-            <!-- PAGINATION -->
-            <?php
-            $baseUrl = '?status=' . urlencode($statusFilter);
-            render_pagination($pagination, $baseUrl);
-            ?>
+        <!-- PAGINATION -->
+        <?php
+        $baseUrl = '?status=' . urlencode($statusFilter);
+        render_pagination($pagination, $baseUrl);
+        ?>
 
-            <?php else: ?>
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in">
-                <div class="text-center py-16 px-6">
-                    <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mx-auto mb-6 border border-blue-100">
-                        <i class="fas fa-handshake text-4xl text-blue-300"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">No contracts yet</h3>
-                    <p class="text-sm text-gray-400 mb-6 max-w-md mx-auto">
-                        <?= $statusFilter !== 'all' ? 'No contracts match this filter.' : 'Submit proposals to jobs and get hired to start your first contract.' ?>
-                    </p>
-                    <a href="browse_jobs.php" class="btn-grad inline-flex items-center gap-2 text-white font-bold px-6 py-3 rounded-xl text-sm">
-                        <i class="fas fa-search text-xs"></i> Browse Jobs
-                    </a>
+    <?php else: ?>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm fade-in">
+            <div class="text-center py-16 px-6">
+                <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 flex items-center justify-center mx-auto mb-6 border border-blue-100 dark:border-blue-800">
+                    <i class="fas fa-handshake text-4xl text-blue-300"></i>
                 </div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No contracts yet</h3>
+                <p class="text-sm text-gray-400 mb-6 max-w-md mx-auto">
+                    <?= $statusFilter !== 'all' ? 'No contracts match this filter.' : 'Submit proposals to jobs and get hired to start your first contract.' ?>
+                </p>
+                <a href="browse_jobs.php" class="btn-grad inline-flex items-center gap-2 text-white font-bold px-6 py-3 rounded-xl text-sm">
+                    <i class="fas fa-search text-xs"></i> Browse Jobs
+                </a>
             </div>
-            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+</div>
 <?php $conn->close(); ?>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

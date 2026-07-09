@@ -66,63 +66,54 @@ $paymentColors = [
     'refunded' => 'bg-gray-100 text-gray-500 border border-gray-200',
 ];
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
 $pageTitle = 'Earnings';
 $pageSubtitle = 'Track your income and payment history';
 $activePage = 'earnings';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-8">
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in">
+    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
         <div class="flex items-center justify-between mb-3">
             <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center"><i class="fas fa-wallet text-blue-500"></i></div>
             <span class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider">Balance</span>
         </div>
-        <p class="text-2xl font-black text-gray-900"><?= format_currency($walletBalance) ?></p>
+        <p class="text-2xl font-black text-gray-900 dark:text-white"><?= format_currency($walletBalance) ?></p>
         <p class="text-xs text-gray-400 mt-1">Wallet Balance</p>
     </div>
-    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.05s">
+    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.05s">
         <div class="flex items-center justify-between mb-3">
             <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center"><i class="fas fa-dollar-sign text-emerald-500"></i></div>
             <span class="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider">Total</span>
         </div>
-        <p class="text-2xl font-black text-gray-900"><?= format_currency($totalEarnings) ?></p>
+        <p class="text-2xl font-black text-gray-900 dark:text-white"><?= format_currency($totalEarnings) ?></p>
         <p class="text-xs text-gray-400 mt-1">Total Earned</p>
     </div>
-    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.1s">
+    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.1s">
         <div class="flex items-center justify-between mb-3">
             <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center"><i class="fas fa-hourglass-half text-amber-500"></i></div>
             <span class="text-[10px] font-semibold text-amber-500 uppercase tracking-wider">Pending</span>
         </div>
-        <p class="text-2xl font-black text-gray-900"><?= format_currency($pendingRelease) ?></p>
+        <p class="text-2xl font-black text-gray-900 dark:text-white"><?= format_currency($pendingRelease) ?></p>
         <p class="text-xs text-gray-400 mt-1">Awaiting Release</p>
     </div>
-    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.15s">
+    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.15s">
         <div class="flex items-center justify-between mb-3">
             <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center"><i class="fas fa-calendar-check text-violet-500"></i></div>
             <span class="text-[10px] font-semibold text-violet-500 uppercase tracking-wider">This Month</span>
         </div>
-        <p class="text-2xl font-black text-gray-900"><?= format_currency($monthEarnings) ?></p>
+        <p class="text-2xl font-black text-gray-900 dark:text-white"><?= format_currency($monthEarnings) ?></p>
         <p class="text-xs text-gray-400 mt-1">Monthly Earnings</p>
     </div>
 </div>
-<div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in" style="animation-delay:.2s">
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in mt-8 dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.2s">
     <div class="p-6">
         <div class="flex items-center gap-3 mb-5">
             <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><i class="fas fa-receipt text-blue-500"></i></div>
             <div>
-                <h2 class="text-base font-bold text-gray-900">Payment History</h2>
+                <h2 class="text-base font-bold text-gray-900 dark:text-white">Payment History</h2>
                 <p class="text-xs text-gray-400"><?= $totalPayments ?> payment<?= $totalPayments !== 1 ? 's' : '' ?> recorded</p>
             </div>
         </div>
@@ -130,7 +121,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="border-b border-gray-100">
+                        <tr class="border-b border-gray-100 dark:border-gray-700">
                             <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Milestone</th>
                             <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">From</th>
                             <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Gross</th>
@@ -142,7 +133,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                     </thead>
                     <tbody>
                         <?php while ($pay = $paymentsResult->fetch_assoc()): ?>
-                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors dark:border-gray-700 dark:hover:bg-gray-700">
                                 <td class="py-3 px-3"><span class="font-medium text-gray-900"><?= sanitize_string($pay['milestone_title']) ?></span></td>
                                 <td class="py-3 px-3 text-gray-500"><?= sanitize_string($pay['payer_name']) ?></td>
                                 <td class="py-3 px-3 font-semibold text-gray-700"><?= format_currency((float) $pay['total_amount']) ?></td>
@@ -156,29 +147,30 @@ require_once __DIR__ . '/../components/layout_start.php';
                 </table>
             </div>
             <?php if ($pagination['total_pages'] > 1): ?>
-                <div class="flex items-center justify-between mt-5 pt-5 border-t border-gray-100">
+                <div class="flex items-center justify-between mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
                     <p class="text-xs text-gray-400">Page <span class="font-semibold text-gray-600"><?= $pagination['current_page'] ?></span> of <span class="font-semibold text-gray-600"><?= $pagination['total_pages'] ?></span></p>
                     <div class="flex items-center gap-1">
                         <?php if ($pagination['has_prev']): ?>
-                            <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i class="fas fa-chevron-left text-xs"></i></a>
+                            <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-chevron-left text-xs"></i></a>
                         <?php endif; ?>
                         <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
-                            <a href="?page=<?= $i ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' ?>"><?= $i ?></a>
+                            <a href="?page=<?= $i ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700' ?>"><?= $i ?></a>
                         <?php endfor; ?>
                         <?php if ($pagination['has_next']): ?>
-                            <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i class="fas fa-chevron-right text-xs"></i></a>
+                            <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-chevron-right text-xs"></i></a>
                         <?php endif; ?>
                     </div>
                 </div>
             <?php endif; ?>
         <?php else: ?>
-            <div class="text-center py-12">
-                <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><i class="fas fa-receipt text-2xl text-gray-300"></i></div>
-                <p class="text-gray-500 text-sm font-medium">No payments yet</p>
+            <div class="text-center py-12 dark:text-gray-400">
+                <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4 dark:bg-gray-700"><i class="fas fa-receipt text-2xl text-gray-300"></i></div>
+                <p class="text-gray-500 text-sm font-medium dark:text-gray-400">No payments yet</p>
                 <p class="text-gray-400 text-xs mt-1">Complete milestones to receive your first payment</p>
             </div>
         <?php endif; ?>
     </div>
 </div>
+</div>
 <?php $conn->close(); ?>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

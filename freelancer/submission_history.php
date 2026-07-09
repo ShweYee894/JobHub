@@ -72,28 +72,18 @@ $statusIcons = [
     'disputed'  => 'fa-exclamation-triangle',
 ];
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
 $pageTitle = 'Submission History';
 $pageSubtitle = 'Track all your milestone submissions';
 $activePage = 'contracts';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
     <?php display_flash('success') ?>
     <?php display_flash('error') ?>
 
     <!-- Status Filters -->
-    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm fade-in">
         <div class="flex flex-wrap gap-2">
             <?php
             $filters = [
@@ -118,7 +108,7 @@ require_once __DIR__ . '/../components/layout_start.php';
     <?php if ($submissionsResult->num_rows > 0): ?>
         <div class="space-y-4">
             <?php while ($s = $submissionsResult->fetch_assoc()): ?>
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all fade-in">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all fade-in">
                     <div class="p-6">
                         <div class="flex flex-col sm:flex-row sm:items-start gap-4">
                             <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex-shrink-0">
@@ -190,7 +180,7 @@ require_once __DIR__ . '/../components/layout_start.php';
 
         <!-- Pagination -->
         <?php if ($pagination['total_pages'] > 1): ?>
-            <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-sm fade-in">
+            <div class="flex items-center justify-between bg-white dark:bg-slate-800 rounded-2xl p-4 border border-gray-100 dark:border-slate-700 shadow-sm fade-in">
                 <p class="text-xs text-gray-400">
                     Page <span class="font-semibold text-gray-600"><?= $pagination['current_page'] ?></span> of <span class="font-semibold text-gray-600"><?= $pagination['total_pages'] ?></span>
                     <span class="text-gray-300 mx-1">|</span>
@@ -215,12 +205,12 @@ require_once __DIR__ . '/../components/layout_start.php';
         <?php endif; ?>
 
     <?php else: ?>
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm fade-in">
             <div class="text-center py-16 px-6">
-                <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mx-auto mb-6 border border-blue-100">
+                <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 flex items-center justify-center mx-auto mb-6 border border-blue-100 dark:border-blue-800">
                     <i class="fas fa-paper-plane text-4xl text-blue-300"></i>
                 </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
                     <?= $statusFilter !== 'all' ? 'No submissions found' : 'No submissions yet' ?>
                 </h3>
                 <p class="text-sm text-gray-400 mb-6 max-w-md mx-auto">
@@ -237,4 +227,4 @@ require_once __DIR__ . '/../components/layout_start.php';
         </div>
     <?php endif; ?>
 
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

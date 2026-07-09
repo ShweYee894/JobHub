@@ -13,7 +13,7 @@ $currentPage = 'dashboard';
 $userId = $_SESSION['user_id'];
 
 // User Info
-$uStmt = $conn->prepare('SELECT name, profile_image FROM users WHERE id = ?');
+$uStmt = $conn->prepare('SELECT name, profile_image, wallet_balance FROM users WHERE id = ?');
 $uStmt->bind_param('i', $userId);
 $uStmt->execute();
 $user = $uStmt->get_result()->fetch_assoc();
@@ -22,6 +22,7 @@ $uStmt->close();
 $clientName = $user['name'] ?? 'Client';
 $clientFirst = explode(' ', $clientName)[0];
 $clientAvatar = get_profile_image($user['profile_image'] ?? null);
+$walletBalance = (float) ($user['wallet_balance'] ?? 0);
 
 // Job status counts
 $s1 = $conn->prepare('SELECT status, COUNT(*) AS cnt FROM jobs WHERE client_id = ? GROUP BY status');
@@ -83,7 +84,7 @@ $rpStmt = $conn->prepare('
     SELECT p.id, p.amount, p.status AS proposal_status, p.created_at,
            j.title AS job_title, j.id AS job_id, u.name AS freelancer_name
     FROM proposals p JOIN jobs j ON p.job_id = j.id
-    JOIN freelancers f ON p.freelancer_id = f.id JOIN users u ON f.user_id = u.id
+    JOIN users u ON p.freelancer_id = u.id
     WHERE j.client_id = ? ORDER BY p.created_at DESC LIMIT 5
 ');
 $rpStmt->bind_param('i', $userId);
@@ -96,7 +97,7 @@ $rcStmt = $conn->prepare('
     SELECT c.id, c.total_budget, c.status, c.contract_type, c.created_at,
            j.title AS job_title, u.name AS freelancer_name
     FROM contracts c JOIN jobs j ON c.job_id = j.id
-    JOIN freelancers f ON c.freelancer_id = f.user_id JOIN users u ON f.user_id = u.id
+    JOIN users u ON c.freelancer_id = u.id
     WHERE c.client_id = ? ORDER BY c.created_at DESC LIMIT 5
 ');
 $rcStmt->bind_param('i', $userId);
@@ -115,8 +116,6 @@ $rmStmt->bind_param('ii', $userId, $userId);
 $rmStmt->execute();
 $recentMessages = $rmStmt->get_result();
 $rmStmt->close();
-
-$conn->close();
 
 $jobStatusColors = [
     'open' => 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800',
@@ -138,214 +137,259 @@ $contractStatusColors = [
     'cancelled' => 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
 ];
 
-// Navigation items
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
-    ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-];
 $pageTitle = 'Client Dashboard';
 $pageSubtitle = 'Welcome back, ' . htmlspecialchars($clientFirst) . " — here's your overview";
 $activePage = 'dashboard';
 $user = ['name' => $clientName, 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = $unreadMessages;
 $profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
 
-    <?php display_flash('success');
-    display_flash('error');
-    display_flash('info'); ?>
-
-    <!-- Welcome Banner -->
-    <div class="fade-in relative overflow-hidden rounded-[20px] p-3 ">
-        <div class="relative z-10">
-            <h2 class="text-2xl font-extrabold text-gray-700 m-0">Welcome back, <?= htmlspecialchars($clientFirst) ?> 👋</h2>
-            <p class="text-gray-500 text-sm mt-1.5 m-0">Manage your projects and find top talent.</p>
+<?php display_flash('success');
+display_flash('error');
+display_flash('info'); ?>
+<?php $conn->close(); ?>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-extrabold text-slate-800 dark:text-white m-0">My Jobs</h2>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1 m-0">General &rsaquo; All Jobs</p>
         </div>
-        <div class="absolute -top-[60px] -right-[40px] w-[260px] h-[260px] rounded-full bg-white/7"></div>
-        <div class="absolute -bottom-[40px] left-[30%] w-[180px] h-[180px] rounded-full bg-white/4"></div>
+        <a href="post_job.php" class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl no-underline shadow-md hover:shadow-lg transition-all">
+            <i class="fas fa-plus text-xs"></i> Create Job
+        </a>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <?php
-        renderStatCard('Open Jobs', $openJobs, 'up', '+18%', 'vs last month', 'fa-briefcase', 'blue', 'Jobs', 'my_jobs.php', 0);
-        renderStatCard('Active Contracts', $activeContracts, 'neutral', '', '', 'fa-file-contract', 'emerald', 'Contracts', 'contracts.php', 1);
-        renderStatCard('Total Spending', $totalSpending, 'up', '+8%', 'vs last month', 'fa-dollar-sign', 'purple', 'Spent', 'payment_history.php', 2);
-        renderStatCard('Pending Proposals', $newProposals, 'up', '+12%', 'vs last week', 'fa-file-signature', 'orange', 'Proposals', 'proposals.php', 3);
-        renderStatCard('Unread Messages', $unreadMessages, 'neutral', '', '', 'fa-comments', 'cyan', 'Messages', 'messages.php', 4);
-        renderStatCard('Completed', $completedJobs, 'up', '+5%', 'vs last month', 'fa-check-circle', 'rose', 'Projects', '', 5);
-        ?>
-    </div>
-
-    <!-- Two Column: Jobs + Contracts -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Recent Jobs -->
-        <div class="dh-card fade-in p-6">
-            <div class="flex items-center justify-between mb-5">
-                <h4 class="text-sm font-bold text-slate-900 dark:text-white m-0">Recent Jobs</h4>
-                <a href="my_jobs.php" class="text-xs font-semibold text-blue-600 no-underline hover:underline">View All →</a>
+    <!-- Stats Cards - Invoice Style -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Open Jobs -->
+        <a href="my_jobs.php?status=open" class="stat-invoice fade-in block rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 dark:from-emerald-900/25 dark:to-emerald-800/15 border border-emerald-200/60 dark:border-emerald-700/30 p-4 no-underline transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                    <i class="fas fa-check text-white text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 m-0 uppercase tracking-wide">Open</p>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="text-2xl font-extrabold text-emerald-700 dark:text-emerald-300"><?= $openJobs ?></span>
+                        <span class="text-[11px] text-emerald-500/70 dark:text-emerald-400/50">Jobs</span>
+                    </div>
+                </div>
             </div>
+        </a>
+
+        <!-- In Progress -->
+        <a href="my_jobs.php?status=in_progress" class="stat-invoice fade-in block rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/60 dark:from-amber-900/25 dark:to-amber-800/15 border border-amber-200/60 dark:border-amber-700/30 p-4 no-underline transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-amber-500 flex items-center justify-center shrink-0">
+                    <i class="fas fa-clock text-white text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold text-amber-600 dark:text-amber-400 m-0 uppercase tracking-wide">In Progress</p>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="text-2xl font-extrabold text-amber-700 dark:text-amber-300"><?= $inProgressJobs ?></span>
+                        <span class="text-[11px] text-amber-500/70 dark:text-amber-400/50">Jobs</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <!-- Completed -->
+        <a href="my_jobs.php?status=completed" class="stat-invoice fade-in block rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100/60 dark:from-rose-900/25 dark:to-rose-800/15 border border-rose-200/60 dark:border-rose-700/30 p-4 no-underline transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-rose-500 flex items-center justify-center shrink-0">
+                    <i class="fas fa-bell text-white text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold text-rose-600 dark:text-rose-400 m-0 uppercase tracking-wide">Completed</p>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="text-2xl font-extrabold text-rose-700 dark:text-rose-300"><?= $completedJobs ?></span>
+                        <span class="text-[11px] text-rose-500/70 dark:text-rose-400/50">Jobs</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <!-- Total Value -->
+        <div class="stat-invoice fade-in rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/60 dark:from-blue-900/25 dark:to-blue-800/15 border border-blue-200/60 dark:border-blue-700/30 p-4 transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+                    <i class="fas fa-file-alt text-white text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold text-blue-600 dark:text-blue-400 m-0 uppercase tracking-wide">Spending</p>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="text-2xl font-extrabold text-blue-700 dark:text-blue-300"><?= format_currency($totalSpending) ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="fade-in mb-6">
+        <div class="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto">
+            <?php
+            $filterTabs = [
+                ['label' => 'All', 'count' => $totalJobs, 'status' => 'all', 'active' => true],
+                ['label' => 'Open', 'count' => $openJobs, 'status' => 'open', 'active' => false],
+                ['label' => 'In Progress', 'count' => $inProgressJobs, 'status' => 'in_progress', 'active' => false],
+                ['label' => 'Completed', 'count' => $completedJobs, 'status' => 'completed', 'active' => false],
+                ['label' => 'Proposals', 'count' => $newProposals, 'status' => 'proposals', 'active' => false],
+            ];
+            foreach ($filterTabs as $tab):
+            ?>
+                <button onclick="filterJobs('<?= $tab['status'] ?>')" class="filter-tab <?= $tab['active'] ? 'active' : '' ?> flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-all <?= $tab['active'] ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' ?>">
+                    <?= $tab['label'] ?>
+                    <span class="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full text-[10px] font-bold <?= $tab['active'] ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300' ?>"><?= $tab['count'] ?></span>
+                </button>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <!-- Jobs Table - Invoice Style -->
+    <div class="fade-in">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 overflow-hidden">
+            <!-- Table Header -->
+            <div class="hidden lg:grid lg:grid-cols-12 gap-4 px-6 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700/50">
+                <div class="col-span-5 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Job</div>
+                <div class="col-span-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Created</div>
+                <div class="col-span-1 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Budget</div>
+                <div class="col-span-1 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">Proposals</div>
+                <div class="col-span-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right">Status</div>
+            </div>
+
+            <!-- Table Body -->
             <?php if ($recentJobs->num_rows > 0): ?>
-                <div class="overflow-x-auto">
-                    <table class="dtbl">
-                        <thead><tr><th>Job</th><th>Status</th><th class="text-right">Budget</th></tr></thead>
-                        <tbody>
-                            <?php while ($job = $recentJobs->fetch_assoc()): ?>
-                                <tr>
-                                    <td>
-                                        <a href="job_detail.php?id=<?= (int) $job['id'] ?>" class="font-semibold text-slate-900 dark:text-white no-underline hover:underline"><?= sanitize_string($job['title']) ?></a>
-                                        <p class="text-[11px] text-slate-400 mt-0.5 m-0"><?= time_ago($job['created_at']) ?></p>
-                                    </td>
-                                    <td><span class="bdg <?= $jobStatusColors[$job['status']] ?? '' ?>"><?= sanitize_string(ucfirst(str_replace('_', ' ', $job['status']))) ?></span></td>
-                                    <td class="text-right font-semibold text-slate-900 dark:text-white"><?= format_currency((float) $job['budget']) ?></td>
-                                </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div class="text-center py-6">
-                    <i class="fas fa-briefcase text-4xl text-slate-300 dark:text-slate-600 mb-3 block"></i>
-                    <p class="text-slate-500 dark:text-slate-400 text-[13px] m-0 mb-3">No jobs posted yet</p>
-                    <a href="post_job.php" class="btn-grad text-xs text-white px-4 py-2 rounded-[10px] no-underline inline-block">Post a Job</a>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Recent Contracts -->
-        <div class="dh-card fade-in p-6">
-            <div class="flex items-center justify-between mb-5">
-                <h4 class="text-sm font-bold text-slate-900 dark:text-white m-0">Recent Contracts</h4>
-                <a href="contracts.php" class="text-xs font-semibold text-blue-600 no-underline hover:underline">View All →</a>
-            </div>
-            <?php if ($recentContracts->num_rows > 0): ?>
-                <div class="flex flex-col gap-2.5">
-                    <?php while ($contract = $recentContracts->fetch_assoc()): ?>
-                        <div class="p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center gap-3 transition-all hover:shadow-md dark:bg-slate-800">
-                            <div class="w-10 h-10 rounded-[10px] bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
-                                <i class="fas fa-handshake text-white text-sm"></i>
+                <?php while ($job = $recentJobs->fetch_assoc()):
+                    $status = $job['status'] ?? 'open';
+                    $statusLabel = ucfirst(str_replace('_', ' ', $status));
+                ?>
+                    <a href="job_detail.php?id=<?= (int) $job['id'] ?>" class="job-table-row grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 px-6 py-4 border-b border-slate-50 dark:border-slate-700/30 no-underline hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors">
+                        <!-- Job Info -->
+                        <div class="col-span-5 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shrink-0">
+                                <i class="fas fa-briefcase text-white text-sm"></i>
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[13px] font-semibold text-slate-900 dark:text-white m-0 truncate"><?= sanitize_string($contract['job_title']) ?></p>
-                                <p class="text-[11px] text-slate-400 mt-0.5 m-0"><?= sanitize_string($contract['freelancer_name']) ?> · <?= sanitize_string(ucfirst($contract['contract_type'])) ?></p>
-                            </div>
-                            <div class="text-right shrink-0">
-                                <p class="text-[13px] font-bold text-slate-900 dark:text-white m-0"><?= format_currency((float) $contract['total_budget']) ?></p>
-                                <span class="bdg text-[10px] <?= $contractStatusColors[$contract['status']] ?? '' ?>"><?= sanitize_string(ucfirst($contract['status'])) ?></span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-slate-900 dark:text-white m-0 truncate"><?= sanitize_string($job['title']) ?></p>
+                                <p class="text-[11px] text-slate-400 dark:text-slate-500 m-0 mt-0.5">Client Job</p>
                             </div>
                         </div>
-                    <?php endwhile; ?>
-                </div>
+                        <!-- Created -->
+                        <div class="col-span-2 flex items-center">
+                            <span class="text-sm text-slate-500 dark:text-slate-400"><?= date('m/d/y', strtotime($job['created_at'])) ?></span>
+                        </div>
+                        <!-- Budget -->
+                        <div class="col-span-1 flex items-center">
+                            <span class="text-sm font-bold text-slate-900 dark:text-white"><?= format_currency((float) $job['budget']) ?></span>
+                        </div>
+                        <!-- Proposals -->
+                        <div class="col-span-1 flex items-center justify-center">
+                            <span class="text-sm text-slate-500 dark:text-slate-400">&mdash;</span>
+                        </div>
+                        <!-- Status -->
+                        <div class="col-span-2 flex items-center justify-end">
+                            <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold <?= $jobStatusColors[$job['status']] ?? '' ?>"><?= $statusLabel ?></span>
+                        </div>
+                    </a>
+                <?php endwhile; ?>
             <?php else: ?>
-                <div class="text-center py-6"><p class="text-slate-400 text-[13px]">No active contracts</p></div>
+                <div class="text-center py-16 px-6">
+                    <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-briefcase text-2xl text-slate-300 dark:text-slate-500"></i>
+                    </div>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm m-0 mb-4">No jobs posted yet</p>
+                    <a href="post_job.php" class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl no-underline">Post Your First Job</a>
+                </div>
             <?php endif; ?>
         </div>
-    </div>
 
-    <!-- Two Column: Proposals + Messages -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Recent Proposals -->
-        <div class="dh-card fade-in p-6">
-            <div class="flex items-center justify-between mb-5">
-                <h4 class="text-sm font-bold text-slate-900 dark:text-white m-0">Recent Proposals</h4>
-                <a href="proposals.php" class="text-xs font-semibold text-blue-600 no-underline hover:underline">View All →</a>
+        <!-- Pagination -->
+        <?php if ($recentJobs->num_rows > 0): ?>
+            <div class="flex items-center justify-between mt-4 px-2">
+                <span class="text-sm text-slate-400 dark:text-slate-500">Showing <?= $recentJobs->num_rows ?> of <?= $totalJobs ?> jobs</span>
+                <a href="my_jobs.php" class="text-sm font-semibold text-blue-600 dark:text-blue-400 no-underline hover:underline">View All &rarr;</a>
             </div>
-            <?php if ($recentProposals->num_rows > 0): ?>
-                <div class="overflow-x-auto">
-                    <table class="dtbl">
-                        <thead><tr><th>Freelancer</th><th>Job</th><th>Status</th><th class="text-right">Amount</th></tr></thead>
-                        <tbody>
-                            <?php while ($prop = $recentProposals->fetch_assoc()): ?>
-                                <tr>
-                                    <td>
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
-                                                <span class="text-white text-[10px] font-bold"><?= strtoupper(substr($prop['freelancer_name'], 0, 1)) ?></span>
-                                            </div>
-                                            <span class="font-semibold text-slate-900 dark:text-white text-xs"><?= sanitize_string($prop['freelancer_name']) ?></span>
-                                        </div>
-                                    </td>
-                                    <td><a href="job_detail.php?id=<?= (int) $prop['job_id'] ?>" class="text-slate-500 dark:text-slate-400 no-underline text-xs hover:underline"><?= sanitize_string($prop['job_title']) ?></a></td>
-                                    <td><span class="bdg <?= $proposalStatusColors[$prop['proposal_status']] ?? '' ?>"><?= sanitize_string(ucfirst($prop['proposal_status'])) ?></span></td>
-                                    <td class="text-right font-semibold text-slate-900 dark:text-white"><?= format_currency((float) $prop['amount']) ?></td>
-                                </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div class="text-center py-6"><p class="text-slate-400 text-[13px]">No proposals received yet</p></div>
-            <?php endif; ?>
-        </div>
+        <?php endif; ?>
+    </div>
 
-        <!-- Recent Messages -->
-        <div class="dh-card fade-in p-6">
-            <div class="flex items-center justify-between mb-5">
-                <h4 class="text-sm font-bold text-slate-900 dark:text-white m-0">Recent Messages</h4>
-                <a href="messages.php" class="text-xs font-semibold text-blue-600 no-underline hover:underline">Open Chat →</a>
+    <!-- Quick Actions - Modern Action Bar -->
+    <div class="fade-in mt-8">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                <i class="fas fa-bolt text-white text-xs"></i>
             </div>
-            <?php if ($recentMessages->num_rows > 0): ?>
-                <div class="flex flex-col gap-2.5">
-                    <?php while ($msg = $recentMessages->fetch_assoc()): ?>
-                        <a href="messages.php" class="flex items-center gap-3 p-3 rounded-xl text-no-underline text-inherit transition-all hover:bg-slate-50 dark:hover:bg-slate-800 no-underline">
-                            <div class="w-10 h-10 rounded-[10px] bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center shrink-0">
-                                <span class="text-white text-xs font-bold"><?= strtoupper(substr($msg['sender_name'], 0, 1)) ?></span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[13px] font-semibold text-slate-900 dark:text-white m-0"><?= htmlspecialchars($msg['sender_name']) ?></p>
-                                <p class="text-xs text-slate-400 mt-0.5 m-0 truncate"><?= htmlspecialchars($msg['message_text']) ?></p>
-                            </div>
-                            <span class="text-[11px] text-slate-400 shrink-0"><?= time_ago($msg['created_at']) ?></span>
-                        </a>
-                    <?php endwhile; ?>
-                </div>
-            <?php else: ?>
-                <div class="text-center py-6"><p class="text-slate-400 text-[13px]">No messages yet</p></div>
-            <?php endif; ?>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white m-0">Quick Actions</h3>
         </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div>
-        <h3 class="text-base font-bold text-slate-900 dark:text-white m-0 mb-4">Quick Actions</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a href="post_job.php" class="qa-card fade-in no-underline block">
-                <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg mb-3">
-                    <i class="fas fa-plus-circle"></i>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <a href="post_job.php" class="action-bar-item group flex items-center gap-3 px-4 py-3.5 rounded-xl border border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 no-underline hover:border-orange-300 dark:hover:border-orange-600 hover:bg-orange-50/50 dark:hover:bg-orange-900/10 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-plus text-white text-sm"></i>
                 </div>
-                <h5 class="text-sm font-bold text-slate-900 dark:text-white mt-3 mb-1">Post a Job</h5>
-                <p class="text-xs text-slate-400 m-0">Hire new talent</p>
+                <div>
+                    <p class="text-sm font-bold text-slate-900 dark:text-white m-0">Post Job</p>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500 m-0">Hire talent</p>
+                </div>
             </a>
-            <a href="proposals.php" class="qa-card fade-in no-underline block">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg mb-3">
-                    <i class="fas fa-file-alt"></i>
+            <a href="wallet.php" class="action-bar-item group flex items-center gap-3 px-4 py-3.5 rounded-xl border border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 no-underline hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-wallet text-white text-sm"></i>
                 </div>
-                <h5 class="text-sm font-bold text-slate-900 dark:text-white mt-3 mb-1">Review Proposals</h5>
-                <p class="text-xs text-slate-400 m-0"><?= $newProposals ?> pending</p>
+                <div>
+                    <p class="text-sm font-bold text-slate-900 dark:text-white m-0">Wallet</p>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500 m-0"><?= format_currency($walletBalance) ?></p>
+                </div>
             </a>
-            <a href="recommended_freelancers.php" class="qa-card fade-in no-underline block">
-                <div class="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg mb-3">
-                    <i class="fas fa-brain"></i>
+            <a href="proposals.php" class="action-bar-item group flex items-center gap-3 px-4 py-3.5 rounded-xl border border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 no-underline hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-file-alt text-white text-sm"></i>
                 </div>
-                <h5 class="text-sm font-bold text-slate-900 dark:text-white mt-3 mb-1">AI Matches</h5>
-                <p class="text-xs text-slate-400 m-0">Find top talent</p>
+                <div>
+                    <p class="text-sm font-bold text-slate-900 dark:text-white m-0">Proposals</p>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500 m-0"><?= $newProposals ?> pending</p>
+                </div>
             </a>
-            <a href="profile.php" class="qa-card fade-in no-underline block">
-                <div class="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 flex items-center justify-center text-lg mb-3">
-                    <i class="fas fa-user-pen"></i>
+            <a href="recommended_freelancers.php" class="action-bar-item group flex items-center gap-3 px-4 py-3.5 rounded-xl border border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 no-underline hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-search text-white text-sm"></i>
                 </div>
-                <h5 class="text-sm font-bold text-slate-900 dark:text-white mt-3 mb-1">Edit Profile</h5>
-                <p class="text-xs text-slate-400 m-0">Update info</p>
+                <div>
+                    <p class="text-sm font-bold text-slate-900 dark:text-white m-0">Find Talent</p>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500 m-0">AI matches</p>
+                </div>
             </a>
         </div>
     </div>
 
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+    <script>
+    function filterJobs(status) {
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+            tab.classList.remove('bg-white', 'dark:bg-slate-700', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+            tab.classList.add('text-slate-500', 'dark:text-slate-400');
+        });
+        event.currentTarget.classList.add('active');
+        event.currentTarget.classList.add('bg-white', 'dark:bg-slate-700', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+        event.currentTarget.classList.remove('text-slate-500', 'dark:text-slate-400');
+
+        if (status === 'all') {
+            document.querySelectorAll('.job-table-row').forEach(row => row.style.display = '');
+        } else if (status === 'proposals') {
+            window.location.href = 'proposals.php';
+            return;
+        } else {
+            document.querySelectorAll('.job-table-row').forEach(row => {
+                const statusEl = row.querySelector('[class*="rounded-lg"][class*="font-bold"]');
+                if (statusEl) {
+                    const rowStatus = statusEl.textContent.trim().toLowerCase().replace(' ', '_');
+                    row.style.display = rowStatus === status ? '' : 'none';
+                }
+            });
+        }
+    }
+    </script>
+</main>
+<?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

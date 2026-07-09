@@ -71,27 +71,17 @@ function buildQueryString(array $overrides = []): string
 
 $page_title = 'My Proposals – JobHub';
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
 $pageTitle = 'My Proposals';
 $pageSubtitle = 'Track all your submitted proposals';
 $activePage = 'proposals';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
     <?php display_flash('success');
     display_flash('error'); ?>
-
-            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+            <div class="mb-4">
                 <div class="flex flex-wrap gap-2">
                     <?php
                     $filters = [
@@ -216,5 +206,6 @@ require_once __DIR__ . '/../components/layout_start.php';
                 </div>
             </div>
             <?php endif; ?>
+        </div>
 <?php $conn->close(); ?>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

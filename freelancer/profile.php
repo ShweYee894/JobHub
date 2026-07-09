@@ -56,7 +56,7 @@ $stmtJobs = $conn->prepare("
     FROM contracts c
     WHERE c.freelancer_id = ? AND c.status = 'completed'
 ");
-$stmtJobs->bind_param('i', $freelancerId);
+$stmtJobs->bind_param('i', $viewUserId);
 $stmtJobs->execute();
 $completedJobs = $stmtJobs->get_result()->fetch_assoc()['total'];
 $stmtJobs->close();
@@ -101,11 +101,33 @@ while ($row = $reviewsResult->fetch_assoc()) {
 }
 $stmtReviews->close();
 
-$availabilityColors = [
-    'Available' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
-    'Busy' => 'bg-amber-50 text-amber-600 border border-amber-200',
-    'Unavailable' => 'bg-red-50 text-red-500 border border-red-200',
-];
+// Similar freelancers (same skills, different user)
+$similarFreelancers = [];
+if (!empty($skills)) {
+    $skillIds = array_column($skills, 'id');
+    $placeholders = implode(',', array_fill(0, count($skillIds), '?'));
+    $simStmt = $conn->prepare("
+        SELECT DISTINCT u.id, u.name, u.profile_image, f.title, f.hourly_rate,
+               COALESCE(AVG(r.rating), 0) AS avg_rating
+        FROM users u
+        JOIN freelancers f ON u.id = f.user_id
+        LEFT JOIN reviews r ON r.reviewee_id = u.id
+        WHERE u.id != ? AND u.role = 'freelancer'
+        AND f.id IN (SELECT fs.freelancer_id FROM freelancer_skills fs WHERE fs.skill_id IN ($placeholders))
+        GROUP BY u.id
+        ORDER BY avg_rating DESC
+        LIMIT 3
+    ");
+    $simParams = array_merge([$viewUserId], $skillIds);
+    $simTypes = 'i' . str_repeat('i', count($skillIds));
+    $simStmt->bind_param($simTypes, ...$simParams);
+    $simStmt->execute();
+    $simResult = $simStmt->get_result();
+    while ($sr = $simResult->fetch_assoc()) {
+        $similarFreelancers[] = $sr;
+    }
+    $simStmt->close();
+}
 
 $profileFields = [
     !empty($profile['title']),
@@ -119,244 +141,460 @@ $completedFields = count(array_filter($profileFields));
 $totalFields = count($profileFields);
 $completionPct = $totalFields > 0 ? round(($completedFields / $totalFields) * 100) : 0;
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
 $pageTitle = 'Freelancer Profile';
 $pageSubtitle = 'Public professional profile';
 $activePage = 'profile';
 $user = ['name' => $profile['name'], 'profile_image' => $profile['profile_image']];
 $unreadCount = get_unread_message_count($viewerId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
 
-                <?php if ($isOwner): ?>
-                <div class="flex justify-end">
-                    <a href="profile_edit.php" class="btn-grad inline-flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/25">
-                        <i class="fas fa-edit text-xs"></i> Edit Profile
-                    </a>
+<style>
+    .profile-header-card {
+        background: #fff;
+        border: 1px solid #e5edf6;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(15,23,42,.04);
+        padding: 32px 40px;
+    }
+    .profile-avatar-lg {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #fff;
+        box-shadow: 0 4px 20px rgba(0,0,0,.1);
+    }
+    .profile-tab {
+        padding: 12px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #64748b;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all .2s;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+    }
+    .profile-tab:hover { color: #2563eb; }
+    .profile-tab.active {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+    }
+    .profile-sidebar-card {
+        background: #fff;
+        border: 1px solid #e5edf6;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(15,23,42,.04);
+        padding: 24px;
+    }
+    .profile-section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 16px;
+    }
+    .website-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        border-bottom: 1px solid #f1f5f9;
+        transition: color .15s;
+    }
+    .website-link:last-child { border-bottom: none; }
+    .website-link:hover { color: #2563eb; }
+    .website-link i { width: 20px; text-align: center; color: #94a3b8; font-size: 14px; }
+    .skill-tag-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        transition: all .15s;
+        cursor: default;
+    }
+    .skill-tag-pill:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #2563eb;
+    }
+    .social-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        border: 1px solid #e2e8f0;
+        transition: all .15s;
+        text-decoration: none;
+    }
+    .social-icon:hover {
+        color: #2563eb;
+        border-color: #bfdbfe;
+        background: #eff6ff;
+    }
+    .social-icon.github:hover { color: #333; border-color: #d1d5db; background: #f3f4f6; }
+    .social-icon.twitter:hover { color: #1da1f2; border-color: #bae6fd; background: #f0f9ff; }
+    .social-icon.linkedin:hover { color: #0a66c2; border-color: #bfdbfe; background: #eff6ff; }
+    .social-icon.facebook:hover { color: #1877f2; border-color: #bfdbfe; background: #eff6ff; }
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+        text-decoration: none;
+        margin-bottom: 20px;
+        transition: color .15s;
+    }
+    .back-link:hover { color: #2563eb; }
+    .promo-card {
+        background: linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%);
+        border: 1px solid #e0f2fe;
+        border-radius: 16px;
+        padding: 28px 24px;
+        text-align: center;
+    }
+    .similar-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .similar-card:last-child { border-bottom: none; }
+</style>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- Back Link -->
+    <a href="home.php" class="back-link">
+        <i class="fas fa-chevron-left text-xs"></i> Back to Home
+    </a>
+
+    <?php display_flash('success'); ?>
+    <?php display_flash('error'); ?>
+
+    <!-- ═══════════════ PROFILE HEADER CARD ═══════════════ -->
+    <div class="profile-header-card mb-8 fade-in">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-8">
+            <!-- Left: Avatar -->
+            <div class="flex-shrink-0">
+                <img src="<?= get_profile_image($profile['profile_image']) . '?v=' . time() ?>"
+                     alt="<?= sanitize_string($profile['name']) ?>"
+                     class="profile-avatar-lg mx-auto lg:mx-0">
+            </div>
+
+            <!-- Center: Name, Title, Buttons -->
+            <div class="flex-1 min-w-0 text-center lg:text-left">
+                <div class="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6 mb-2">
+                    <h1 class="text-2xl font-extrabold text-gray-900"><?= sanitize_string($profile['name']) ?></h1>
+                    <span class="text-xl font-bold text-gray-700"><?= format_currency($profile['hourly_rate'] ?? 0) ?>/hr</span>
                 </div>
-                <?php elseif (is_logged_in() && $viewerRole === 'client'): ?>
-                <div class="flex justify-end">
-                    <a href="../client/messages.php?freelancer=<?= $viewUserId ?>" class="btn-grad inline-flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/25">
-                        <i class="fas fa-paper-plane text-xs"></i> Contact
-                    </a>
-                </div>
+                <?php if (!empty($profile['title'])): ?>
+                    <p class="text-sm text-gray-500 mb-1"><?= sanitize_string($profile['title']) ?></p>
                 <?php endif; ?>
-
-                <?php display_flash('success'); ?>
-                <?php display_flash('error'); ?>
-
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden fade-in">
-                    <div class="h-32 bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-500 relative">
-                        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ij48cGF0aCBkPSJNMzYgMzRoMnYyaC0yem0wLTRoMnYyaC0yem0tNCA0aDJ2MmgtMnptMC00aDJ2MmgtMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-40"></div>
+                <div class="flex items-center gap-2 justify-center lg:justify-start mb-5">
+                    <div class="w-5 h-5 rounded bg-blue-500 flex items-center justify-center">
+                        <i class="fas fa-briefcase text-white text-[9px]"></i>
                     </div>
-                    <div class="px-8 pb-8 -mt-16 relative">
-                        <div class="flex flex-col sm:flex-row items-start gap-6">
-                            <img src="<?= get_profile_image($profile['profile_image']) . '?v=' . time() ?>"
-                                alt="<?= sanitize_string($profile['name']) ?>"
-                                class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg">
-
-
-                            <div class="flex-1 pt-2">
-                                <div class="flex flex-wrap items-center gap-3 mb-2">
-                                    <h2 class="text-2xl font-extrabold text-gray-900"><?= sanitize_string($profile['name']) ?></h2>
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold <?= $availabilityColors[$profile['availability']] ?? 'bg-gray-100 text-gray-500 border border-gray-200' ?>">
-                                        <span class="w-1.5 h-1.5 rounded-full <?= $profile['availability'] === 'Available' ? 'bg-emerald-500' : ($profile['availability'] === 'Busy' ? 'bg-amber-500' : 'bg-red-500') ?>"></span>
-                                        <?= sanitize_string($profile['availability']) ?>
-                                    </span>
-                                </div>
-                                <?php if (!empty($profile['title'])): ?>
-                                    <p class="text-gray-600 font-medium mb-3"><?= sanitize_string($profile['title']) ?></p>
-                                <?php endif; ?>
-                                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-400">
-                                    <?php if ($profile['years_of_experience'] > 0): ?>
-                                        <span class="flex items-center gap-1.5">
-                                            <i class="fas fa-briefcase text-blue-400"></i>
-                                            <?= $profile['years_of_experience'] ?> year<?= $profile['years_of_experience'] != 1 ? 's' : '' ?> experience
-                                        </span>
-                                    <?php endif; ?>
-                                    <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-calendar text-gray-400"></i>
-                                        Member since <?= date('M Y', strtotime($profile['member_since'])) ?>
-                                    </span>
-                                    <?php if (!empty($profile['portfolio_url'])): ?>
-                                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener noreferrer"
-                                            class="flex items-center gap-1.5 text-blue-500 hover:text-blue-700 transition-colors">
-                                            <i class="fas fa-globe"></i> Portfolio
-                                            <i class="fas fa-external-link-alt text-[9px]"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <span class="text-sm font-medium text-blue-600">JobHub Freelancer</span>
                 </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 fade-in" style="animation-delay:.1s">
-                    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
-                                <i class="fas fa-dollar-sign text-emerald-500"></i>
-                            </div>
-                            <span class="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider">Rate</span>
-                        </div>
-                        <p class="text-2xl font-black text-gray-900"><?= format_currency($profile['hourly_rate'] ?? 0) ?></p>
-                        <p class="text-xs text-gray-400 mt-1">Per Hour</p>
-                    </div>
-
-                    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm" style="animation-delay:.15s">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
-                                <i class="fas fa-check-double text-blue-500"></i>
-                            </div>
-                            <span class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider">Done</span>
-                        </div>
-                        <p class="text-2xl font-black text-gray-900"><?= $completedJobs ?></p>
-                        <p class="text-xs text-gray-400 mt-1">Completed Jobs</p>
-                    </div>
-
-                    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm" style="animation-delay:.2s">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
-                                <i class="fas fa-star text-amber-500"></i>
-                            </div>
-                            <span class="text-[10px] font-semibold text-amber-500 uppercase tracking-wider">Rating</span>
-                        </div>
-                        <p class="text-2xl font-black text-gray-900"><?= $avgRating > 0 ? number_format($avgRating, 1) : '—' ?></p>
-                        <p class="text-xs text-gray-400 mt-1"><?= $reviewCount ?> review<?= $reviewCount != 1 ? 's' : '' ?></p>
-                    </div>
-
-                    <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm" style="animation-delay:.25s">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
-                                <i class="fas fa-wallet text-violet-500"></i>
-                            </div>
-                            <span class="text-[10px] font-semibold text-violet-500 uppercase tracking-wider">Total</span>
-                        </div>
-                        <p class="text-2xl font-black text-gray-900"><?= format_currency($totalEarnings) ?></p>
-                        <p class="text-xs text-gray-400 mt-1">Total Earnings</p>
-                    </div>
+                <div class="flex items-center gap-3 justify-center lg:justify-start">
+                    <?php if ($isOwner): ?>
+                        <a href="profile_edit.php" class="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm">
+                            <i class="fas fa-edit text-xs"></i> Edit Profile
+                        </a>
+                        <?php if (!empty($profile['resume_file'])): ?>
+                            <a href="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>" target="_blank" class="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-gray-200 hover:border-blue-300 text-gray-600 hover:text-blue-600 text-sm font-semibold rounded-lg transition-all">
+                                <i class="fas fa-file-pdf text-xs"></i> Resume
+                            </a>
+                        <?php endif; ?>
+                    <?php elseif (is_logged_in() && $viewerRole === 'client'): ?>
+                        <a href="../client/messages.php?freelancer=<?= $viewUserId ?>" class="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm">
+                            <i class="fas fa-paper-plane text-xs"></i> Contact
+                        </a>
+                        <?php if (!empty($profile['resume_file'])): ?>
+                            <a href="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>" target="_blank" class="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-gray-200 hover:border-blue-300 text-gray-600 hover:text-blue-600 text-sm font-semibold rounded-lg transition-all">
+                                <i class="fas fa-file-pdf text-xs"></i> Resume
+                            </a>
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
+            </div>
 
-                <?php if (!empty($profile['bio'])): ?>
-                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm fade-in" style="animation-delay:.3s">
-                        <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                                <i class="fas fa-user text-blue-500 text-sm"></i>
-                            </div>
-                            About
-                        </h3>
-                        <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line"><?= nl2br(sanitize_string($profile['bio'])) ?></p>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!empty($skills)): ?>
-                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm fade-in" style="animation-delay:.35s">
-                        <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
-                                <i class="fas fa-tags text-violet-500 text-sm"></i>
-                            </div>
-                            Skills
-                        </h3>
-                        <?php
-                        $grouped = [];
-                        foreach ($skills as $s) {
-                            $grouped[$s['category']][] = $s;
-                        }
-                        foreach ($grouped as $category => $catSkills):
-                            ?>
-                            <div class="mb-4 last:mb-0">
-                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"><?= sanitize_string($category) ?></p>
-                                <div class="flex flex-wrap gap-2">
-                                    <?php foreach ($catSkills as $s): ?>
-                                        <span class="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
-                                            <?= sanitize_string($s['skill_name']) ?>
-                                        </span>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!empty($reviews) || $reviewCount > 0): ?>
-                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm fade-in" style="animation-delay:.4s">
-                        <div class="flex items-center justify-between mb-5">
-                            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                                    <i class="fas fa-star text-amber-500 text-sm"></i>
-                                </div>
-                                Reviews
-                                <?php if ($reviewCount > 0): ?>
-                                    <span class="text-xs font-normal text-gray-400 ml-1">
-                                        (<?= $avgRating ?> average &middot; <?= $reviewCount ?> review<?= $reviewCount !== 1 ? 's' : '' ?>)
-                                    </span>
-                                <?php endif; ?>
-                            </h3>
-                            <?php if ($reviewCount > 5): ?>
-                                <a href="reviews.php" class="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
-                                    View All +<?= $reviewCount - 5 ?> more <i class="fas fa-arrow-right ml-1"></i>
-                                </a>
-                            <?php endif; ?>
-                        </div>
-
-                        <?php if (!empty($reviews)): ?>
-                            <div class="space-y-4">
-                                <?php foreach ($reviews as $review): ?>
-                                    <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
-                                        <div class="flex items-start gap-3">
-                                            <img src="<?= get_profile_image($review['reviewer_image']) ?>"
-                                                class="w-10 h-10 rounded-full object-cover flex-shrink-0" alt="">
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-center justify-between mb-1">
-                                                    <p class="text-sm font-semibold text-gray-900"><?= sanitize_string($review['reviewer_name']) ?></p>
-                                                    <span class="text-[11px] text-gray-400"><?= time_ago($review['created_at']) ?></span>
-                                                </div>
-                                                <div class="flex items-center gap-0.5 mb-2">
-                                                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                        <i class="fas fa-star text-xs <?= $i <= $review['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
-                                                    <?php endfor; ?>
-                                                    <span class="text-xs font-semibold text-gray-600 ml-1"><?= $review['rating'] ?>/5</span>
-                                                </div>
-                                                <?php if (!empty($review['comment'])): ?>
-                                                    <p class="text-sm text-gray-600 leading-relaxed"><?= nl2br(sanitize_string($review['comment'])) ?></p>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="text-center py-6">
-                                <p class="text-sm text-gray-400">No reviews yet.</p>
-                            </div>
+            <!-- Right: Details -->
+            <div class="flex-shrink-0">
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-400 w-28">Availability:</span>
+                        <span class="font-semibold text-gray-700"><?= sanitize_string($profile['availability'] ?? 'Not set') ?></span>
+                        <?php if (($profile['availability'] ?? '') === 'Available'): ?>
+                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase">available</span>
                         <?php endif; ?>
                     </div>
+                    <?php if ($profile['years_of_experience'] > 0): ?>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-400 w-28">Experience:</span>
+                        <span class="font-semibold text-gray-700"><?= $profile['years_of_experience'] ?> year<?= $profile['years_of_experience'] != 1 ? 's' : '' ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-400 w-28">Member since:</span>
+                        <span class="font-semibold text-gray-700"><?= date('M Y', strtotime($profile['member_since'])) ?></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-400 w-28">Rating:</span>
+                        <span class="font-semibold text-gray-700">
+                            <i class="fas fa-star text-amber-400 text-xs"></i>
+                            <?= $avgRating > 0 ? number_format($avgRating, 1) : '—' ?>
+                            <span class="text-gray-400 font-normal">(<?= $reviewCount ?>)</span>
+                        </span>
+                    </div>
+                </div>
+                <!-- Social Icons -->
+                <div class="flex items-center gap-2 mt-5 justify-center lg:justify-start">
+                    <?php if (!empty($profile['portfolio_url'])): ?>
+                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="social-icon" title="Portfolio"><i class="fas fa-globe"></i></a>
+                    <?php endif; ?>
+                    <a href="#" class="social-icon github" title="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="#" class="social-icon facebook" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-icon linkedin" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <?php if (!empty($profile['portfolio_url'])): ?>
+                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="social-icon" title="Website"><i class="fas fa-link"></i></a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ TABS ═══════════════ -->
+    <div class="border-b border-gray-200 mb-8">
+        <div class="flex gap-0">
+            <button onclick="switchProfileTab('profile')" id="ptab-profile" class="profile-tab active">Profile</button>
+            <button onclick="switchProfileTab('resume')" id="ptab-resume" class="profile-tab">CV/Resume</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ PROFILE TAB CONTENT ═══════════════ -->
+    <div id="ptab-panel-profile" class="profile-panel">
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Left Sidebar -->
+            <div class="w-full lg:w-64 flex-shrink-0 space-y-6">
+                <!-- Websites -->
+                <div class="profile-sidebar-card">
+                    <h3 class="profile-section-title">Websites</h3>
+                    <?php if (!empty($profile['portfolio_url'])): ?>
+                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="website-link">
+                            <i class="fas fa-globe"></i> Portfolio
+                        </a>
+                    <?php endif; ?>
+                    <a href="#" class="website-link">
+                        <i class="fas fa-blog"></i> Blog
+                    </a>
+                    <?php if (!empty($profile['portfolio_url'])): ?>
+                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="website-link">
+                            <i class="fas fa-folder-open"></i> Portfolio
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 min-w-0 space-y-8">
+                <!-- About -->
+                <?php if (!empty($profile['bio'])): ?>
+                <div>
+                    <h3 class="profile-section-title mb-4">About</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line"><?= nl2br(sanitize_string($profile['bio'])) ?></p>
+                </div>
+                <?php else: ?>
+                <div>
+                    <h3 class="profile-section-title mb-4">About</h3>
+                    <p class="text-sm text-gray-400 italic">No bio provided yet.</p>
+                </div>
                 <?php endif; ?>
 
-                <?php if ($isOwner && $completionPct < 100): ?>
-                    <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100 fade-in" style="animation-delay:.45s">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-magic text-blue-500 text-lg"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="text-sm font-bold text-gray-900 mb-1">Complete Your Profile (<?= $completionPct ?>%)</h4>
-                                <p class="text-xs text-gray-500">A complete profile gets 3x more job invitations from clients.</p>
-                            </div>
-                            <a href="profile_edit.php" class="btn-grad inline-flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/25 flex-shrink-0">
-                                <i class="fas fa-arrow-right text-xs"></i> Complete
-                            </a>
-                        </div>
+                <!-- Skills -->
+                <?php if (!empty($skills)): ?>
+                <div>
+                    <h3 class="profile-section-title mb-4">Skills</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <?php foreach ($skills as $s): ?>
+                            <span class="skill-tag-pill"><?= sanitize_string($s['skill_name']) ?></span>
+                        <?php endforeach; ?>
                     </div>
+                </div>
                 <?php endif; ?>
+
+                <!-- Reviews Section -->
+                <?php if (!empty($reviews) || $reviewCount > 0): ?>
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="profile-section-title mb-0">Reviews</h3>
+                        <?php if ($reviewCount > 5): ?>
+                            <a href="reviews.php" class="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                                View All +<?= $reviewCount - 5 ?> more <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (!empty($reviews)): ?>
+                        <div class="space-y-4">
+                            <?php foreach ($reviews as $review): ?>
+                                <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                                    <div class="flex items-start gap-3">
+                                        <img src="<?= get_profile_image($review['reviewer_image']) ?>"
+                                            class="w-10 h-10 rounded-full object-cover flex-shrink-0" alt="">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <p class="text-sm font-semibold text-gray-900"><?= sanitize_string($review['reviewer_name']) ?></p>
+                                                <span class="text-[11px] text-gray-400"><?= time_ago($review['created_at']) ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-0.5 mb-2">
+                                                <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                    <i class="fas fa-star text-xs <?= $i <= $review['rating'] ? 'text-amber-400' : 'text-gray-200' ?>"></i>
+                                                <?php endfor; ?>
+                                                <span class="text-xs font-semibold text-gray-600 ml-1"><?= $review['rating'] ?>/5</span>
+                                            </div>
+                                            <?php if (!empty($review['comment'])): ?>
+                                                <p class="text-sm text-gray-600 leading-relaxed"><?= nl2br(sanitize_string($review['comment'])) ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-8 bg-gray-50 rounded-xl">
+                            <p class="text-sm text-gray-400">No reviews yet.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="w-full lg:w-72 flex-shrink-0 space-y-6">
+                <!-- Promo Card -->
+                <div class="promo-card">
+                    <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-clock text-blue-600 text-xl"></i>
+                    </div>
+                    <h4 class="text-sm font-bold text-gray-900 mb-1">Track time on JobHub</h4>
+                    <p class="text-xs text-gray-500 mb-4">Pay only for the hours worked</p>
+                    <a href="#" class="inline-block w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all">Sign Up</a>
+                    <a href="#" class="text-xs text-blue-600 hover:text-blue-700 font-medium mt-3 inline-block">Learn more...</a>
+                </div>
+
+                <!-- Similar Profiles -->
+                <?php if (!empty($similarFreelancers)): ?>
+                <div class="profile-sidebar-card">
+                    <h3 class="profile-section-title">Similar Profiles</h3>
+                    <?php foreach ($similarFreelancers as $sf): ?>
+                        <a href="profile.php?id=<?= (int) $sf['id'] ?>" class="similar-card group">
+                            <img src="<?= get_profile_image($sf['profile_image']) ?>"
+                                 class="w-10 h-10 rounded-full object-cover flex-shrink-0" alt="">
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate"><?= sanitize_string($sf['name']) ?></p>
+                                <p class="text-[11px] text-gray-400 truncate"><?= sanitize_string($sf['title'] ?? 'Freelancer') ?></p>
+                                <div class="flex items-center gap-1 mt-0.5">
+                                    <i class="fas fa-star text-[9px] text-amber-400"></i>
+                                    <span class="text-[11px] font-semibold text-gray-600"><?= $sf['avg_rating'] > 0 ? number_format($sf['avg_rating'], 1) : '—' ?></span>
+                                    <span class="text-[11px] text-gray-400 ml-1"><?= format_currency($sf['hourly_rate'] ?? 0) ?>/hr</span>
+                                </div>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ RESUME TAB CONTENT ═══════════════ -->
+    <div id="ptab-panel-resume" class="profile-panel hidden">
+        <div class="profile-sidebar-card max-w-2xl">
+            <?php if (!empty($profile['resume_file'])): ?>
+                <div class="flex items-center gap-4 p-5 bg-gray-50 rounded-xl border border-gray-200">
+                    <div class="w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-file-pdf text-red-500 text-xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-gray-900 truncate"><?= sanitize_string(basename($profile['resume_file'])) ?></p>
+                        <p class="text-xs text-gray-400 mt-0.5">PDF Resume</p>
+                    </div>
+                    <a href="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>"
+                       target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all flex-shrink-0">
+                        <i class="fas fa-download text-xs"></i> Download
+                    </a>
+                </div>
+                <!-- PDF Preview -->
+                <div class="mt-6 rounded-xl overflow-hidden border border-gray-200" style="height: 600px;">
+                    <iframe src="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>"
+                            class="w-full h-full" frameborder="0"></iframe>
+                </div>
+            <?php else: ?>
+                <div class="text-center py-16">
+                    <div class="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-file-pdf text-3xl text-gray-300"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-gray-900 mb-2">No Resume Uploaded</h4>
+                    <p class="text-sm text-gray-400 mb-5">Upload your resume to showcase your qualifications to clients.</p>
+                    <?php if ($isOwner): ?>
+                        <a href="profile_edit.php" class="inline-flex items-center gap-2 px-6 py-2.5 btn-grad text-white font-semibold rounded-lg text-sm">
+                            <i class="fas fa-upload text-xs"></i> Upload Resume
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- ═══════════════ PROFILE COMPLETION BANNER ═══════════════ -->
+    <?php if ($isOwner && $completionPct < 100): ?>
+        <div class="mt-8 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100 fade-in">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-magic text-blue-500 text-lg"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 mb-1">Complete Your Profile (<?= $completionPct ?>%)</h4>
+                    <p class="text-xs text-gray-500">A complete profile gets 3x more job invitations from clients.</p>
+                </div>
+                <a href="profile_edit.php" class="inline-flex items-center gap-2 px-5 py-2.5 btn-grad text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/25 flex-shrink-0">
+                    <i class="fas fa-arrow-right text-xs"></i> Complete
+                </a>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>
+
+<script>
+function switchProfileTab(tab) {
+    document.querySelectorAll('.profile-panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('ptab-panel-' + tab).classList.remove('hidden');
+    document.getElementById('ptab-' + tab).classList.add('active');
+}
+</script>
+
 <?php $conn->close(); ?>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

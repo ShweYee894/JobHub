@@ -186,9 +186,9 @@ $completedCount = count(array_filter($completionFields));
 $totalCount = count($completionFields);
 $completionPercent = $totalCount > 0 ? round(($completedCount / $totalCount) * 100) : 0;
 
-$conn->close();
-
 $profileData = $user;
+
+$conn->close();
 
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],

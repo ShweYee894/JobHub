@@ -89,10 +89,10 @@ function display_flash(string $type): void
     $message = get_flash($type);
     if ($message) {
         $colors = [
-            'success' => 'bg-green-50 text-green-800 border-green-200',
-            'error' => 'bg-red-50 text-red-800 border-red-200',
-            'warning' => 'bg-yellow-50 text-yellow-800 border-yellow-200',
-            'info' => 'bg-blue-50 text-blue-800 border-blue-200',
+            'success' => 'bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
+            'error' => 'bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
+            'warning' => 'bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800',
+            'info' => 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800',
         ];
         $icons = [
             'success' => 'fa-check-circle',
@@ -209,14 +209,14 @@ function render_pagination(array $pagination, string $base_url): void
         return;
     echo '<nav class="flex items-center justify-center gap-2 mt-8">';
     if ($pagination['has_prev']) {
-        echo '<a href="' . $base_url . '&page=' . ($pagination['current_page'] - 1) . '" class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">Prev</a>';
+        echo '<a href="' . $base_url . '&page=' . ($pagination['current_page'] - 1) . '" class="px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Prev</a>';
     }
     for ($i = 1; $i <= $pagination['total_pages']; $i++) {
-        $active = $i === $pagination['current_page'] ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50';
+        $active = $i === $pagination['current_page'] ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700';
         echo '<a href="' . $base_url . '&page=' . $i . '" class="px-3 py-2 rounded-lg border text-sm font-medium ' . $active . '">' . $i . '</a>';
     }
     if ($pagination['has_next']) {
-        echo '<a href="' . $base_url . '&page=' . ($pagination['current_page'] + 1) . '" class="px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">Next</a>';
+        echo '<a href="' . $base_url . '&page=' . ($pagination['current_page'] + 1) . '" class="px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Next</a>';
     }
     echo '</nav>';
 }

@@ -223,75 +223,7 @@ unset($_SESSION['form_data']);
             <p id="email-err" class="text-red-500 text-[11px] mt-1 hidden"></p>
           </div>
 
-          <!-- CLIENT-ONLY FIELDS -->
-          <div id="client-fields" class="<?= $old_role !== 'client' ? 'hidden' : '' ?>">
-            <!-- Company Name -->
-            <div class="mb-4">
-              <label for="company_name" class="block text-xs font-semibold text-gray-700 mb-1.5">Company Name <span class="text-gray-400">(optional)</span></label>
-              <div class="relative">
-                <i class="fas fa-building absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" id="company_name" name="company_name"
-                  value="<?= $old_company ?>"
-                  placeholder="Acme Inc."
-                  class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-gray-900 placeholder-gray-400 text-sm"/>
-              </div>
-            </div>
-
-            <!-- Industry -->
-            <div class="mb-4">
-              <label for="industry" class="block text-xs font-semibold text-gray-700 mb-1.5">Industry <span class="text-gray-400">(optional)</span></label>
-              <div class="relative">
-                <i class="fas fa-briefcase absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                <select id="industry" name="industry"
-                  class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-gray-900 text-sm appearance-none">
-                  <option value="">Select your industry</option>
-                  <option value="Technology" <?= $old_industry === 'Technology' ? 'selected' : '' ?>>Technology</option>
-                  <option value="Healthcare" <?= $old_industry === 'Healthcare' ? 'selected' : '' ?>>Healthcare</option>
-                  <option value="Finance" <?= $old_industry === 'Finance' ? 'selected' : '' ?>>Finance & Banking</option>
-                  <option value="Education" <?= $old_industry === 'Education' ? 'selected' : '' ?>>Education</option>
-                  <option value="E-commerce" <?= $old_industry === 'E-commerce' ? 'selected' : '' ?>>E-commerce</option>
-                  <option value="Marketing" <?= $old_industry === 'Marketing' ? 'selected' : '' ?>>Marketing & Advertising</option>
-                  <option value="Real Estate" <?= $old_industry === 'Real Estate' ? 'selected' : '' ?>>Real Estate</option>
-                  <option value="Manufacturing" <?= $old_industry === 'Manufacturing' ? 'selected' : '' ?>>Manufacturing</option>
-                  <option value="Media" <?= $old_industry === 'Media' ? 'selected' : '' ?>>Media & Entertainment</option>
-                  <option value="Other" <?= $old_industry === 'Other' ? 'selected' : '' ?>>Other</option>
-                </select>
-                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
-              </div>
-            </div>
-          </div>
-
-          <!-- FREELANCER-ONLY FIELDS -->
-          <div id="freelancer-fields" class="<?= $old_role === 'client' ? 'hidden' : '' ?>">
-            <!-- Professional Title -->
-            <div class="mb-4">
-              <label for="professional_title" class="block text-xs font-semibold text-gray-700 mb-1.5">Professional Title</label>
-              <div class="relative">
-                <i class="fas fa-id-badge absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" id="professional_title" name="professional_title"
-                  value="<?= $old_title ?>"
-                  placeholder="e.g. Full Stack Developer"
-                  class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-gray-900 placeholder-gray-400 text-sm"
-                  required/>
-              </div>
-              <p id="title-err" class="text-red-500 text-[11px] mt-1 hidden"></p>
-            </div>
-
-            <!-- Hourly Rate -->
-            <div class="mb-4">
-              <label for="hourly_rate" class="block text-xs font-semibold text-gray-700 mb-1.5">Hourly Rate (USD)</label>
-              <div class="relative">
-                <i class="fas fa-dollar-sign absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="number" id="hourly_rate" name="hourly_rate"
-                  value="<?= $old_rate ?>"
-                  placeholder="e.g. 45"
-                  min="1" max="5000" step="1"
-                  class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-gray-900 placeholder-gray-400 text-sm"
-                  required/>
-              </div>
-              <p id="rate-err" class="text-red-500 text-[11px] mt-1 hidden"></p>
-            </div>
-          </div>
+         
 
           <!-- Password -->
           <div class="mb-4">

@@ -1,12 +1,12 @@
 <?php
 /**
  * Online Status API
- * 
- * Returns the online status of a user based on their last activity timestamp.
+ *
+ * Returns the online status and last seen time of a user.
  * A user is considered "online" if active within the last 2 minutes.
- * 
+ *
  * GET Parameters: user_id
- * Returns: { success: true, is_online: bool, last_seen: string }
+ * Returns: { success: true, is_online: bool, last_seen: string, last_seen_text: string }
  */
 session_start();
 header('Content-Type: application/json');
@@ -42,10 +42,31 @@ if (!$user) {
 }
 
 $lastActive = strtotime($user['updated_at']);
-$isOnline = (time() - $lastActive) < 120;
+$diff = time() - $lastActive;
+$isOnline = $diff < 120;
+
+if ($diff < 60) {
+    $lastSeenText = 'Active now';
+} elseif ($diff < 3600) {
+    $mins = floor($diff / 60);
+    $lastSeenText = "Active {$mins}m ago";
+} elseif ($diff < 86400) {
+    $hours = floor($diff / 3600);
+    $lastSeenText = "Active {$hours}h ago";
+} elseif ($diff < 172800) {
+    $lastSeenText = 'Active yesterday';
+} else {
+    $days = floor($diff / 86400);
+    if ($days < 7) {
+        $lastSeenText = "Active {$days}d ago";
+    } else {
+        $lastSeenText = 'Active ' . date('M j', $lastActive);
+    }
+}
 
 echo json_encode([
-    'success'   => true,
-    'is_online' => $isOnline,
-    'last_seen' => $user['updated_at']
+    'success'        => true,
+    'is_online'      => $isOnline,
+    'last_seen'      => $user['updated_at'],
+    'last_seen_text' => $lastSeenText
 ]);

@@ -21,6 +21,19 @@ $_layoutUser = $user ?? ['name' => 'User', 'profile_image' => ''];
 $_layoutAvatar = get_profile_image($_layoutUser['profile_image']);
 $_layoutUnread = $unreadCount ?? 0;
 $_layoutProfile = $profileLink ?? 'profile.php';
+
+// Fetch wallet balance for clients
+$_layoutWalletBalance = null;
+if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isset($_SESSION['user_id'])) {
+    if (isset($conn) && $conn instanceof mysqli) {
+        $_layoutWStmt = $conn->prepare('SELECT wallet_balance FROM users WHERE id = ?');
+        $_layoutWStmt->bind_param('i', $_SESSION['user_id']);
+        $_layoutWStmt->execute();
+        $_layoutWRow = $_layoutWStmt->get_result()->fetch_assoc();
+        $_layoutWStmt->close();
+        $_layoutWalletBalance = $_layoutWRow ? (float) $_layoutWRow['wallet_balance'] : 0.0;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -33,6 +46,15 @@ $_layoutProfile = $profileLink ?? 'profile.php';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/finalproject/shared/dark-mode.css">
+    <script>
+        (function() {
+            var dark = localStorage.getItem('fh-dark-mode');
+            if (dark === '1' || dark === 'dark' || (!dark && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -565,13 +587,21 @@ $_layoutProfile = $profileLink ?? 'profile.php';
                 </div>
             </div>
 
-            <!-- Right: search, notifications, dark mode, profile -->
+            <!-- Right: search, wallet, notifications, dark mode, profile -->
             <div class="flex items-center gap-2">
                 <!-- Search -->
                 <div class="relative hidden md:block">
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
                     <input type="text" placeholder="Search..." class="w-56 py-2 pl-9 pr-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-300 transition">
                 </div>
+
+                <?php if ($_layoutWalletBalance !== null): ?>
+                <!-- Wallet Balance -->
+                <a href="wallet.php" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-100 hover:from-blue-100 hover:to-teal-100 dark:from-blue-900/20 dark:to-teal-900/20 dark:border-blue-800/30 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 transition-all no-underline" title="View Wallet">
+                    <i class="fas fa-wallet text-blue-600 dark:text-blue-400 text-sm"></i>
+                    <span class="text-sm font-bold text-blue-700 dark:text-blue-300" id="navWalletBalance">$<?= number_format($_layoutWalletBalance, 2) ?></span>
+                </a>
+                <?php endif; ?>
 
                 <!-- Notifications -->
                 <a href="../shared/notifications.php" class="relative w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700 no-underline transition">

@@ -64,25 +64,123 @@ $fl_skill_ids = $fl_vector['skill_ids'] ?? [];
 $fl_rate = $fl_vector['hourly_rate'] ?? 0;
 
 $STOP_WORDS = [
-    'the','is','at','which','on','a','an','and','or','but','in','with','to','for',
-    'of','not','no','can','had','has','was','were','are','be','been','being',
-    'have','having','do','does','did','doing','will','would','could','should',
-    'may','might','shall','must','that','this','these','those','it','its',
-    'from','by','as','if','then','than','so','just','also','about','into',
-    'over','after','before','between','under','above','out','off','up','down',
-    'all','each','every','both','few','more','most','other','some','such','any',
-    'only','same','own','too','very','here','there','when','where','why','how',
-    'what','who','whom','whose','through','during','until','while','again',
-    'further','once','because','nor','against','during','once','twice',
+    'the',
+    'is',
+    'at',
+    'which',
+    'on',
+    'a',
+    'an',
+    'and',
+    'or',
+    'but',
+    'in',
+    'with',
+    'to',
+    'for',
+    'of',
+    'not',
+    'no',
+    'can',
+    'had',
+    'has',
+    'was',
+    'were',
+    'are',
+    'be',
+    'been',
+    'being',
+    'have',
+    'having',
+    'do',
+    'does',
+    'did',
+    'doing',
+    'will',
+    'would',
+    'could',
+    'should',
+    'may',
+    'might',
+    'shall',
+    'must',
+    'that',
+    'this',
+    'these',
+    'those',
+    'it',
+    'its',
+    'from',
+    'by',
+    'as',
+    'if',
+    'then',
+    'than',
+    'so',
+    'just',
+    'also',
+    'about',
+    'into',
+    'over',
+    'after',
+    'before',
+    'between',
+    'under',
+    'above',
+    'out',
+    'off',
+    'up',
+    'down',
+    'all',
+    'each',
+    'every',
+    'both',
+    'few',
+    'more',
+    'most',
+    'other',
+    'some',
+    'such',
+    'any',
+    'only',
+    'same',
+    'own',
+    'too',
+    'very',
+    'here',
+    'there',
+    'when',
+    'where',
+    'why',
+    'how',
+    'what',
+    'who',
+    'whom',
+    'whose',
+    'through',
+    'during',
+    'until',
+    'while',
+    'again',
+    'further',
+    'once',
+    'because',
+    'nor',
+    'against',
+    'during',
+    'once',
+    'twice',
 ];
 
-function extract_keywords_rf(string $text, array $stop_words): array {
+function extract_keywords_rf(string $text, array $stop_words): array
+{
     $text = strtolower($text);
     $text = preg_replace('/[^a-z0-9\s]/', ' ', $text);
     $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
     $freq = [];
     foreach ($words as $word) {
-        if (strlen($word) < 3 || in_array($word, $stop_words, true)) continue;
+        if (strlen($word) < 3 || in_array($word, $stop_words, true))
+            continue;
         $freq[$word] = ($freq[$word] ?? 0) + 1;
     }
     arsort($freq);
@@ -139,7 +237,8 @@ while ($job = $jobs_result->fetch_assoc()) {
 
     $total_score = round($skill_score + $budget_score + $recency_score, 2);
 
-    if ($total_score <= 0) continue;
+    if ($total_score <= 0)
+        continue;
 
     // Get skill names
     $sn = $conn->prepare('SELECT s.skill_name FROM job_skills js JOIN skills s ON js.skill_id = s.id WHERE js.job_id = ?');
@@ -160,40 +259,29 @@ while ($job = $jobs_result->fetch_assoc()) {
     $cn->close();
 
     $matches[] = [
-        'job_id'       => $job['id'],
-        'title'        => $job['title'],
-        'description'  => $job['description'],
-        'budget'       => $job_budget,
-        'client_name'  => $client_name,
-        'skill_names'  => $skill_names,
-        'created_at'   => $job['created_at'],
-        'total_score'  => $total_score,
-        'skill_pct'    => round($skill_score / 60 * 100),
+        'job_id' => $job['id'],
+        'title' => $job['title'],
+        'description' => $job['description'],
+        'budget' => $job_budget,
+        'client_name' => $client_name,
+        'skill_names' => $skill_names,
+        'created_at' => $job['created_at'],
+        'total_score' => $total_score,
+        'skill_pct' => round($skill_score / 60 * 100),
     ];
 }
 
 usort($matches, fn($a, $b) => $b['total_score'] <=> $a['total_score']);
 $recommended = array_slice($matches, 0, 20);
 
-$activePage = 'recommended_jobs';
-
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
+$activePage = 'home';
 $pageTitle = 'Recommended Jobs';
 $pageSubtitle = 'Jobs matched to your skills and experience';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
-
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
             <?php if (empty($recommended)): ?>
             <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
                 <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
@@ -210,12 +298,16 @@ require_once __DIR__ . '/../components/layout_start.php';
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <?php foreach ($recommended as $match): ?>
                 <?php
-                    $scoreColor = ($match['total_score'] >= 50) ? 'bg-emerald-500' :
-                                  (($match['total_score'] >= 30) ? 'bg-blue-500' :
-                                  (($match['total_score'] >= 15) ? 'bg-amber-500' : 'bg-gray-400'));
-                    $scoreText = ($match['total_score'] >= 50) ? 'text-emerald-600' :
-                                 (($match['total_score'] >= 30) ? 'text-blue-600' :
-                                 (($match['total_score'] >= 15) ? 'text-amber-600' : 'text-gray-600'));
+                $scoreColor = ($match['total_score'] >= 50)
+                    ? 'bg-emerald-500'
+                    : (($match['total_score'] >= 30)
+                        ? 'bg-blue-500'
+                        : (($match['total_score'] >= 15) ? 'bg-amber-500' : 'bg-gray-400'));
+                $scoreText = ($match['total_score'] >= 50)
+                    ? 'text-emerald-600'
+                    : (($match['total_score'] >= 30)
+                        ? 'text-blue-600'
+                        : (($match['total_score'] >= 15) ? 'text-amber-600' : 'text-gray-600'));
                 ?>
                 <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
                     <div class="flex items-start justify-between mb-3">
@@ -252,6 +344,6 @@ require_once __DIR__ . '/../components/layout_start.php';
                 </div>
                 <?php endforeach; ?>
             </div>
-
+        </div>
             <?php endif; ?>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

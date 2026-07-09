@@ -64,9 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $stmt->close();
 
+                $newBalance = $walletBalance - $amount;
                 $desc = 'Withdrawal of ' . format_currency($amount);
                 $stmt = $conn->prepare('INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at) VALUES (?, \'withdrawal\', ?, ?, NULL, \'wallet\', ?, NOW())');
-                $stmt->bind_param('iddd', $userId, $amount, $newBalance, $amount, $desc);
+                $stmt->bind_param('idds', $userId, $amount, $newBalance, $desc);
                 $stmt->execute();
                 $stmt->close();
 
@@ -82,22 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
 $pageTitle = 'Withdraw Funds';
 $pageSubtitle = 'Transfer earnings to your bank account';
 $activePage = 'earnings';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
     <?= display_flash('success') ?>
     <?= display_flash('error') ?>
@@ -105,11 +96,11 @@ require_once __DIR__ . '/../components/layout_start.php';
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Withdraw Form -->
         <div class="lg:col-span-1">
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in dark:bg-gray-800 dark:border-gray-700">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><i class="fas fa-wallet text-blue-500"></i></div>
                     <div>
-                        <h3 class="text-base font-bold text-gray-900">Withdraw Funds</h3>
+                        <h3 class="text-base font-bold text-gray-900 dark:text-white">Withdraw Funds</h3>
                         <p class="text-xs text-gray-400">Transfer to your bank account</p>
                     </div>
                 </div>
@@ -122,7 +113,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 </div>
 
                 <?php if (!empty($errors)): ?>
-                    <div class="bg-red-50 text-red-800 border border-red-200 rounded-xl p-4 mb-4">
+                    <div class="bg-red-50 text-red-800 border border-red-200 rounded-xl p-4 mb-4 dark:bg-red-900/30 dark:border-red-800 dark:text-red-200">
                         <div class="flex items-start gap-3">
                             <i class="fas fa-exclamation-circle mt-0.5"></i>
                             <div class="text-sm">
@@ -137,20 +128,20 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <form method="POST" class="space-y-4">
                     <?= csrf_field() ?>
                     <div>
-                        <label for="amount" class="block text-sm font-semibold text-gray-700 mb-2">Withdrawal Amount</label>
+                        <label for="amount" class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300">Withdrawal Amount</label>
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">$</span>
                             <input type="number" id="amount" name="amount" step="0.01" min="10" max="<?= $walletBalance ?>"
-                                   class="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                                   class="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                    placeholder="0.00" required>
                         </div>
                         <p class="text-xs text-gray-400 mt-1.5">Minimum: $10.00 | Maximum: <?= format_currency($walletBalance) ?></p>
                     </div>
 
                     <div class="flex gap-2">
-                        <button type="button" onclick="document.getElementById('amount').value='<?= $walletBalance ?>'" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all">Max</button>
-                        <button type="button" onclick="document.getElementById('amount').value=Math.min(100, <?= $walletBalance ?>)" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all">$100</button>
-                        <button type="button" onclick="document.getElementById('amount').value=Math.min(500, <?= $walletBalance ?>)" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all">$500</button>
+                        <button type="button" onclick="document.getElementById('amount').value='<?= $walletBalance ?>'" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300">Max</button>
+                        <button type="button" onclick="document.getElementById('amount').value=Math.min(100, <?= $walletBalance ?>)" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300">$100</button>
+                        <button type="button" onclick="document.getElementById('amount').value=Math.min(500, <?= $walletBalance ?>)" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300">$500</button>
                     </div>
 
                     <button type="submit" class="w-full btn-grad px-6 py-3 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2" <?= $walletBalance < 10 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>
@@ -158,7 +149,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                     </button>
                 </form>
 
-                <div class="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                <div class="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-100 dark:bg-blue-900/30 dark:border-blue-800">
                     <p class="text-xs text-blue-600 flex items-start gap-2">
                         <i class="fas fa-info-circle mt-0.5"></i>
                         <span>Withdrawals are processed within 1-3 business days. Funds will be transferred to your registered payment method.</span>
@@ -169,11 +160,11 @@ require_once __DIR__ . '/../components/layout_start.php';
 
         <!-- Withdrawal History -->
         <div class="lg:col-span-2">
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.1s">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.1s">
                 <div class="flex items-center gap-3 mb-5">
                     <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center"><i class="fas fa-history text-violet-500"></i></div>
                     <div>
-                        <h2 class="text-base font-bold text-gray-900">Withdrawal History</h2>
+                        <h2 class="text-base font-bold text-gray-900 dark:text-white">Withdrawal History</h2>
                         <p class="text-xs text-gray-400"><?= $totalWithdrawals ?> withdrawal<?= $totalWithdrawals !== 1 ? 's' : '' ?></p>
                     </div>
                 </div>
@@ -181,12 +172,12 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <?php if ($withdrawalsResult->num_rows > 0): ?>
                     <div class="space-y-3">
                         <?php while ($w = $withdrawalsResult->fetch_assoc()): ?>
-                            <div class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 dark:bg-gray-700 dark:border-gray-600">
                                 <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
                                     <i class="fas fa-arrow-up text-red-500 text-sm"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900">Withdrawal</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">Withdrawal</p>
                                     <p class="text-[11px] text-gray-400"><?= date('M d, Y h:i A', strtotime($w['created_at'])) ?></p>
                                 </div>
                                 <div class="text-right flex-shrink-0">
@@ -198,17 +189,17 @@ require_once __DIR__ . '/../components/layout_start.php';
                     </div>
 
                     <?php if ($pagination['total_pages'] > 1): ?>
-                        <div class="flex items-center justify-between mt-5 pt-5 border-t border-gray-100">
+                        <div class="flex items-center justify-between mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
                             <p class="text-xs text-gray-400">Page <span class="font-semibold text-gray-600"><?= $pagination['current_page'] ?></span> of <span class="font-semibold text-gray-600"><?= $pagination['total_pages'] ?></span></p>
                             <div class="flex items-center gap-1">
                                 <?php if ($pagination['has_prev']): ?>
-                                    <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i class="fas fa-chevron-left text-xs"></i></a>
+                                    <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-chevron-left text-xs"></i></a>
                                 <?php endif; ?>
                                 <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
-                                    <a href="?page=<?= $i ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' ?>"><?= $i ?></a>
+                                    <a href="?page=<?= $i ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700' ?>"><?= $i ?></a>
                                 <?php endfor; ?>
                                 <?php if ($pagination['has_next']): ?>
-                                    <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i class="fas fa-chevron-right text-xs"></i></a>
+                                    <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-chevron-right text-xs"></i></a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -223,4 +214,4 @@ require_once __DIR__ . '/../components/layout_start.php';
             </div>
         </div>
     </div>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

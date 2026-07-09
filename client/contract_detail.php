@@ -42,33 +42,23 @@ $mSC = ['pending' => 'bg-gray-100 text-gray-600 border border-gray-200', 'funded
 $mIC = ['pending' => 'fa-clock', 'funded_in_escrow' => 'fa-shield-halved', 'submitted' => 'fa-paper-plane', 'released' => 'fa-check-circle', 'disputed' => 'fa-exclamation-triangle'];
 $cC = ['active' => 'bg-emerald-50 text-emerald-600 border border-emerald-200', 'completed' => 'bg-blue-50 text-blue-600 border border-blue-200', 'cancelled' => 'bg-gray-100 text-gray-500 border border-gray-200', 'disputed' => 'bg-red-50 text-red-500 border border-red-200'];
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
-    ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-];
 $pageTitle = sanitize_string($contract['job_title']) . ' - Contract Details';
 $pageSubtitle = 'Manage milestones and payments';
 $activePage = 'contracts';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
     <?php display_flash('success') ?>
     <?php display_flash('error') ?>
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">  
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm fade-in">
         <div class="p-6 sm:p-8">
             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                 <div class="flex-1">
                     <div class="flex flex-wrap items-center gap-2 mb-3">
-                        <h2 class="text-xl font-bold text-gray-900"><?= sanitize_string($contract['job_title']) ?></h2>
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white"><?= sanitize_string($contract['job_title']) ?></h2>
                         <span class="inline-block px-3 py-1 rounded-lg text-[11px] font-semibold <?= $cC[$contract['status']] ?? '' ?>"><?= sanitize_string(ucfirst($contract['status'])) ?></span>
                     </div>
                     <div class="flex flex-wrap items-center gap-4 text-sm text-gray-400">
@@ -103,11 +93,11 @@ require_once __DIR__ . '/../components/layout_start.php';
             <?php endif; ?>
         </div>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in" style="animation-delay:.1s">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm fade-in" style="animation-delay:.1s">
         <div class="p-6 sm:p-8">
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center"><i class="fas fa-tasks text-violet-500"></i></div>
+                    <div class="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center"><i class="fas fa-tasks text-violet-500"></i></div>
                     <div>
                         <h3 class="text-base font-bold text-gray-900">Milestones</h3>
                         <p class="text-xs text-gray-400"><?= count($milestones) ?> milestone<?= count($milestones) !== 1 ? 's' : '' ?></p>
@@ -190,10 +180,10 @@ require_once __DIR__ . '/../components/layout_start.php';
 <div id="createModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-overlay absolute inset-0" onclick="closeModal('createModal')"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
-            <div class="p-6 border-b border-gray-100">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-700">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-gray-900">Add Milestone</h3><button onclick="closeModal('createModal')" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"><i class="fas fa-times text-sm"></i></button>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Add Milestone</h3><button onclick="closeModal('createModal')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><i class="fas fa-times text-sm"></i></button>
                 </div>
             </div>
             <form id="createMilestoneForm" onsubmit="return createMilestone(event)">
@@ -201,13 +191,13 @@ require_once __DIR__ . '/../components/layout_start.php';
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="create">
                     <input type="hidden" name="contract_id" value="<?= $contractId ?>">
-                    <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">Milestone Title</label><input type="text" name="title" required maxlength="255" placeholder="e.g., Homepage Design" class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white"></div>
-                    <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">Amount ($)</label><input type="number" name="amount" required step="0.01" min="0.01" max="<?= $budgetRem ?>" placeholder="0.00" class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                    <div><label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Milestone Title</label><input type="text" name="title" required maxlength="255" placeholder="e.g., Homepage Design" class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white"></div>
+                    <div><label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Amount ($)</label><input type="number" name="amount" required step="0.01" min="0.01" max="<?= $budgetRem ?>" placeholder="0.00" class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
                         <p class="text-[11px] text-gray-400 mt-1">Remaining budget: <?= format_currency($budgetRem) ?></p>
                     </div>
                 </div>
                 <div class="px-6 pb-6 flex gap-3">
-                    <button type="button" onclick="closeModal('createModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="button" onclick="closeModal('createModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
                     <button type="submit" class="flex-1 btn-grad px-4 py-2.5 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25">Create Milestone</button>
                 </div>
             </form>
@@ -218,10 +208,10 @@ require_once __DIR__ . '/../components/layout_start.php';
 <div id="editModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-overlay absolute inset-0" onclick="closeModal('editModal')"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
-            <div class="p-6 border-b border-gray-100">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-700">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-gray-900">Edit Milestone</h3><button onclick="closeModal('editModal')" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"><i class="fas fa-times text-sm"></i></button>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Milestone</h3><button onclick="closeModal('editModal')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><i class="fas fa-times text-sm"></i></button>
                 </div>
             </div>
             <form id="editMilestoneForm" onsubmit="return updateMilestone(event)">
@@ -229,11 +219,11 @@ require_once __DIR__ . '/../components/layout_start.php';
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="update">
                     <input type="hidden" name="milestone_id" id="edit_milestone_id">
-                    <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">Milestone Title</label><input type="text" name="title" id="edit_title" required maxlength="255" class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white"></div>
-                    <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">Amount ($)</label><input type="number" name="amount" id="edit_amount" required step="0.01" min="0.01" class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white"></div>
+                    <div><label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Milestone Title</label><input type="text" name="title" id="edit_title" required maxlength="255" class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white"></div>
+                    <div><label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Amount ($)</label><input type="number" name="amount" id="edit_amount" required step="0.01" min="0.01" class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white"></div>
                 </div>
                 <div class="px-6 pb-6 flex gap-3">
-                    <button type="button" onclick="closeModal('editModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="button" onclick="closeModal('editModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
                     <button type="submit" class="flex-1 btn-grad px-4 py-2.5 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25">Update Milestone</button>
                 </div>
             </form>
@@ -244,15 +234,15 @@ require_once __DIR__ . '/../components/layout_start.php';
 <div id="fundModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-overlay absolute inset-0" onclick="closeModal('fundModal')"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative z-10 slide-down">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 slide-down">
             <div class="p-6 text-center">
-                <div class="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4"><i class="fas fa-shield-halved text-2xl text-amber-600"></i></div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Fund Escrow</h3>
-                <p class="text-sm text-gray-500 mb-1">Place <span id="fundAmount" class="font-bold text-gray-900"></span> in escrow?</p>
-                <p class="text-xs text-gray-400">Deducted from your wallet and held until milestone completion.</p>
+                <div class="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4"><i class="fas fa-shield-halved text-2xl text-amber-600"></i></div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Fund Escrow</h3>
+                <p class="text-sm text-gray-500 dark:text-slate-400 mb-1">Place <span id="fundAmount" class="font-bold text-gray-900 dark:text-white"></span> in escrow?</p>
+                <p class="text-xs text-gray-400 dark:text-slate-500">Deducted from your wallet and held until milestone completion.</p>
             </div>
             <div class="px-6 pb-6 flex gap-3">
-                <button onclick="closeModal('fundModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                <button onclick="closeModal('fundModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
                 <button onclick="confirmFund()" id="fundConfirmBtn" class="flex-1 btn-grad px-4 py-2.5 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25"><span id="fundBtnText">Confirm Fund</span></button>
             </div>
         </div>
@@ -262,14 +252,14 @@ require_once __DIR__ . '/../components/layout_start.php';
 <div id="approveModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-overlay absolute inset-0" onclick="closeModal('approveModal')"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative z-10 slide-down">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 slide-down">
             <div class="p-6 text-center">
-                <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4"><i class="fas fa-check-circle text-2xl text-emerald-600"></i></div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Approve &amp; Release Payment</h3>
-                <p class="text-sm text-gray-500">This will release payment to the freelancer. Cannot be undone.</p>
+                <div class="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-4"><i class="fas fa-check-circle text-2xl text-emerald-600"></i></div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Approve &amp; Release Payment</h3>
+                <p class="text-sm text-gray-500 dark:text-slate-400">This will release payment to the freelancer. Cannot be undone.</p>
             </div>
             <div class="px-6 pb-6 flex gap-3">
-                <button onclick="closeModal('approveModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                <button onclick="closeModal('approveModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
                 <button onclick="confirmApprove()" id="approveConfirmBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold shadow-lg shadow-emerald-500/25"><span id="approveBtnText">Approve</span></button>
             </div>
         </div>
@@ -279,11 +269,11 @@ require_once __DIR__ . '/../components/layout_start.php';
 <div id="revisionModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-overlay absolute inset-0" onclick="closeModal('revisionModal')"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
-            <div class="p-6 border-b border-gray-100">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-700">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-gray-900">Request Changes</h3>
-                    <button onclick="closeModal('revisionModal')" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"><i class="fas fa-times text-sm"></i></button>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Request Changes</h3>
+                    <button onclick="closeModal('revisionModal')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><i class="fas fa-times text-sm"></i></button>
                 </div>
             </div>
             <form id="revisionForm" onsubmit="return submitRevision(event)">
@@ -292,12 +282,12 @@ require_once __DIR__ . '/../components/layout_start.php';
                     <input type="hidden" name="action" value="request_revision">
                     <input type="hidden" name="milestone_id" id="revision_milestone_id">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Reason for Revision</label>
-                        <textarea name="revision_note" id="revision_note" required rows="4" placeholder="Describe what needs to be changed..." class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white resize-none"></textarea>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Reason for Revision</label>
+                        <textarea name="revision_note" id="revision_note" required rows="4" placeholder="Describe what needs to be changed..." class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white resize-none"></textarea>
                     </div>
                 </div>
                 <div class="px-6 pb-6 flex gap-3">
-                    <button type="button" onclick="closeModal('revisionModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="button" onclick="closeModal('revisionModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
                     <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-lg shadow-amber-500/25"><span id="revisionBtnText">Send Revision</span></button>
                 </div>
             </form>
@@ -306,20 +296,20 @@ require_once __DIR__ . '/../components/layout_start.php';
 </div>
 
 <div id="loadingOverlay" class="fixed inset-0 z-[60] hidden modal-overlay flex items-center justify-center">
-    <div class="bg-white rounded-2xl p-8 shadow-2xl text-center">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl text-center">
         <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-        <p class="text-sm font-semibold text-gray-700">Processing...</p>
+        <p class="text-sm font-semibold text-gray-700 dark:text-slate-200">Processing...</p>
     </div>
 </div>
 
 <div id="disputeModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-overlay absolute inset-0 bg-black/40" onclick="closeDisputeModal()"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
-            <div class="p-6 border-b border-gray-100">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 slide-down">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-700">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-gray-900">File a Dispute</h3>
-                    <button onclick="closeDisputeModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"><i class="fas fa-times text-sm"></i></button>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">File a Dispute</h3>
+                    <button onclick="closeDisputeModal()" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><i class="fas fa-times text-sm"></i></button>
                 </div>
             </div>
             <form id="disputeForm" onsubmit="return submitDispute(event)">
@@ -328,8 +318,8 @@ require_once __DIR__ . '/../components/layout_start.php';
                     <input type="hidden" name="action" value="create">
                     <input type="hidden" name="contract_id" value="<?= (int) $contract['id'] ?>">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Related Milestone (optional)</label>
-                        <select name="milestone_id" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Related Milestone (optional)</label>
+                        <select name="milestone_id" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
                             <option value="">None - Contract-level dispute</option>
                             <?php foreach ($milestones as $m): ?>
                                 <option value="<?= (int) $m['id'] ?>"><?= sanitize_string($m['title']) ?> (<?= format_currency((float) $m['amount']) ?>)</option>
@@ -337,8 +327,8 @@ require_once __DIR__ . '/../components/layout_start.php';
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Reason</label>
-                        <select name="reason" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Reason</label>
+                        <select name="reason" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
                             <option value="">Select a reason...</option>
                             <option value="non_delivery">Non-Delivery</option>
                             <option value="quality_issue">Quality Issue</option>
@@ -348,19 +338,19 @@ require_once __DIR__ . '/../components/layout_start.php';
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Description</label>
-                        <textarea name="description" required rows="4" minlength="20" maxlength="5000" placeholder="Provide a detailed description of the issue (min 20 characters)..." class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white resize-none"></textarea>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Description</label>
+                        <textarea name="description" required rows="4" minlength="20" maxlength="5000" placeholder="Provide a detailed description of the issue (min 20 characters)..." class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white resize-none"></textarea>
                     </div>
                 </div>
                 <div class="px-6 pb-6 flex gap-3">
-                    <button type="button" onclick="closeDisputeModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="button" onclick="closeDisputeModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
                     <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold shadow-lg shadow-red-500/25">Submit Dispute</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
+</main>
 <script>
     var CSRF_TOKEN = '<?= generate_csrf_token() ?>';
     var BASE_URL = '/finalproject';
@@ -639,4 +629,4 @@ require_once __DIR__ . '/../components/layout_start.php';
         return false;
     }
 </script>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

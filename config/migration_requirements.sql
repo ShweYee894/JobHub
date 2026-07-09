@@ -299,8 +299,9 @@ CALL safe_add_column('payments', 'refund_reason',  'TEXT NULL AFTER `refund_amou
 CALL safe_add_column('payments', 'refunded_at',    'TIMESTAMP NULL AFTER `refund_reason`');
 CALL safe_add_column('payments', 'payment_method', "ENUM('wallet','stripe','paypal','bank_transfer') DEFAULT 'wallet' AFTER `status`");
 
--- chat_messages: read/delivered timestamps
-CALL safe_add_column('chat_messages', 'read_at',     'TIMESTAMP NULL AFTER `is_read`');
+-- chat_messages: payload for file attachments, read/delivered timestamps
+CALL safe_add_column('chat_messages', 'payload',     'JSON DEFAULT NULL AFTER `is_read`');
+CALL safe_add_column('chat_messages', 'read_at',     'TIMESTAMP NULL AFTER `payload`');
 CALL safe_add_column('chat_messages', 'delivered_at','TIMESTAMP NULL AFTER `read_at`');
 
 -- contracts: lifecycle management

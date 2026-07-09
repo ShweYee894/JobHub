@@ -232,28 +232,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$conn->close();
-
 $profileData = $user;
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
-    ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-];
 $pageTitle = 'My Profile';
 $pageSubtitle = 'Manage your personal and company information';
 $activePage = 'profile';
 $user = ['name' => $profileData['name'] ?? 'Client', 'profile_image' => $profileData['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
 
     <?php display_flash('success'); ?>
@@ -261,7 +248,7 @@ require_once __DIR__ . '/../components/layout_start.php';
     <?php display_flash('info'); ?>
 
     <?php if (!empty($errors)): ?>
-        <div class="bg-red-50 text-red-800 border border-red-200 rounded-xl p-4">
+        <div class="bg-red-50 text-red-800 border border-red-200 rounded-xl p-4 dark:bg-red-900/30 dark:text-red-200 dark:border-red-800">
             <div class="flex items-center gap-2 mb-2">
                 <i class="fas fa-exclamation-circle"></i>
                 <span class="font-semibold text-sm">Please fix the following errors:</span>
@@ -273,30 +260,31 @@ require_once __DIR__ . '/../components/layout_start.php';
             </ul>
         </div>
     <?php endif; ?>
-
+    <?php $conn->close(); ?>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
     <!-- ═══ PROFILE HEADER ═════════════════════════════════════════════ -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden fade-in" style="animation-delay:.2s">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden fade-in mb-6 dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.2s">
         <div class="h-32 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400"></div>
         <div class="px-6 pb-6">
             <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12">
                 <div class="relative group">
                     <img id="profilePreview"
                          src="<?= get_profile_image($profileData['profile_image']) ?>"
-                         class="w-24 h-24 rounded-2xl border-4 border-white object-cover shadow-lg"
+                         class="w-24 h-24 rounded-2xl border-4 border-white dark:border-gray-800 object-cover shadow-lg"
                          alt="Profile">
                     <label for="profileImageInput" class="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                         <i class="fas fa-camera text-white text-lg"></i>
                     </label>
                 </div>
                 <div class="sm:flex-1 text-center sm:text-left sm:pb-1">
-                    <h2 class="text-xl font-bold text-gray-900"><?= sanitize_string($profileData['name']) ?></h2>
-                    <p class="text-sm text-gray-400"><?= sanitize_string($profileData['email']) ?></p>
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white"><?= sanitize_string($profileData['name']) ?></h2>
+                    <p class="text-sm text-gray-400 dark:text-gray-500"><?= sanitize_string($profileData['email']) ?></p>
                 </div>
                 <div class="flex items-center gap-2 pb-1">
-                    <span class="px-3 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-200">
+                    <span class="px-3 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">
                         <i class="fas fa-crown mr-1"></i>Client
                     </span>
-                    <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-semibold border border-emerald-200">
+                    <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-semibold border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
                         <?= format_currency((float) $profileData['wallet_balance']) ?> wallet
                     </span>
                 </div>
@@ -310,9 +298,9 @@ require_once __DIR__ . '/../components/layout_start.php';
         <input type="hidden" name="action" value="update_profile">
 
         <!-- ── Personal Information ─────────────────────────────────── -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in" style="animation-delay:.25s">
-            <div class="p-6 border-b border-gray-100">
-                <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.25s">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-user text-blue-500"></i> Personal Information
                 </h3>
             </div>
@@ -320,59 +308,59 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <input type="file" id="profileImageInput" name="profile_image" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" onchange="previewImage(this, 'profilePreview')">
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Full Name <span class="text-red-400">*</span></label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Full Name <span class="text-red-400">*</span></label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-user text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-user text-sm"></i></span>
                         <input type="text" name="name" value="<?= sanitize_string($profileData['name']) ?>" required
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-envelope text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-envelope text-sm"></i></span>
                         <input type="email" value="<?= sanitize_string($profileData['email']) ?>" readonly
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed">
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Phone Number</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-phone text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-phone text-sm"></i></span>
                         <input type="tel" name="phone" value="<?= sanitize_string($profileData['phone'] ?? '') ?>"
                                placeholder="+1 (555) 000-0000"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Wallet Balance</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Wallet Balance</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-wallet text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-wallet text-sm"></i></span>
                         <input type="text" value="<?= format_currency((float) $profileData['wallet_balance']) ?>" readonly
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed">
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- ── Company Information ──────────────────────────────────── -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in" style="animation-delay:.3s">
-            <div class="p-6 border-b border-gray-100">
-                <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.3s">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-building text-cyan-500"></i> Company Information
                 </h3>
             </div>
             <div class="p-6 space-y-5">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Company Logo</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Logo</label>
                     <div class="flex items-center gap-4">
                         <div class="relative group flex-shrink-0">
                             <img id="logoPreview"
                                  src="<?= get_profile_image($client['company_logo'] ?? null) ?>"
-                                 class="w-16 h-16 rounded-xl border border-gray-200 object-cover"
+                                 class="w-16 h-16 rounded-xl border border-gray-200 dark:border-gray-600 object-cover"
                                  alt="Company Logo">
                             <label for="logoInput" class="absolute inset-0 rounded-xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                                 <i class="fas fa-camera text-white text-sm"></i>
@@ -380,74 +368,74 @@ require_once __DIR__ . '/../components/layout_start.php';
                         </div>
                         <div class="flex-1">
                             <input type="file" id="logoInput" name="company_logo" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" onchange="previewImage(this, 'logoPreview')">
-                            <label for="logoInput" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors">
+                            <label for="logoInput" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
                                 <i class="fas fa-upload text-xs"></i> Choose Logo
                             </label>
-                            <p class="text-[11px] text-gray-400 mt-1">JPG, PNG, WebP. Max 2MB.</p>
+                            <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">JPG, PNG, WebP. Max 2MB.</p>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Company Name</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Name</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-building text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-building text-sm"></i></span>
                         <input type="text" name="company_name" value="<?= sanitize_string($client['company_name'] ?? '') ?>"
                                placeholder="Your Company LLC"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Industry</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Industry</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-industry text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-industry text-sm"></i></span>
                         <input type="text" name="industry" value="<?= sanitize_string($client['industry'] ?? '') ?>"
                                placeholder="e.g. Technology, Healthcare, Finance"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Company Website</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Website</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-globe text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-globe text-sm"></i></span>
                         <input type="url" name="company_website" value="<?= sanitize_string($client['company_website'] ?? '') ?>"
                                placeholder="https://example.com"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Company Size</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Size</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-users text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-users text-sm"></i></span>
                         <select name="company_size"
-                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all appearance-none">
+                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all appearance-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                             <option value="">Select size</option>
                             <option value="Startup" <?= ($client['company_size'] ?? '') === 'Startup' ? 'selected' : '' ?>>Startup (1-10)</option>
                             <option value="Small" <?= ($client['company_size'] ?? '') === 'Small' ? 'selected' : '' ?>>Small (11-50)</option>
                             <option value="Medium" <?= ($client['company_size'] ?? '') === 'Medium' ? 'selected' : '' ?>>Medium (51-200)</option>
                             <option value="Large" <?= ($client['company_size'] ?? '') === 'Large' ? 'selected' : '' ?>>Large (200+)</option>
                         </select>
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none"><i class="fas fa-chevron-down text-xs"></i></span>
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none dark:text-gray-500"><i class="fas fa-chevron-down text-xs"></i></span>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Total Spending</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Total Spending</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-dollar-sign text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-dollar-sign text-sm"></i></span>
                         <input type="text" value="<?= format_currency((float) ($client['total_spent'] ?? 0)) ?>" readonly
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed">
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="2xl:col-span-2 fade-in" style="animation-delay:.35s">
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-sm text-gray-400">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between gap-4 dark:bg-gray-800 dark:border-gray-700">
+                <p class="text-sm text-gray-400 dark:text-gray-500">
                     <i class="fas fa-info-circle mr-1"></i> Changes will be reflected across the platform.
                 </p>
                 <button type="submit"
@@ -463,46 +451,46 @@ require_once __DIR__ . '/../components/layout_start.php';
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="change_password">
 
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-lock text-red-500"></i> Change Password
                 </h3>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Current Password <span class="text-red-400">*</span></label>
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Current Password <span class="text-red-400">*</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-key text-sm"></i></span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-key text-sm"></i></span>
                             <input type="password" name="current_password" required autocomplete="current-password"
-                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
-                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
+                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
                                 <i class="fas fa-eye text-sm"></i>
                             </button>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">New Password <span class="text-red-400">*</span></label>
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">New Password <span class="text-red-400">*</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-lock text-sm"></i></span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-lock text-sm"></i></span>
                             <input type="password" name="new_password" required autocomplete="new-password"
-                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
-                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
+                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
                                 <i class="fas fa-eye text-sm"></i>
                             </button>
                         </div>
-                        <p class="text-[11px] text-gray-400 mt-1">Min 8 chars, upper, lower, number.</p>
+                        <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Min 8 chars, upper, lower, number.</p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Confirm Password <span class="text-red-400">*</span></label>
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Confirm Password <span class="text-red-400">*</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-lock text-sm"></i></span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-lock text-sm"></i></span>
                             <input type="password" name="confirm_password" required autocomplete="new-password"
-                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
-                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
+                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
                                 <i class="fas fa-eye text-sm"></i>
                             </button>
                         </div>
@@ -511,14 +499,14 @@ require_once __DIR__ . '/../components/layout_start.php';
 
                 <div class="mt-5 flex justify-end">
                     <button type="submit"
-                            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors">
+                            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30">
                         <i class="fas fa-shield-alt"></i> Update Password
                     </button>
                 </div>
             </div>
         </div>
     </form>
-
+</main>
 <script>
 function previewImage(input, previewId) {
     if (input.files && input.files[0]) {
@@ -542,4 +530,4 @@ function togglePassword(btn) {
     }
 }
 </script>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

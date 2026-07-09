@@ -134,7 +134,7 @@ try {
     // 2. Insert into role-specific table
     if ($role === 'client') {
         $stmt = $conn->prepare(
-            'INSERT INTO clients (user_id, company_name, industry, total_spent, created_at)
+            'INSERT INTO clients (client_id, company_name, industry, total_spent, created_at)
              VALUES (?, ?, ?, 0.00, NOW())'
         );
         if (!$stmt) {
@@ -197,7 +197,7 @@ try {
     $conn->rollback();
     error_log('[JobHub] Registration error: ' . $e->getMessage());
 
-    $_SESSION['errors'] = ['A database error occurred during registration. Please try again.'];
+    $_SESSION['errors'] = ['Database error: ' . $e->getMessage()];
     header('Location: register.php');
     exit;
 }

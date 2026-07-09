@@ -44,7 +44,7 @@ if (!isset($_POST['room_id']) || !is_numeric($_POST['room_id'])) {
 $roomId = (int) $_POST['room_id'];
 
 // Validate message text
-if (!isset($_POST['message_text']) || trim($_POST['message_text']) === '') {
+if (!isset($_POST['message_text'])) {
     http_response_code(400);
     echo json_encode(['error' => 'Message text is required']);
     exit;
@@ -52,8 +52,13 @@ if (!isset($_POST['message_text']) || trim($_POST['message_text']) === '') {
 
 $messageText = trim($_POST['message_text']);
 
+// Allow empty text for file-only messages
+if ($messageText === '') {
+    $messageText = '';
+}
+
 // Reject messages exceeding 5000 characters
-if (mb_strlen($messageText) > 5000) {
+if ($messageText !== '' && mb_strlen($messageText) > 5000) {
     http_response_code(400);
     echo json_encode(['error' => 'Message too long (max 5000 characters)']);
     exit;
@@ -85,11 +90,19 @@ if ($result->num_rows === 0) {
 $stmt->close();
 
 // Insert the message
+$payloadJson = null;
+if (isset($_POST['payload']) && !empty($_POST['payload'])) {
+    $payloadData = json_decode($_POST['payload'], true);
+    if ($payloadData && isset($payloadData['path'])) {
+        $payloadJson = json_encode($payloadData);
+    }
+}
+
 $insStmt = $conn->prepare("
-    INSERT INTO chat_messages (room_id, sender_id, message_text, is_read, created_at)
-    VALUES (?, ?, ?, 0, NOW())
+    INSERT INTO chat_messages (room_id, sender_id, message_text, is_read, created_at, payload)
+    VALUES (?, ?, ?, 0, NOW(), ?)
 ");
-$insStmt->bind_param('iis', $roomId, $clientId, $messageText);
+$insStmt->bind_param('iiss', $roomId, $clientId, $messageText, $payloadJson);
 
 if (!$insStmt->execute()) {
     $insStmt->close();
@@ -115,6 +128,7 @@ $stmtGet = $conn->prepare("
         cm.message_text,
         cm.is_read,
         cm.created_at,
+        cm.payload,
         u.name AS sender_name,
         u.profile_image AS sender_image
     FROM chat_messages cm
@@ -127,6 +141,12 @@ $msgResult = $stmtGet->get_result();
 $newMessage = null;
 
 if ($row = $msgResult->fetch_assoc()) {
+    $payload = null;
+    if (!empty($row['payload'])) {
+        $decoded = json_decode($row['payload'], true);
+        $payload = $decoded ?: null;
+    }
+
     $newMessage = [
         'id'            => (int) $row['id'],
         'sender_id'     => (int) $row['sender_id'],
@@ -135,7 +155,7 @@ if ($row = $msgResult->fetch_assoc()) {
         'message_text'  => htmlspecialchars($row['message_text'], ENT_QUOTES, 'UTF-8'),
         'is_read'       => (int) $row['is_read'],
         'created_at'    => $row['created_at'],
-        'payload'       => null
+        'payload'       => $payload
     ];
 }
 $stmtGet->close();

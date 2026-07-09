@@ -85,29 +85,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $conn->close();
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
-    ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-];
 $pageTitle = 'Create Milestone';
 $pageSubtitle = 'Add a milestone to your contract';
 $activePage = 'contracts';
 $user = ['name' => $_SESSION['user_name'] ?? 'Client', 'profile_image' => $_SESSION['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
     <div class="max-w-2xl mx-auto w-full">
 
         <!-- Contract Summary -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6 fade-in">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 mb-6 fade-in">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
                     <i class="fas fa-handshake text-white"></i>
@@ -116,7 +105,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                     <a href="contract_detail.php?id=<?= $contractId ?>" class="text-xs text-blue-600 hover:text-blue-700 font-medium mb-1 inline-flex items-center gap-1">
                         <i class="fas fa-arrow-left text-[10px]"></i> Back to Contract
                     </a>
-                    <h3 class="text-sm font-bold text-gray-900 truncate"><?= sanitize_string($contract['job_title']) ?></h3>
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white truncate"><?= sanitize_string($contract['job_title']) ?></h3>
                     <div class="flex items-center gap-4 text-xs text-gray-400 mt-1">
                         <span class="flex items-center gap-1">
                             <i class="fas fa-wallet text-blue-400"></i>
@@ -132,8 +121,8 @@ require_once __DIR__ . '/../components/layout_start.php';
         </div>
 
         <!-- Form -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.1s">
-            <h3 class="text-base font-bold text-gray-900 mb-6 flex items-center gap-2">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 fade-in" style="animation-delay:.1s">
+            <h3 class="text-base font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                 <i class="fas fa-flag text-blue-500"></i> Milestone Details
             </h3>
 
@@ -155,26 +144,26 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <input type="hidden" name="contract_id" value="<?= $contractId ?>">
 
                 <div>
-                    <label for="title" class="block text-sm font-semibold text-gray-700 mb-2">Milestone Title</label>
+                    <label for="title" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Milestone Title</label>
                     <input type="text" id="title" name="title" value="<?= sanitize_string($title) ?>"
-                           class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white"
                            placeholder="e.g., Design mockups delivery" required maxlength="255">
                     <p class="text-xs text-gray-400 mt-1.5">A clear, descriptive name for this milestone</p>
                 </div>
 
                 <div>
-                    <label for="amount" class="block text-sm font-semibold text-gray-700 mb-2">Amount ($)</label>
+                    <label for="amount" class="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Amount ($)</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">$</span>
                         <input type="number" id="amount" name="amount" value="<?= sanitize_string($amount) ?>" step="0.01" min="0.01"
-                               class="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                               class="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white"
                                placeholder="0.00" required>
                     </div>
                     <p class="text-xs text-gray-400 mt-1.5">Maximum: <?= format_currency((float) $contract['total_budget'] - $totalExisting) ?></p>
                 </div>
 
                 <div class="flex items-center gap-3 pt-2">
-                    <a href="contract_detail.php?id=<?= $contractId ?>" class="px-6 py-3 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+                    <a href="contract_detail.php?id=<?= $contractId ?>" class="px-6 py-3 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                         Cancel
                     </a>
                     <button type="submit" class="btn-grad px-6 py-3 text-white rounded-xl text-sm font-bold">
@@ -184,4 +173,4 @@ require_once __DIR__ . '/../components/layout_start.php';
             </form>
         </div>
     </div>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

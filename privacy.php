@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,45 +11,151 @@
   <link href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons@3.3.1/css/all/all.min.css" rel="stylesheet">
   <script>
     tailwind.config = {
-      theme: { extend: {
-        fontFamily: { inter: ['Inter', 'sans-serif'] },
-        colors: {
-          primary: { DEFAULT: '#2563eb', dark: '#1d4ed8', light: '#3b82f6' },
-          accent: { DEFAULT: '#0ea5e9', dark: '#0284c7' },
-        },
-        animation: { 'float': 'float 3s ease-in-out infinite' },
-        keyframes: { float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } } }
-      }}
+      theme: {
+        extend: {
+          fontFamily: {
+            inter: ['Inter', 'sans-serif']
+          },
+          colors: {
+            primary: {
+              DEFAULT: '#2563eb',
+              dark: '#1d4ed8',
+              light: '#3b82f6'
+            },
+            accent: {
+              DEFAULT: '#0ea5e9',
+              dark: '#0284c7'
+            },
+          },
+          animation: {
+            'float': 'float 3s ease-in-out infinite'
+          },
+          keyframes: {
+            float: {
+              '0%,100%': {
+                transform: 'translateY(0)'
+              },
+              '50%': {
+                transform: 'translateY(-10px)'
+              }
+            }
+          }
+        }
+      }
     }
   </script>
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f8fafc; color: #1e293b; }
-    .grad-text { background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 60%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .btn-grad { background: linear-gradient(135deg, #2563eb, #0ea5e9); transition: opacity .25s, transform .2s; }
-    .btn-grad:hover { opacity: .88; transform: translateY(-2px); }
-    .nav-link { position: relative; }
-    .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, #2563eb, #0ea5e9); transition: width .3s ease; }
-    .nav-link:hover::after { width: 100%; }
-    .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .15; animation: float 6s ease-in-out infinite; }
-    #progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #2563eb, #0ea5e9, #6366f1); z-index: 9999; transition: width .1s; }
-    #mobile-menu { transition: max-height .35s ease, opacity .3s ease; max-height: 0; opacity: 0; overflow: hidden; }
-    #mobile-menu.open { max-height: 600px; opacity: 1; }
-    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s ease, transform .7s ease; }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    #navbar.scrolled { background: rgba(255,255,255,.95); backdrop-filter: blur(16px); box-shadow: 0 2px 20px rgba(0,0,0,.08); }
-    .toc-link.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: #f8fafc;
+      color: #1e293b;
+    }
+
+    .grad-text {
+      background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 60%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn-grad {
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      transition: opacity .25s, transform .2s;
+    }
+
+    .btn-grad:hover {
+      opacity: .88;
+      transform: translateY(-2px);
+    }
+
+    .nav-link {
+      position: relative;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #2563eb, #0ea5e9);
+      transition: width .3s ease;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: .15;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    #progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #2563eb, #0ea5e9, #6366f1);
+      z-index: 9999;
+      transition: width .1s;
+    }
+
+    #mobile-menu {
+      transition: max-height .35s ease, opacity .3s ease;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    #mobile-menu.open {
+      max-height: 600px;
+      opacity: 1;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #navbar.scrolled {
+      background: rgba(255, 255, 255, .95);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 2px 20px rgba(0, 0, 0, .08);
+    }
+
+    .toc-link.active {
+      color: #2563eb;
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
   </style>
 </head>
+
 <body>
   <div id="progress"></div>
 
   <!-- NAVBAR -->
   <nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 py-3 bg-white/80 backdrop-blur-md">
     <div class="w-full mx-auto px-4 sm:px-6 flex items-center justify-between">
-      <a href="index.php" class="flex items-center gap-2 group">
-        <span class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25"><i class="fi fi-brands-artstation text-white text-sm"></i></span>
-        <span class="text-xl font-extrabold tracking-tight"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
+      <a href="index.php" class="flex items-center gap-1.5 group shrink-0">
+        <img src="assets/upload/logos/logo.png" alt="Logo" class="w-[36px] h-[36px] rounded-xl">
+        <span class="text-lg font-extrabold tracking-tight">
+          <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
+        </span>
       </a>
       <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-500">
         <a href="index.php" class="nav-link hover:text-gray-900 transition-colors">Home</a>
@@ -119,11 +226,21 @@
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-database text-blue-600 text-sm"></i></span>Information We Collect</h2>
               <p class="text-gray-500 leading-relaxed mb-4">We collect information to provide and improve our services. The types of information we collect include:</p>
               <div class="space-y-3">
-                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Personal Information:</strong> <span class="text-gray-500">Name, email address, phone number, postal address, date of birth, and government-issued ID for verification purposes.</span></div></div>
-                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Profile Information:</strong> <span class="text-gray-500">Professional skills, portfolio items, work history, education, hourly rate, and profile photograph.</span></div></div>
-                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Financial Information:</strong> <span class="text-gray-500">Payment method details (credit card numbers, bank account information), billing address, and transaction history. Financial data is processed through our PCI-DSS compliant payment processors.</span></div></div>
-                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Usage Data:</strong> <span class="text-gray-500">IP address, browser type, device information, pages visited, time spent on pages, click patterns, and referral URLs.</span></div></div>
-                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Communications:</strong> <span class="text-gray-500">Messages sent through the platform, customer support inquiries, and feedback you provide.</span></div></div>
+                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Personal Information:</strong> <span class="text-gray-500">Name, email address, phone number, postal address, date of birth, and government-issued ID for verification purposes.</span></div>
+                </div>
+                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Profile Information:</strong> <span class="text-gray-500">Professional skills, portfolio items, work history, education, hourly rate, and profile photograph.</span></div>
+                </div>
+                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Financial Information:</strong> <span class="text-gray-500">Payment method details (credit card numbers, bank account information), billing address, and transaction history. Financial data is processed through our PCI-DSS compliant payment processors.</span></div>
+                </div>
+                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Usage Data:</strong> <span class="text-gray-500">IP address, browser type, device information, pages visited, time spent on pages, click patterns, and referral URLs.</span></div>
+                </div>
+                <div class="flex items-start gap-3"><i class="fas fa-check text-green-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Communications:</strong> <span class="text-gray-500">Messages sent through the platform, customer support inquiries, and feedback you provide.</span></div>
+                </div>
               </div>
             </div>
 
@@ -157,10 +274,18 @@
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-cookie text-yellow-600 text-sm"></i></span>Cookies</h2>
               <p class="text-gray-500 leading-relaxed mb-4">We use cookies and similar technologies to enhance your experience on JobHub:</p>
               <div class="space-y-3">
-                <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Essential Cookies</strong><p class="text-gray-400 text-xs mt-1">Required for the platform to function (authentication, security, session management).</p></div>
-                <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Analytics Cookies</strong><p class="text-gray-400 text-xs mt-1">Help us understand how users interact with the platform (Google Analytics, Mixpanel).</p></div>
-                <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Marketing Cookies</strong><p class="text-gray-400 text-xs mt-1">Used to deliver relevant advertisements and track campaign performance.</p></div>
-                <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Preference Cookies</strong><p class="text-gray-400 text-xs mt-1">Remember your settings and preferences (language, currency, theme).</p></div>
+                <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Essential Cookies</strong>
+                  <p class="text-gray-400 text-xs mt-1">Required for the platform to function (authentication, security, session management).</p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Analytics Cookies</strong>
+                  <p class="text-gray-400 text-xs mt-1">Help us understand how users interact with the platform (Google Analytics, Mixpanel).</p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Marketing Cookies</strong>
+                  <p class="text-gray-400 text-xs mt-1">Used to deliver relevant advertisements and track campaign performance.</p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4"><strong class="text-gray-900 text-sm">Preference Cookies</strong>
+                  <p class="text-gray-400 text-xs mt-1">Remember your settings and preferences (language, currency, theme).</p>
+                </div>
               </div>
               <p class="text-gray-500 leading-relaxed mt-4">You can manage cookie preferences through your browser settings. Disabling essential cookies may affect platform functionality.</p>
             </div>
@@ -169,10 +294,30 @@
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-shield-alt text-green-600 text-sm"></i></span>Data Security</h2>
               <p class="text-gray-500 leading-relaxed mb-4">We implement industry-standard security measures to protect your personal information:</p>
               <div class="grid sm:grid-cols-2 gap-4">
-                <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4"><i class="fas fa-lock text-green-600 mt-0.5 flex-shrink-0"></i><div><p class="text-sm font-semibold text-gray-900">Encryption</p><p class="text-xs text-gray-400">AES-256 at rest, TLS 1.3 in transit</p></div></div>
-                <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4"><i class="fas fa-server text-green-600 mt-0.5 flex-shrink-0"></i><div><p class="text-sm font-semibold text-gray-900">Infrastructure</p><p class="text-xs text-gray-400">SOC 2 certified data centers</p></div></div>
-                <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4"><i class="fas fa-user-shield text-green-600 mt-0.5 flex-shrink-0"></i><div><p class="text-sm font-semibold text-gray-900">Access Controls</p><p class="text-xs text-gray-400">Role-based access, MFA for employees</p></div></div>
-                <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4"><i class="fas fa-bug text-green-600 mt-0.5 flex-shrink-0"></i><div><p class="text-sm font-semibold text-gray-900">Monitoring</p><p class="text-xs text-gray-400">24/7 intrusion detection systems</p></div></div>
+                <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4"><i class="fas fa-lock text-green-600 mt-0.5 flex-shrink-0"></i>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900">Encryption</p>
+                    <p class="text-xs text-gray-400">AES-256 at rest, TLS 1.3 in transit</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4"><i class="fas fa-server text-green-600 mt-0.5 flex-shrink-0"></i>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900">Infrastructure</p>
+                    <p class="text-xs text-gray-400">SOC 2 certified data centers</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4"><i class="fas fa-user-shield text-green-600 mt-0.5 flex-shrink-0"></i>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900">Access Controls</p>
+                    <p class="text-xs text-gray-400">Role-based access, MFA for employees</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-4"><i class="fas fa-bug text-green-600 mt-0.5 flex-shrink-0"></i>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900">Monitoring</p>
+                    <p class="text-xs text-gray-400">24/7 intrusion detection systems</p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -180,11 +325,21 @@
               <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-balance-scale text-indigo-600 text-sm"></i></span>Your Rights</h2>
               <p class="text-gray-500 leading-relaxed mb-4">You have the following rights regarding your personal data under GDPR and CCPA:</p>
               <div class="space-y-3">
-                <div class="flex items-start gap-3"><i class="fas fa-eye text-indigo-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Right to Access:</strong> <span class="text-gray-500">Request a copy of all personal data we hold about you.</span></div></div>
-                <div class="flex items-start gap-3"><i class="fas fa-edit text-indigo-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Right to Rectification:</strong> <span class="text-gray-500">Request correction of inaccurate or incomplete data.</span></div></div>
-                <div class="flex items-start gap-3"><i class="fas fa-trash text-indigo-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Right to Erasure:</strong> <span class="text-gray-500">Request deletion of your personal data ("right to be forgotten").</span></div></div>
-                <div class="flex items-start gap-3"><i class="fas fa-download text-indigo-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Right to Portability:</strong> <span class="text-gray-500">Receive your data in a structured, machine-readable format.</span></div></div>
-                <div class="flex items-start gap-3"><i class="fas fa-ban text-indigo-500 mt-1 flex-shrink-0"></i><div><strong class="text-gray-900">Right to Opt-Out:</strong> <span class="text-gray-500">Opt out of marketing communications at any time.</span></div></div>
+                <div class="flex items-start gap-3"><i class="fas fa-eye text-indigo-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Right to Access:</strong> <span class="text-gray-500">Request a copy of all personal data we hold about you.</span></div>
+                </div>
+                <div class="flex items-start gap-3"><i class="fas fa-edit text-indigo-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Right to Rectification:</strong> <span class="text-gray-500">Request correction of inaccurate or incomplete data.</span></div>
+                </div>
+                <div class="flex items-start gap-3"><i class="fas fa-trash text-indigo-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Right to Erasure:</strong> <span class="text-gray-500">Request deletion of your personal data ("right to be forgotten").</span></div>
+                </div>
+                <div class="flex items-start gap-3"><i class="fas fa-download text-indigo-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Right to Portability:</strong> <span class="text-gray-500">Receive your data in a structured, machine-readable format.</span></div>
+                </div>
+                <div class="flex items-start gap-3"><i class="fas fa-ban text-indigo-500 mt-1 flex-shrink-0"></i>
+                  <div><strong class="text-gray-900">Right to Opt-Out:</strong> <span class="text-gray-500">Opt out of marketing communications at any time.</span></div>
+                </div>
               </div>
             </div>
 
@@ -210,9 +365,11 @@
     <div class="max-w-7xl mx-auto">
       <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-14">
         <div class="lg:col-span-2">
-          <a href="index.php" class="flex items-center gap-2 mb-5">
-            <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25"><i class="fi fi-brands-artstation text-white text-sm"></i></div>
-            <span class="text-xl font-extrabold"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
+          <a href="index.php" class="flex items-center gap-1.5 group shrink-0">
+            <img src="assets/upload/logos/logo.png" alt="Logo" class="w-[36px] h-[36px] rounded-xl">
+            <span class="text-lg font-extrabold tracking-tight">
+              <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
+            </span>
           </a>
           <p class="text-gray-400 text-sm leading-relaxed mb-6 max-w-xs">The world's most trusted marketplace for top freelancers and innovative clients. Work smarter, together.</p>
           <div class="flex gap-3">
@@ -276,15 +433,25 @@
       checkReveal();
       updateToc();
     });
-    document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('mobile-menu').classList.toggle('open'); });
-    document.querySelectorAll('#mobile-menu a').forEach(a => { a.addEventListener('click', () => document.getElementById('mobile-menu').classList.remove('open')); });
+    document.getElementById('hamburger').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('open');
+    });
+    document.querySelectorAll('#mobile-menu a').forEach(a => {
+      a.addEventListener('click', () => document.getElementById('mobile-menu').classList.remove('open'));
+    });
     const reveals = document.querySelectorAll('.reveal');
-    function checkReveal() { reveals.forEach(el => { if (el.getBoundingClientRect().top < window.innerHeight - 80) el.classList.add('visible'); }); }
+
+    function checkReveal() {
+      reveals.forEach(el => {
+        if (el.getBoundingClientRect().top < window.innerHeight - 80) el.classList.add('visible');
+      });
+    }
     checkReveal();
 
     // TOC active state
     const tocLinks = document.querySelectorAll('.toc-link');
     const sections = ['collection', 'usage', 'sharing', 'cookies', 'security', 'rights', 'contact'];
+
     function updateToc() {
       let current = '';
       sections.forEach(id => {
@@ -300,9 +467,13 @@
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const target = document.querySelector(link.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (target) target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
       });
     });
   </script>
 </body>
+
 </html>

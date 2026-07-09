@@ -90,11 +90,6 @@ function check_contract_completion(int $contractId): void {
         $stmt->bind_param('ii', $contractId, $contractId);
         $stmt->execute();
         $stmt->close();
-
-        $stmt = $conn->prepare('UPDATE freelancers SET completed_jobs = completed_jobs + 1, total_earnings = total_earnings + (SELECT COALESCE(SUM(freelancer_net), 0) FROM payments p JOIN milestones m ON p.milestone_id = m.id WHERE m.contract_id = ? AND p.status = \'completed\') WHERE user_id = (SELECT freelancer_id FROM contracts WHERE id = ?)');
-        $stmt->bind_param('ii', $contractId, $contractId);
-        $stmt->execute();
-        $stmt->close();
     }
 }
 
@@ -240,19 +235,16 @@ switch ($action) {
 
         $conn->begin_transaction();
         try {
-            $dueDateSql = !empty($dueDate) ? "'{$dueDate}'" : 'NULL';
-            $stmt = $conn->prepare("INSERT INTO milestones (contract_id, title, amount, description, due_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, {$dueDateSql}, 'pending', NOW(), NOW())");
-            $stmt->bind_param('isd', $contractId, $title, $amount);
+            if (!empty($dueDate)) {
+                $stmt = $conn->prepare('INSERT INTO milestones (contract_id, title, amount, description, due_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, \'pending\', NOW(), NOW())');
+                $stmt->bind_param('isdss', $contractId, $title, $amount, $description, $dueDate);
+            } else {
+                $stmt = $conn->prepare('INSERT INTO milestones (contract_id, title, amount, description, status, created_at, updated_at) VALUES (?, ?, ?, ?, \'pending\', NOW(), NOW())');
+                $stmt->bind_param('isd', $contractId, $title, $amount, $description);
+            }
             $stmt->execute();
             $newId = $conn->insert_id;
             $stmt->close();
-
-            if (!empty($description)) {
-                $stmt = $conn->prepare('UPDATE milestones SET description = ? WHERE id = ?');
-                $stmt->bind_param('si', $description, $newId);
-                $stmt->execute();
-                $stmt->close();
-            }
 
             $conn->commit();
 
@@ -530,12 +522,6 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
 
-            $stmt = $conn->prepare('INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at) VALUES (NULL, \'platform_fee\', ?, 0, ?, \'milestone\', ?, NOW())');
-            $feeDesc = 'Platform fee from milestone #' . $milestoneId;
-            $stmt->bind_param('dis', $platformFee, $milestoneId, $feeDesc);
-            $stmt->execute();
-            $stmt->close();
-
             check_contract_completion((int) $milestone['contract_id']);
 
             $conn->commit();
@@ -648,32 +634,52 @@ switch ($action) {
                 $stmt->close();
 
                 $milestoneTitle = $milestone['title'];
-                $stmt = $conn->prepare('INSERT INTO payments (milestone_id, client_id, freelancer_id, total_amount, platform_fee, freelancer_net, status, created_at) VALUES (?, ?, ?, ?, ?, ?, \'completed\', NOW())');
+                $stmt = $conn->prepare('INSERT INTO payments (milestone_id, payer_id, payee_id, total_amount, platform_fee, freelancer_net, status, created_at) VALUES (?, ?, ?, ?, ?, ?, \'completed\', NOW())');
                 $stmt->bind_param('iiiddd', $milestoneId, $milestone['client_id'], $milestone['freelancer_id'], $amount, $platformFee, $freelancerNet);
                 $stmt->execute();
                 $stmt->close();
 
                 $paymentId = $conn->insert_id;
 
+                // Credit freelancer wallet
+                $freelancerId = (int) $milestone['freelancer_id'];
+                $stmt = $conn->prepare('SELECT wallet_balance FROM users WHERE id = ?');
+                $stmt->bind_param('i', $freelancerId);
+                $stmt->execute();
+                $freelancerBalance = (float) $stmt->get_result()->fetch_assoc()['wallet_balance'];
+                $stmt->close();
+
+                $newFreelancerBalance = round($freelancerBalance + $freelancerNet, 2);
+                $stmt = $conn->prepare('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?');
+                $stmt->bind_param('di', $freelancerNet, $freelancerId);
+                $stmt->execute();
+                $stmt->close();
+
                 $freelancerNetFmt = number_format($freelancerNet, 2, '.', '');
-                $stmt = $conn->prepare('UPDATE freelancers SET total_earnings = total_earnings + ? WHERE user_id = ?');
-                $stmt->bind_param('di', $freelancerNetFmt, $milestone['freelancer_id']);
-                $stmt->execute();
-                $stmt->close();
-
-                $stmt = $conn->prepare('INSERT INTO wallet_transactions (user_id, type, amount, reference_id, reference_type, description, created_at) VALUES (?, \'credit\', ?, ?, \'payment\', ?, NOW())');
+                $stmt = $conn->prepare('INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at) VALUES (?, \'escrow_release\', ?, ?, ?, \'payment\', ?, NOW())');
                 $desc = 'Milestone payment released (Admin resolution): ' . $milestoneTitle;
-                $stmt->bind_param('idds', $milestone['freelancer_id'], $freelancerNet, $paymentId, $desc);
+                $stmt->bind_param('iddis', $freelancerId, $freelancerNet, $newFreelancerBalance, $paymentId, $desc);
                 $stmt->execute();
                 $stmt->close();
 
-                // Update wallet balance
-                $stmt = $conn->prepare('UPDATE freelancers SET total_earnings = total_earnings WHERE user_id = ?');
-                $stmt->bind_param('i', $milestone['freelancer_id']);
-                $stmt->execute();
-                $stmt->close();
+                // Log to user_behavior_logs
+                $payload = json_encode([
+                    'milestone_id'   => $milestoneId,
+                    'freelancer_id'  => $freelancerId,
+                    'gross_amount'   => $amount,
+                    'platform_fee'   => $platformFee,
+                    'freelancer_net' => $freelancerNet,
+                    'old_balance'    => $freelancerBalance,
+                    'new_balance'    => $newFreelancerBalance,
+                    'resolution'     => 'release',
+                ]);
+                $ip = get_ip_address();
+                $logStmt = $conn->prepare('INSERT INTO user_behavior_logs (user_id, action_type, ip_address, payload, created_at) VALUES (?, \'admin_dispute_release\', ?, ?, NOW())');
+                $logStmt->bind_param('iss', $freelancerId, $ip, $payload);
+                $logStmt->execute();
+                $logStmt->close();
 
-                $stmt = $conn->prepare('UPDATE clients SET total_spent = total_spent + ? WHERE user_id = ?');
+                $stmt = $conn->prepare('UPDATE clients SET total_spent = total_spent + ? WHERE client_id = ?');
                 $stmt->bind_param('di', $amount, $milestone['client_id']);
                 $stmt->execute();
                 $stmt->close();
@@ -684,13 +690,57 @@ switch ($action) {
                 json_response(['success' => true, 'message' => 'Dispute resolved. Payment released to freelancer.']);
             } else {
                 // Refund client
+                $clientId = (int) $milestone['client_id'];
+                $amount = (float) $milestone['amount'];
+
+                // Credit client wallet
+                $stmt = $conn->prepare('SELECT wallet_balance FROM users WHERE id = ?');
+                $stmt->bind_param('i', $clientId);
+                $stmt->execute();
+                $clientBalance = (float) $stmt->get_result()->fetch_assoc()['wallet_balance'];
+                $stmt->close();
+
+                $newClientBalance = round($clientBalance + $amount, 2);
+                $stmt = $conn->prepare('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?');
+                $stmt->bind_param('di', $amount, $clientId);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update milestone status to pending
                 $stmt = $conn->prepare('UPDATE milestones SET status = \'pending\', updated_at = NOW() WHERE id = ?');
                 $stmt->bind_param('i', $milestoneId);
                 $stmt->execute();
                 $stmt->close();
 
+                // Update payment status to refunded
+                $stmt = $conn->prepare("UPDATE payments SET status = 'refunded', refund_amount = ?, refunded_at = NOW() WHERE milestone_id = ? AND status = 'completed'");
+                $stmt->bind_param('di', $amount, $milestoneId);
+                $stmt->execute();
+                $stmt->close();
+
+                // Log wallet transaction
+                $stmt = $conn->prepare('INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at) VALUES (?, \'refund\', ?, ?, ?, \'milestone\', ?, NOW())');
+                $desc = 'Refund for milestone #' . $milestoneId . ' (Dispute resolved)';
+                $stmt->bind_param('iddis', $clientId, $amount, $newClientBalance, $milestoneId, $desc);
+                $stmt->execute();
+                $stmt->close();
+
+                // Log to user_behavior_logs
+                $payload = json_encode([
+                    'milestone_id' => $milestoneId,
+                    'amount'       => $amount,
+                    'old_balance'  => $clientBalance,
+                    'new_balance'  => $newClientBalance,
+                    'resolution'   => 'refund',
+                ]);
+                $ip = get_ip_address();
+                $logStmt = $conn->prepare('INSERT INTO user_behavior_logs (user_id, action_type, ip_address, payload, created_at) VALUES (?, \'admin_dispute_refund\', ?, ?, NOW())');
+                $logStmt->bind_param('iss', $clientId, $ip, $payload);
+                $logStmt->execute();
+                $logStmt->close();
+
                 $conn->commit();
-                json_response(['success' => true, 'message' => 'Dispute resolved. Milestone refunded to client.']);
+                json_response(['success' => true, 'message' => 'Dispute resolved. Refund of ' . format_currency($amount) . ' returned to client wallet.']);
             }
         } catch (Exception $e) {
             $conn->rollback();

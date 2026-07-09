@@ -19,12 +19,6 @@ function renderStatCard(
     int $delay = 0
 ): void {
     $colors = [
-        // 'blue'    => ['bg' => '#EEF5FF', 'icon' => '#2563EB', 'text' => '#2563EB', 'border' => '#2563EB'],
-        // 'emerald' => ['bg' => '#ECFDF5', 'icon' => '#059669', 'text' => '#059669', 'border' => '#059669'],
-        // 'purple'  => ['bg' => '#F5F3FF', 'icon' => '#7C3AED', 'text' => '#7C3AED', 'border' => '#7C3AED'],
-        // 'orange'  => ['bg' => '#FFF7ED', 'icon' => '#EA580C', 'text' => '#EA580C', 'border' => '#EA580C'],
-        // 'cyan'    => ['bg' => '#ECFEFF', 'icon' => '#0891B2', 'text' => '#0891B2', 'border' => '#0891B2'],
-        // 'rose'    => ['bg' => '#FFF1F2', 'icon' => '#E11D48', 'text' => '#E11D48', 'border' => '#E11D48'],
         'blue' => ['bg' => '238, 245, 255', 'icon' => '#2563EB', 'text' => '#2563EB', 'border' => '#2563EB'],
         'emerald' => ['bg' => '236, 253, 245', 'icon' => '#059669', 'text' => '#059669', 'border' => '#059669'],
         'purple' => ['bg' => '245, 243, 255', 'icon' => '#7C3AED', 'text' => '#7C3AED', 'border' => '#7C3AED'],

@@ -1,3 +1,17 @@
+<?php
+require_once __DIR__ . '/config/helpers.php';
+require_once __DIR__ . '/auth/auth.php';
+$_ixLoggedIn = isset($_SESSION['user_id']);
+$_ixAvatar = $_ixLoggedIn ? get_profile_image($_SESSION['profile_image'] ?? null) : '';
+$_ixName = $_ixLoggedIn ? ($_SESSION['user_name'] ?? 'User') : '';
+$_ixRole = $_ixLoggedIn ? ($_SESSION['user_role'] ?? '') : '';
+$_ixDash = match ($_ixRole) {
+  'admin' => 'admin/dashboard.php',
+  'client' => 'client/dashboard.php',
+  'freelancer' => 'freelancer/home.php',
+  default => 'index.php'
+};
+?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 
@@ -241,6 +255,24 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
     }
 
+    /* ── Profile popup ── */
+    .profile-popup {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(15,23,42,.15);
+      min-width: 220px;
+      z-index: 50;
+      overflow: hidden;
+    }
+    .profile-popup.show {
+      display: block;
+    }
+
     /* ── Search dropdown styles ── */
     #searchBar {
       background: #ffffff;
@@ -311,10 +343,34 @@
         </div>
 
 
-        <!-- Auth buttons -->
+        <!-- Auth buttons / Profile -->
         <div class="hidden lg:flex items-center gap-3">
+          <?php if ($_ixLoggedIn): ?>
+          <div class="relative" id="navProfileDropdown">
+            <button onclick="document.getElementById('navProfileDropdown').querySelector('.profile-popup').classList.toggle('show')" class="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-gray-100 transition-all">
+              <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-9 h-9 rounded-xl object-cover border-2 border-gray-100" alt="Avatar">
+              <!-- <span class="text-sm font-semibold text-gray-900 max-w-[100px] truncate"><?= htmlspecialchars($_ixName) ?></span> -->
+            </button>
+            <div class="profile-popup">
+              <div class="p-4 border-b border-gray-100">
+                <p class="text-sm font-bold text-gray-900"><?= htmlspecialchars($_ixName) ?></p>
+                <p class="text-xs text-gray-400 mt-0.5 capitalize"><?= htmlspecialchars($_ixRole) ?></p>
+              </div>
+              <div class="py-1">
+                <a href="<?= $_ixDash ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"><i class="fas fa-th-large w-4 text-center"></i> Dashboard</a>
+                <?php if ($_ixRole === 'freelancer'): ?>
+                <a href="freelancer/profile.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"><i class="fas fa-user w-4 text-center"></i> My Profile</a>
+                <?php endif; ?>
+              </div>
+              <div class="border-t border-gray-100 py-1">
+                <a href="auth/logout.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"><i class="fas fa-sign-out-alt w-4 text-center"></i> Logout</a>
+              </div>
+            </div>
+          </div>
+          <?php else: ?>
           <a href="auth/login.php" class="text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-primary px-4 py-2 rounded-lg transition-all">Log In</a>
           <a href="auth/register.php" class="btn-grad text-sm font-semibold text-white px-5 py-2 rounded-lg shadow-lg shadow-blue-500/25">Sign Up</a>
+          <?php endif; ?>
         </div>
       </div>
       <!-- Hamburger -->
@@ -334,8 +390,16 @@
         <a href="#pricing" class="hover:text-gray-900 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors">💰 Pricing</a>
         <!-- <a href="#footer" class="hover:text-gray-900 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors">📬 Contact</a> -->
         <hr class="border-gray-100 my-1" />
-        <a href="auth/login.php" class="hover:text-gray-900 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors">🔑 Log In</a>
-        <a href="auth/register.php" class="btn-grad text-white text-center py-2 px-3 rounded-lg mt-1">🚀 Sign Up</a>
+        <?php if ($_ixLoggedIn): ?>
+        <a href="<?= $_ixDash ?>" class="flex items-center gap-3 hover:text-gray-900 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors">
+          <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-7 h-7 rounded-full object-cover border border-gray-200" alt="Avatar">
+          <span class="font-semibold"><?= htmlspecialchars($_ixName) ?></span>
+        </a>
+        <a href="auth/logout.php" class="hover:text-red-500 py-2 px-3 rounded-lg hover:bg-red-50 transition-colors text-red-500"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+        <?php else: ?>
+        <a href="auth/login.php" class="hover:text-gray-900 py-2 px-3 rounded-lg hover:bg-gray-50 transition-colors">Log In</a>
+        <a href="auth/register.php" class="btn-grad text-white text-center py-2 px-3 rounded-lg mt-1">Sign Up</a>
+        <?php endif; ?>
       </div>
     </div>
   </nav>
@@ -412,7 +476,7 @@
         <div class="hidden lg:block relative w-full max-w-xl mx-auto">
 
           <!-- Main image asset -->
-          <img src="assets/upload/logos/download.png" alt="Freelancer" class="w-full h-auto object-contain block mx-auto">
+          <img src="assets/upload/logos/freelancer.png" alt="Freelancer" class="w-full h-auto object-contain block mx-auto">
 
           <!-- Left Side Badge ($4,500 Deposited) -->
           <!-- Shifted down to "top-[45%]" to sit right next to her arm/elbow exactly like your layout image -->
@@ -1555,6 +1619,15 @@
     // ── Close mobile menu on link click ──
     document.querySelectorAll('#mobile-menu a').forEach(a => {
       a.addEventListener('click', () => document.getElementById('mobile-menu').classList.remove('open'));
+    });
+
+    // ── Profile dropdown close on outside click ──
+    document.addEventListener('click', function(e) {
+      const pd = document.getElementById('navProfileDropdown');
+      if (pd && !pd.contains(e.target)) {
+        const popup = pd.querySelector('.profile-popup');
+        if (popup) popup.classList.remove('show');
+      }
     });
 
 

@@ -84,28 +84,17 @@ $statusColors = [
     'disputed' => 'bg-red-50 text-red-600 border border-red-200',
 ];
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'my_jobs', 'label' => 'My Jobs', 'url' => 'my_jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'post_job', 'label' => 'Post a Job', 'url' => 'post_job.php', 'icon' => 'fa-plus-circle'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'recommended_freelancers', 'label' => 'Find Freelancers', 'url' => 'recommended_freelancers.php', 'icon' => 'fa-search'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'fa-star'],
-    ['key' => 'payment_history', 'label' => 'Payments', 'url' => 'payment_history.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-];
 $pageTitle = 'Review Proposal – JobHub';
 $pageSubtitle = 'Review proposal from ' . sanitize_string($proposal['freelancer_name']);
 $activePage = 'proposals';
 $user = ['name' => $user['name'] ?? 'Client', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
     <?php display_flash('success');
     display_flash('error'); ?>
-
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
     <div class="flex flex-col xl:flex-row gap-6">
 
         <div class="flex-1 min-w-0 space-y-6">
@@ -292,4 +281,5 @@ require_once __DIR__ . '/../components/layout_start.php';
             </a>
         </div>
     </div>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+</main>
+<?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

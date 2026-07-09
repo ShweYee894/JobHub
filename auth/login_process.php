@@ -152,7 +152,7 @@ if ($log_stmt) {
 $redirect = match ($user['role']) {
     'admin' => '../admin/dashboard.php',
     'client' => '../client/dashboard.php',
-    'freelancer' => '../freelancer/dashboard.php',
+    'freelancer' => '../freelancer/home.php',
     default => '../index.php',
 };
 

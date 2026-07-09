@@ -36,6 +36,16 @@ switch ($action) {
             json_response(['success' => false, 'message' => 'action_type is required.'], 400);
         }
 
+        // Verify user exists
+        $userCheck = $conn->prepare('SELECT id FROM users WHERE id = ?');
+        $userCheck->bind_param('i', $userId);
+        $userCheck->execute();
+        if (!$userCheck->get_result()->fetch_assoc()) {
+            $userCheck->close();
+            json_response(['success' => false, 'message' => 'User not found.'], 404);
+        }
+        $userCheck->close();
+
         $stmt = $conn->prepare(
             'INSERT INTO user_behavior_logs (user_id, action_type, ip_address, payload, created_at) VALUES (?, ?, ?, ?, NOW())'
         );

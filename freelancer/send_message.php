@@ -39,15 +39,19 @@ if (!isset($_POST['room_id']) || !is_numeric($_POST['room_id'])) {
 }
 $roomId = (int) $_POST['room_id'];
 
-if (!isset($_POST['message_text']) || trim($_POST['message_text']) === '') {
+if (!isset($_POST['message_text'])) {
     http_response_code(400);
-    echo json_encode(['error' => 'Message cannot be empty']);
+    echo json_encode(['error' => 'Message text is required']);
     exit;
 }
 
 $messageText = trim($_POST['message_text']);
 
-if (mb_strlen($messageText) > 5000) {
+if ($messageText === '') {
+    $messageText = '';
+}
+
+if ($messageText !== '' && mb_strlen($messageText) > 5000) {
     http_response_code(400);
     echo json_encode(['error' => 'Message too long (max 5000 characters)']);
     exit;
@@ -77,11 +81,19 @@ if ($result->num_rows === 0) {
 $stmt->close();
 
 // Insert message
+$payloadJson = null;
+if (isset($_POST['payload']) && !empty($_POST['payload'])) {
+    $payloadData = json_decode($_POST['payload'], true);
+    if ($payloadData && isset($payloadData['path'])) {
+        $payloadJson = json_encode($payloadData);
+    }
+}
+
 $insStmt = $conn->prepare("
-    INSERT INTO chat_messages (room_id, sender_id, message_text, is_read, created_at)
-    VALUES (?, ?, ?, 0, NOW())
+    INSERT INTO chat_messages (room_id, sender_id, message_text, is_read, created_at, payload)
+    VALUES (?, ?, ?, 0, NOW(), ?)
 ");
-$insStmt->bind_param('iis', $roomId, $freelancerId, $messageText);
+$insStmt->bind_param('iiss', $roomId, $freelancerId, $messageText, $payloadJson);
 
 if (!$insStmt->execute()) {
     $insStmt->close();

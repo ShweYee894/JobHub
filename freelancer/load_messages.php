@@ -53,7 +53,7 @@ $msgStmt = $conn->prepare("
     FROM chat_messages cm
     JOIN users u ON cm.sender_id = u.id
     WHERE cm.room_id = ?
-    ORDER BY cm.created_at ASC
+    ORDER BY cm.id ASC
 ");
 $msgStmt->bind_param('i', $roomId);
 $msgStmt->execute();

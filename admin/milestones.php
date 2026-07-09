@@ -79,10 +79,8 @@ $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 $countSql = "SELECT COUNT(*) AS cnt
              FROM milestones m
              JOIN contracts ct ON m.contract_id = ct.id
-             JOIN clients cl ON ct.client_id = cl.id
-             JOIN users cu ON cl.user_id = cu.id
-             JOIN freelancers fr ON ct.freelancer_id = fr.id
-             JOIN users fu ON fr.user_id = fu.id
+             JOIN users cu ON ct.client_id = cu.id
+             JOIN users fu ON ct.freelancer_id = fu.id
              $whereSql";
 $countStmt = $conn->prepare($countSql);
 if ($bindTypes) $countStmt->bind_param($bindTypes, ...$params);
@@ -102,10 +100,8 @@ $querySql = "SELECT m.id, m.title, m.amount, m.status, m.due_date, m.submission_
                     j.title AS job_title
              FROM milestones m
              JOIN contracts ct ON m.contract_id = ct.id
-             JOIN clients cl ON ct.client_id = cl.id
-             JOIN users cu ON cl.user_id = cu.id
-             JOIN freelancers fr ON ct.freelancer_id = fr.id
-             JOIN users fu ON fr.user_id = fu.id
+             JOIN users cu ON ct.client_id = cu.id
+             JOIN users fu ON ct.freelancer_id = fu.id
              JOIN jobs j ON ct.job_id = j.id
              $whereSql
              ORDER BY FIELD(m.status, 'disputed', 'submitted', 'funded_in_escrow', 'pending', 'released'), m.created_at DESC
@@ -189,61 +185,61 @@ require_once __DIR__ . '/../components/layout_start.php';
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center"><i class="fas fa-tasks text-blue-600"></i></div>
+                <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"><i class="fas fa-tasks text-blue-600"></i></div>
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Total</span>
             </div>
-            <p class="text-2xl font-extrabold text-gray-900"><?= $stats['total'] ?></p>
+            <p class="text-2xl font-extrabold text-gray-900 dark:text-white"><?= $stats['total'] ?></p>
         </div>
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center"><i class="fas fa-paper-plane text-amber-600"></i></div>
+                <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><i class="fas fa-paper-plane text-amber-600"></i></div>
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Awaiting Review</span>
             </div>
-            <p class="text-2xl font-extrabold text-gray-900"><?= $stats['submitted'] ?></p>
+            <p class="text-2xl font-extrabold text-gray-900 dark:text-white"><?= $stats['submitted'] ?></p>
         </div>
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center"><i class="fas fa-check-circle text-emerald-600"></i></div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"><i class="fas fa-check-circle text-emerald-600"></i></div>
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Released</span>
             </div>
-            <p class="text-2xl font-extrabold text-gray-900"><?= $stats['released'] ?></p>
+            <p class="text-2xl font-extrabold text-gray-900 dark:text-white"><?= $stats['released'] ?></p>
             <p class="text-xs text-gray-400 mt-1"><?= format_currency($stats['released_total']) ?> paid out</p>
         </div>
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center"><i class="fas fa-flag text-red-600"></i></div>
+                <div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center"><i class="fas fa-flag text-red-600"></i></div>
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Disputes</span>
             </div>
-            <p class="text-2xl font-extrabold <?= $stats['disputed'] > 0 ? 'text-red-600' : 'text-gray-900' ?>"><?= $stats['disputed'] ?></p>
+            <p class="text-2xl font-extrabold <?= $stats['disputed'] > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white' ?>"><?= $stats['disputed'] ?></p>
         </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
             <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center"><i class="fas fa-clock text-gray-500"></i></div>
+                <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center"><i class="fas fa-clock text-gray-500"></i></div>
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Pending</span>
             </div>
-            <p class="text-xl font-extrabold text-gray-900"><?= $stats['pending'] ?></p>
+            <p class="text-xl font-extrabold text-gray-900 dark:text-white"><?= $stats['pending'] ?></p>
         </div>
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
             <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center"><i class="fas fa-shield-halved text-blue-500"></i></div>
+                <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"><i class="fas fa-shield-halved text-blue-500"></i></div>
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">In Escrow</span>
             </div>
-            <p class="text-xl font-extrabold text-gray-900"><?= $stats['funded'] ?></p>
+            <p class="text-xl font-extrabold text-gray-900 dark:text-white"><?= $stats['funded'] ?></p>
             <p class="text-xs text-gray-400 mt-1"><?= format_currency($stats['escrow_total']) ?> held</p>
         </div>
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-5 mb-6">
         <form method="GET" class="flex flex-wrap gap-3 items-end">
             <div class="flex-1 min-w-[140px]">
                 <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Status</label>
-                <select name="status" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                <select name="status" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
                     <option value="">All Statuses</option>
                     <?php foreach ($allowedStatuses as $s): ?>
                         <option value="<?= $s ?>" <?= $statusF === $s ? 'selected' : '' ?>><?= ucwords(str_replace('_', ' ', $s)) ?></option>
@@ -252,21 +248,21 @@ require_once __DIR__ . '/../components/layout_start.php';
             </div>
             <div class="flex-1 min-w-[140px]">
                 <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Client</label>
-                <input type="text" name="client" value="<?= sanitize_string($clientQ) ?>" placeholder="Search client..." class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                <input type="text" name="client" value="<?= sanitize_string($clientQ) ?>" placeholder="Search client..." class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
             </div>
             <div class="flex-1 min-w-[140px]">
                 <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Freelancer</label>
-                <input type="text" name="freelancer" value="<?= sanitize_string($freelancerQ) ?>" placeholder="Search freelancer..." class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                <input type="text" name="freelancer" value="<?= sanitize_string($freelancerQ) ?>" placeholder="Search freelancer..." class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="btn-grad px-5 py-2 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25"><i class="fas fa-search mr-1.5 text-xs"></i> Filter</button>
-                <a href="milestones.php" class="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Clear</a>
+                <a href="milestones.php" class="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Clear</a>
             </div>
         </form>
     </div>
 
     <!-- Milestones Table -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden mb-6">
         <?php if (empty($milestones)): ?>
             <div class="text-center py-16">
                 <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><i class="fas fa-tasks text-2xl text-gray-300"></i></div>
@@ -276,7 +272,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
-                        <tr class="border-b border-gray-100">
+                        <tr class="border-b border-gray-100 dark:border-slate-700">
                             <th class="text-left px-5 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Milestone</th>
                             <th class="text-left px-5 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Contract / Job</th>
                             <th class="text-left px-5 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Client</th>
@@ -286,28 +282,28 @@ require_once __DIR__ . '/../components/layout_start.php';
                             <th class="text-center px-5 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50">
+                    <tbody class="divide-y divide-gray-50 dark:divide-slate-700">
                         <?php foreach ($milestones as $m): ?>
-                            <tr class="hover:bg-gray-50/50 transition-colors">
+                            <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-700/30 transition-colors">
                                 <td class="px-5 py-4">
-                                    <p class="text-sm font-bold text-gray-900"><?= sanitize_string($m['title']) ?></p>
+                                    <p class="text-sm font-bold text-gray-900 dark:text-white"><?= sanitize_string($m['title']) ?></p>
                                     <p class="text-[11px] text-gray-400 mt-0.5">ID: #<?= $m['id'] ?></p>
                                     <?php if (!empty($m['submission_github_url'])): ?>
                                         <a href="<?= sanitize_string($m['submission_github_url']) ?>" target="_blank" class="text-[11px] text-blue-500 hover:underline"><i class="fab fa-github mr-1"></i>View Submission</a>
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-5 py-4">
-                                    <p class="text-sm text-gray-700"><?= sanitize_string($m['job_title']) ?></p>
+                                    <p class="text-sm text-gray-700 dark:text-slate-300"><?= sanitize_string($m['job_title']) ?></p>
                                     <p class="text-[11px] text-gray-400">Contract #<?= $m['contract_id'] ?></p>
                                 </td>
                                 <td class="px-5 py-4">
-                                    <p class="text-sm text-gray-700"><?= sanitize_string($m['client_name']) ?></p>
+                                    <p class="text-sm text-gray-700 dark:text-slate-300"><?= sanitize_string($m['client_name']) ?></p>
                                 </td>
                                 <td class="px-5 py-4">
-                                    <p class="text-sm text-gray-700"><?= sanitize_string($m['freelancer_name']) ?></p>
+                                    <p class="text-sm text-gray-700 dark:text-slate-300"><?= sanitize_string($m['freelancer_name']) ?></p>
                                 </td>
                                 <td class="px-5 py-4 text-right">
-                                    <span class="text-sm font-bold text-gray-900"><?= format_currency((float) $m['amount']) ?></span>
+                                    <span class="text-sm font-bold text-gray-900 dark:text-white"><?= format_currency((float) $m['amount']) ?></span>
                                 </td>
                                 <td class="px-5 py-4 text-center">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold border <?= $statusColors[$m['status']] ?? '' ?>">
@@ -360,11 +356,11 @@ require_once __DIR__ . '/../components/layout_start.php';
     <div id="resolveModal" class="fixed inset-0 z-50 hidden">
         <div class="modal-overlay absolute inset-0 bg-black/40" onclick="closeResolveModal()"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10" style="transform:scale(.95) translateY(10px);transition:transform .25s ease">
-                <div class="p-6 border-b border-gray-100">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10" style="transform:scale(.95) translateY(10px);transition:transform .25s ease">
+                <div class="p-6 border-b border-gray-100 dark:border-slate-700">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-bold text-gray-900">Resolve Dispute</h3>
-                        <button onclick="closeResolveModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600"><i class="fas fa-times text-sm"></i></button>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Resolve Dispute</h3>
+                        <button onclick="closeResolveModal()" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"><i class="fas fa-times text-sm"></i></button>
                     </div>
                 </div>
                 <form id="resolveForm" onsubmit="return submitResolve(event)">
@@ -372,19 +368,19 @@ require_once __DIR__ . '/../components/layout_start.php';
                         <input type="hidden" name="action" value="resolve_dispute">
                         <input type="hidden" name="milestone_id" id="resolve_milestone_id">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Resolution Action</label>
-                            <select name="resolution" id="resolve_resolution" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white">
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Resolution Action</label>
+                            <select name="resolution" id="resolve_resolution" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
                                 <option value="release">Release Payment to Freelancer</option>
                                 <option value="refund">Refund Client</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Admin Note</label>
-                            <textarea name="admin_note" id="resolve_note" rows="3" placeholder="Explain the resolution..." class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:bg-white resize-none"></textarea>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Admin Note</label>
+                            <textarea name="admin_note" id="resolve_note" rows="3" placeholder="Explain the resolution..." class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white resize-none"></textarea>
                         </div>
                     </div>
                     <div class="px-6 pb-6 flex gap-3">
-                        <button type="button" onclick="closeResolveModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                        <button type="button" onclick="closeResolveModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
                         <button type="submit" class="flex-1 btn-grad px-4 py-2.5 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25">Confirm Resolution</button>
                     </div>
                 </form>

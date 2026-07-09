@@ -93,12 +93,21 @@ CREATE TABLE IF NOT EXISTS `jobs` (
     `title` VARCHAR(255) NOT NULL,
     `description` TEXT NOT NULL,
     `budget` DECIMAL(10, 2) NOT NULL,
+    `job_type` ENUM('hourly', 'fixed') DEFAULT 'fixed',
+    `experience_level` ENUM('entry', 'intermediate', 'expert') DEFAULT 'intermediate',
+    `project_duration` VARCHAR(50) DEFAULT NULL,
+    `category` VARCHAR(100) DEFAULT NULL,
+    `deadline` DATE DEFAULT NULL,
+    `max_freelancers` INT DEFAULT 1,
     `status` ENUM('open', 'in_progress', 'completed', 'disputed', 'cancelled') DEFAULT 'open',
     `embedding_vector` JSON DEFAULT NULL,
+    `proposal_count` INT DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
-    INDEX `idx_job_status` (`status`)
+    INDEX `idx_job_status` (`status`),
+    INDEX `idx_job_type` (`job_type`),
+    INDEX `idx_job_category` (`category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --  Keyword Search 
@@ -171,9 +180,11 @@ CREATE TABLE IF NOT EXISTS `chat_messages` (
     `sender_id` INT UNSIGNED NOT NULL,
     `message_text` TEXT NOT NULL,
     `is_read` TINYINT(1) DEFAULT 0,
+    `payload` JSON DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`room_id`) REFERENCES `chat_rooms` (`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+    FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    INDEX `idx_chat_msg_room_id` (`room_id`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

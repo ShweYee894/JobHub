@@ -53,6 +53,21 @@ if (
         redirect('/finalproject/freelancer/job_detail.php?id=' . $jobId);
     }
 
+    // Verify job exists and is open
+    $jobCheck = $conn->prepare('SELECT id, status FROM jobs WHERE id = ?');
+    $jobCheck->bind_param('i', $jobId);
+    $jobCheck->execute();
+    $jobRow = $jobCheck->get_result()->fetch_assoc();
+    $jobCheck->close();
+    if (!$jobRow) {
+        set_flash('error', 'Job not found.');
+        redirect('/finalproject/freelancer/browse_jobs.php');
+    }
+    if ($jobRow['status'] !== 'open') {
+        set_flash('error', 'This job is no longer accepting proposals.');
+        redirect('/finalproject/freelancer/job_detail.php?id=' . $jobId);
+    }
+
     // Insert proposal
     $stmt = $conn->prepare("
         INSERT INTO proposals
@@ -297,30 +312,20 @@ $statusColors = [
     'cancelled' => 'bg-gray-100 text-gray-500 border border-gray-200',
 ];
 
-$navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
-];
 $pageTitle = 'Browse Jobs';
 $pageSubtitle = 'Find new opportunities and submit proposals';
 $activePage = 'browse_jobs';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
-$profileLink = 'profile.php';
-require_once __DIR__ . '/../components/layout_start.php';
+require_once __DIR__ . '/../components/freelancer_header.php';
 $conn->close();
 
 ?>
 
-                <form method="GET" id="filterForm" class="space-y-6">
+                <form method="GET" id="filterForm" class="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
                     <!-- ═══ SEARCH BAR ═══════════════════════════════════ -->
-                    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in">
+                    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
                         <div class="flex flex-col sm:flex-row gap-3">
                             <div class="relative flex-1">
                                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
@@ -345,8 +350,8 @@ $conn->close();
                         <aside id="filterPanel" class="hidden lg:block w-72 flex-shrink-0 space-y-4">
 
                             <!-- Status Filter -->
-                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in">
-                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
+                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 dark:text-white">
                                     <i class="fas fa-circle-dot text-blue-500 text-xs"></i> Status
                                 </h3>
                                 <div class="space-y-2">
@@ -360,19 +365,19 @@ $conn->close();
                                     ];
                                     foreach ($statusOptions as $val => $info):
                                         ?>
-                                        <label class="flex items-center gap-2.5 cursor-pointer group p-2 rounded-lg hover:bg-gray-50 transition-colors <?= $statusFilter === $val ? 'bg-blue-50' : '' ?>">
+                                        <label class="flex items-center gap-2.5 cursor-pointer group p-2 rounded-lg hover:bg-gray-50 transition-colors dark:hover:bg-gray-700 <?= $statusFilter === $val ? 'bg-blue-50' : '' ?>">
                                             <input type="radio" name="status" value="<?= $val ?>" <?= $statusFilter === $val ? 'checked' : '' ?>
                                                 class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" onchange="this.form.submit()">
                                             <i class="fas <?= $info[1] ?> <?= $info[2] ?> text-xs"></i>
-                                            <span class="text-sm <?= $statusFilter === $val ? 'font-semibold text-gray-900' : 'text-gray-600' ?> group-hover:text-gray-900 transition-colors"><?= $info[0] ?></span>
+                                            <span class="text-sm <?= $statusFilter === $val ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-600' ?> group-hover:text-gray-900 transition-colors"><?= $info[0] ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
 
                             <!-- Budget Range -->
-                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.1s">
-                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.1s">
+                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 dark:text-white">
                                     <i class="fas fa-dollar-sign text-emerald-500 text-xs"></i> Budget Range
                                 </h3>
                                 <div class="flex items-center gap-2">
@@ -390,14 +395,14 @@ $conn->close();
                                             class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 text-sm text-gray-900 placeholder-gray-400">
                                     </div>
                                 </div>
-                                <button type="submit" class="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors">
+                                <button type="submit" class="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300">
                                     Apply Budget
                                 </button>
                             </div>
 
                             <!-- Skills Filter (grouped by category) -->
-                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.2s">
-                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.2s">
+                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 dark:text-white">
                                     <i class="fas fa-tags text-violet-500 text-xs"></i> Skills
                                 </h3>
                                 <div class="space-y-4 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
@@ -431,8 +436,8 @@ $conn->close();
                             </div>
 
                             <!-- Date Posted -->
-                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.3s">
-                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.3s">
+                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 dark:text-white">
                                     <i class="fas fa-calendar text-cyan-500 text-xs"></i> Date Posted
                                 </h3>
                                 <div class="space-y-2">
@@ -459,8 +464,8 @@ $conn->close();
                         </aside>
 
                         <!-- Mobile filter drawer -->
-                        <div id="mobileFilter" class="fixed inset-y-0 left-0 z-40 w-80 bg-white shadow-2xl transform -translate-x-full lg:hidden overflow-y-auto">
-                            <div class="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                        <div id="mobileFilter" class="fixed inset-y-0 left-0 z-40 w-80 bg-white shadow-2xl transform -translate-x-full lg:hidden overflow-y-auto dark:bg-gray-800">
+                            <div class="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 dark:bg-gray-800 dark:border-gray-700">
                                 <h2 class="text-lg font-bold text-gray-900">Filters</h2>
                                 <button onclick="document.getElementById('mobileFilter').classList.add('translate-x-full')" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
                                     <i class="fas fa-times text-sm"></i>
@@ -555,12 +560,12 @@ $conn->close();
                             <?php if (!empty($jobs)): ?>
                                 <div class="space-y-4">
                                     <?php foreach ($jobs as $index => $job): ?>
-                                        <div class="job-card bg-white rounded-2xl border border-gray-100 shadow-sm fade-in" style="animation-delay:<?= 0.05 + ($index * 0.04) ?>s">
+                                        <div class="job-card bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:<?= 0.05 + ($index * 0.04) ?>s">
                                             <div class="p-6">
                                                 <div class="flex flex-col lg:flex-row lg:items-start gap-4">
                                                     <div class="flex-1 min-w-0">
                                                         <div class="flex flex-wrap items-center gap-2 mb-2">
-                                                            <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                                                            <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors dark:text-white dark:hover:text-blue-400">
                                                                 <?= sanitize_string($job['title']) ?>
                                                             </a>
                                                             <span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-semibold <?= $statusColors[$job['status']] ?? $statusColors['open'] ?>">
@@ -588,7 +593,7 @@ $conn->close();
                                                         <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400">
                                                             <span class="flex items-center gap-1.5">
                                                                 <i class="fas fa-dollar-sign text-emerald-500"></i>
-                                                                <span class="font-bold text-gray-900"><?= format_currency($job['budget']) ?></span>
+                                                                <span class="font-bold text-gray-900 dark:text-white"><?= format_currency($job['budget']) ?></span>
                                                             </span>
                                                             <span class="flex items-center gap-1.5">
                                                                 <i class="fas fa-clock text-blue-400"></i>
@@ -607,7 +612,7 @@ $conn->close();
 
                                                     <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:flex-col lg:items-stretch lg:min-w-[150px]">
                                                         <a href="job_detail.php?id=<?= $job['id'] ?>"
-                                                            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 text-xs font-semibold rounded-xl transition-all">
+                                                            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 text-xs font-semibold rounded-xl transition-all dark:border-gray-600 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-400">
                                                             <i class="fas fa-eye text-[10px]"></i> View Details
                                                         </a>
                                                         <?php if ($job['has_proposed']): ?>
@@ -629,7 +634,7 @@ $conn->close();
 
                                 <!-- ═══ PAGINATION ═══════════════════════════════════ -->
                                 <?php if ($pagination['total_pages'] > 1): ?>
-                                    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-sm fade-in">
+                                    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
                                         <p class="text-xs text-gray-400">
                                             Page <span class="font-semibold text-gray-600"><?= $pagination['current_page'] ?></span>
                                             of <span class="font-semibold text-gray-600"><?= $pagination['total_pages'] ?></span>
@@ -639,7 +644,7 @@ $conn->close();
                                         <div class="flex items-center gap-1">
                                             <?php if ($pagination['has_prev']): ?>
                                                 <a href="<?= $baseUrl ?>&page=<?= $pagination['current_page'] - 1 ?>"
-                                                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm transition-all">
+                                                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm transition-all dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
                                                     <i class="fas fa-chevron-left text-xs"></i>
                                                 </a>
                                             <?php endif; ?>
@@ -649,25 +654,25 @@ $conn->close();
                                             $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
                                             if ($startPage > 1):
                                                 ?>
-                                                <a href="<?= $baseUrl ?>&page=1" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all">1</a>
+                                                <a href="<?= $baseUrl ?>&page=1" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all dark:text-gray-400 dark:hover:bg-gray-700">1</a>
                                                 <?php if ($startPage > 2): ?><span class="text-gray-300 px-1">...</span><?php endif; ?>
                                             <?php endif; ?>
 
                                             <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                                                 <a href="<?= $baseUrl ?>&page=<?= $i ?>"
-                                                    class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' ?>">
+                                                    class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700' ?>">
                                                     <?= $i ?>
                                                 </a>
                                             <?php endfor; ?>
 
                                             <?php if ($endPage < $pagination['total_pages']): ?>
                                                 <?php if ($endPage < $pagination['total_pages'] - 1): ?><span class="text-gray-300 px-1">...</span><?php endif; ?>
-                                                <a href="<?= $baseUrl ?>&page=<?= $pagination['total_pages'] ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all"><?= $pagination['total_pages'] ?></a>
+                                                <a href="<?= $baseUrl ?>&page=<?= $pagination['total_pages'] ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all dark:text-gray-400 dark:hover:bg-gray-700"><?= $pagination['total_pages'] ?></a>
                                             <?php endif; ?>
 
                                             <?php if ($pagination['has_next']): ?>
                                                 <a href="<?= $baseUrl ?>&page=<?= $pagination['current_page'] + 1 ?>"
-                                                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm transition-all">
+                                                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm transition-all dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
                                                     <i class="fas fa-chevron-right text-xs"></i>
                                                 </a>
                                             <?php endif; ?>
@@ -677,12 +682,12 @@ $conn->close();
 
                             <?php else: ?>
                                 <!-- ═══ EMPTY STATE ═════════════════════════════════ -->
-                                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in">
+                                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
                                     <div class="text-center py-16 px-6">
                                         <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mx-auto mb-6 border border-blue-100">
                                             <i class="fas fa-search text-4xl text-blue-300"></i>
                                         </div>
-                                        <h3 class="text-xl font-bold text-gray-900 mb-2">No jobs found</h3>
+                                        <h3 class="text-xl font-bold text-gray-900 mb-2 dark:text-white">No jobs found</h3>
                                         <p class="text-sm text-gray-400 mb-6 max-w-md mx-auto">
                                             <?= ($search !== '' || $budgetMin > 0 || $budgetMax > 0 || $statusFilter !== 'open' || $datePosted !== 'all' || !empty($skillIds))
                                                 ? 'Try adjusting your filters or search terms to find more opportunities.'
@@ -705,13 +710,13 @@ $conn->close();
     <div id="proposalModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeProposalModal()"></div>
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl relative z-10 fade-in">
+            <div class="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl relative z-10 fade-in dark:bg-gray-800">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h3 class="text-lg font-bold text-gray-900">Submit Proposal</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Submit Proposal</h3>
                         <p class="text-xs text-gray-400 mt-1">for <span id="modalJobTitle" class="font-semibold text-gray-600"></span></p>
                     </div>
-                    <button onclick="closeProposalModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                    <button onclick="closeProposalModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors dark:bg-gray-700">
                         <i class="fas fa-times text-sm"></i>
                     </button>
                 </div>
@@ -723,12 +728,12 @@ $conn->close();
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Your Bid Amount ($) <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            <div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-100">
+                            <div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
                                 <i class="fas fa-dollar-sign text-emerald-600 text-xs"></i>
                             </div>
                             <input type="number" name="amount" step="0.01" min="0.01" required id="modalBudget"
                                 placeholder="0.00"
-                                class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400">
+                                class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         </div>
                         <p class="text-[11px] text-gray-400 mt-1">Job budget: <span id="modalBudgetDisplay" class="font-semibold text-gray-600">$0.00</span></p>
                     </div>
@@ -737,13 +742,13 @@ $conn->close();
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Proposal Message <span class="text-red-500">*</span></label>
                         <textarea name="proposal_text" rows="6" required
                             placeholder="Explain why you're the best fit for this job. Mention relevant experience, your approach, and timeline..."
-                            class="fld w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 resize-none"></textarea>
+                            class="fld w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
                         <p class="text-[11px] text-gray-400 mt-1">Minimum 20 characters</p>
                     </div>
 
                     <div class="flex gap-3 pt-2">
                         <button type="button" onclick="closeProposalModal()"
-                            class="flex-1 px-5 py-3 border border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl text-sm font-semibold transition-all">
+                            class="flex-1 px-5 py-3 border border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl text-sm font-semibold transition-all dark:border-gray-600 dark:text-gray-400">
                             Cancel
                         </button>
                         <button type="submit"
@@ -777,4 +782,4 @@ $conn->close();
             if (e.key === 'Escape') closeProposalModal();
         });
     </script>
-<?php require_once __DIR__ . '/../components/layout_end.php'; ?>
+<?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

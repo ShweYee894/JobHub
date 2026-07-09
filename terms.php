@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,45 +11,151 @@
   <link href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons@3.3.1/css/all/all.min.css" rel="stylesheet">
   <script>
     tailwind.config = {
-      theme: { extend: {
-        fontFamily: { inter: ['Inter', 'sans-serif'] },
-        colors: {
-          primary: { DEFAULT: '#2563eb', dark: '#1d4ed8', light: '#3b82f6' },
-          accent: { DEFAULT: '#0ea5e9', dark: '#0284c7' },
-        },
-        animation: { 'float': 'float 3s ease-in-out infinite' },
-        keyframes: { float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } } }
-      }}
+      theme: {
+        extend: {
+          fontFamily: {
+            inter: ['Inter', 'sans-serif']
+          },
+          colors: {
+            primary: {
+              DEFAULT: '#2563eb',
+              dark: '#1d4ed8',
+              light: '#3b82f6'
+            },
+            accent: {
+              DEFAULT: '#0ea5e9',
+              dark: '#0284c7'
+            },
+          },
+          animation: {
+            'float': 'float 3s ease-in-out infinite'
+          },
+          keyframes: {
+            float: {
+              '0%,100%': {
+                transform: 'translateY(0)'
+              },
+              '50%': {
+                transform: 'translateY(-10px)'
+              }
+            }
+          }
+        }
+      }
     }
   </script>
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f8fafc; color: #1e293b; }
-    .grad-text { background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 60%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .btn-grad { background: linear-gradient(135deg, #2563eb, #0ea5e9); transition: opacity .25s, transform .2s; }
-    .btn-grad:hover { opacity: .88; transform: translateY(-2px); }
-    .nav-link { position: relative; }
-    .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, #2563eb, #0ea5e9); transition: width .3s ease; }
-    .nav-link:hover::after { width: 100%; }
-    .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .15; animation: float 6s ease-in-out infinite; }
-    #progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #2563eb, #0ea5e9, #6366f1); z-index: 9999; transition: width .1s; }
-    #mobile-menu { transition: max-height .35s ease, opacity .3s ease; max-height: 0; opacity: 0; overflow: hidden; }
-    #mobile-menu.open { max-height: 600px; opacity: 1; }
-    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s ease, transform .7s ease; }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    #navbar.scrolled { background: rgba(255,255,255,.95); backdrop-filter: blur(16px); box-shadow: 0 2px 20px rgba(0,0,0,.08); }
-    .toc-link.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: #f8fafc;
+      color: #1e293b;
+    }
+
+    .grad-text {
+      background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 60%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn-grad {
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      transition: opacity .25s, transform .2s;
+    }
+
+    .btn-grad:hover {
+      opacity: .88;
+      transform: translateY(-2px);
+    }
+
+    .nav-link {
+      position: relative;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #2563eb, #0ea5e9);
+      transition: width .3s ease;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: .15;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    #progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #2563eb, #0ea5e9, #6366f1);
+      z-index: 9999;
+      transition: width .1s;
+    }
+
+    #mobile-menu {
+      transition: max-height .35s ease, opacity .3s ease;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    #mobile-menu.open {
+      max-height: 600px;
+      opacity: 1;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #navbar.scrolled {
+      background: rgba(255, 255, 255, .95);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 2px 20px rgba(0, 0, 0, .08);
+    }
+
+    .toc-link.active {
+      color: #2563eb;
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
   </style>
 </head>
+
 <body>
   <div id="progress"></div>
 
   <!-- NAVBAR -->
   <nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 py-3 bg-white/80 backdrop-blur-md">
     <div class="w-full mx-auto px-4 sm:px-6 flex items-center justify-between">
-      <a href="index.php" class="flex items-center gap-2 group">
-        <span class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25"><i class="fi fi-brands-artstation text-white text-sm"></i></span>
-        <span class="text-xl font-extrabold tracking-tight"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
+      <a href="index.php" class="flex items-center gap-1.5 group shrink-0">
+        <img src="assets/upload/logos/logo.png" alt="Logo" class="w-[36px] h-[36px] rounded-xl">
+        <span class="text-lg font-extrabold tracking-tight">
+          <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
+        </span>
       </a>
       <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-500">
         <a href="index.php" class="nav-link hover:text-gray-900 transition-colors">Home</a>
@@ -230,9 +337,11 @@
     <div class="max-w-7xl mx-auto">
       <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-14">
         <div class="lg:col-span-2">
-          <a href="index.php" class="flex items-center gap-2 mb-5">
-            <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25"><i class="fi fi-brands-artstation text-white text-sm"></i></div>
-            <span class="text-xl font-extrabold"><span class="text-gray-900">Job</span><span class="grad-text">Hub</span></span>
+          <a href="index.php" class="flex items-center gap-1.5 group shrink-0">
+            <img src="assets/upload/logos/logo.png" alt="Logo" class="w-[36px] h-[36px] rounded-xl">
+            <span class="text-lg font-extrabold tracking-tight">
+              <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
+            </span>
           </a>
           <p class="text-gray-400 text-sm leading-relaxed mb-6 max-w-xs">The world's most trusted marketplace for top freelancers and innovative clients. Work smarter, together.</p>
           <div class="flex gap-3">
@@ -296,14 +405,24 @@
       checkReveal();
       updateToc();
     });
-    document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('mobile-menu').classList.toggle('open'); });
-    document.querySelectorAll('#mobile-menu a').forEach(a => { a.addEventListener('click', () => document.getElementById('mobile-menu').classList.remove('open')); });
+    document.getElementById('hamburger').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('open');
+    });
+    document.querySelectorAll('#mobile-menu a').forEach(a => {
+      a.addEventListener('click', () => document.getElementById('mobile-menu').classList.remove('open'));
+    });
     const reveals = document.querySelectorAll('.reveal');
-    function checkReveal() { reveals.forEach(el => { if (el.getBoundingClientRect().top < window.innerHeight - 80) el.classList.add('visible'); }); }
+
+    function checkReveal() {
+      reveals.forEach(el => {
+        if (el.getBoundingClientRect().top < window.innerHeight - 80) el.classList.add('visible');
+      });
+    }
     checkReveal();
 
     const tocLinks = document.querySelectorAll('.toc-link');
     const sections = ['acceptance', 'accounts', 'rules', 'client-obligations', 'freelancer-obligations', 'payments', 'disputes', 'ip', 'liability', 'termination'];
+
     function updateToc() {
       let current = '';
       sections.forEach(id => {
@@ -319,9 +438,13 @@
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const target = document.querySelector(link.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (target) target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
       });
     });
   </script>
 </body>
+
 </html>

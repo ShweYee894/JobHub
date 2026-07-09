@@ -418,3 +418,655 @@ html.dark .dark-toggle .icon-moon { opacity: 1; }
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Freelancer Profile Dark Mode Overrides
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Profile header/sidebar cards ───────────────────────────────── */
+html.dark .profile-header-card,
+html.dark .profile-sidebar-card,
+html.dark .pe-header-card,
+html.dark .pe-sidebar-card,
+html.dark .pe-field-group {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* ── Profile avatar border ──────────────────────────────────────── */
+html.dark .profile-avatar-lg {
+    border-color: #1e293b !important;
+}
+
+/* ── Profile tab styles ─────────────────────────────────────────── */
+html.dark .profile-tab {
+    color: #64748b !important;
+}
+html.dark .profile-tab:hover {
+    color: #60a5fa !important;
+}
+html.dark .profile-tab.active {
+    color: #60a5fa !important;
+    border-bottom-color: #60a5fa !important;
+}
+
+/* ── Profile section titles ─────────────────────────────────────── */
+html.dark .profile-section-title,
+html.dark .pe-section-label {
+    color: #94a3b8 !important;
+}
+
+/* ── Website links ──────────────────────────────────────────────── */
+html.dark .website-link {
+    color: #94a3b8 !important;
+    border-bottom-color: #334155 !important;
+}
+html.dark .website-link:hover {
+    color: #60a5fa !important;
+}
+html.dark .website-link i {
+    color: #64748b !important;
+}
+
+/* ── Skill tag pills ────────────────────────────────────────────── */
+html.dark .skill-tag-pill,
+html.dark .pe-skill-pill {
+    background-color: #1a2332 !important;
+    border-color: #475569 !important;
+    color: #94a3b8 !important;
+}
+html.dark .skill-tag-pill:hover {
+    background-color: #1e3a5f !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
+
+/* ── Social icons ───────────────────────────────────────────────── */
+html.dark .social-icon {
+    border-color: #475569 !important;
+    color: #64748b !important;
+}
+html.dark .social-icon:hover {
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+    background-color: #1e3a5f !important;
+}
+
+/* ── Back link ──────────────────────────────────────────────────── */
+html.dark .back-link {
+    color: #94a3b8 !important;
+}
+
+/* ── Promo card ─────────────────────────────────────────────────── */
+html.dark .promo-card {
+    background: linear-gradient(135deg, #1e3a5f 0%, #083344 100%) !important;
+    border-color: #1e40af !important;
+}
+
+/* ── Similar profiles card ──────────────────────────────────────── */
+html.dark .similar-card {
+    border-bottom-color: #334155 !important;
+}
+
+/* ── Review cards ───────────────────────────────────────────────── */
+html.dark .rounded-xl.bg-gray-50 {
+    background-color: #1a2332 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Freelancer Profile Edit Dark Mode Overrides
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Profile edit header ────────────────────────────────────────── */
+html.dark .pe-header-card {
+    background-color: #1e293b !important;
+}
+
+/* ── Avatar edit badge ──────────────────────────────────────────── */
+html.dark .pe-avatar-edit {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+}
+
+/* ── Verified badge ─────────────────────────────────────────────── */
+/* (stays blue) */
+
+/* ── Available pill ─────────────────────────────────────────────── */
+html.dark .pe-available-pill {
+    background-color: #064e3b !important;
+    border-color: #065f46 !important;
+    color: #34d399 !important;
+}
+html.dark .pe-available-dot {
+    background-color: #34d399 !important;
+}
+
+/* ── Success bar ────────────────────────────────────────────────── */
+html.dark .pe-success-bar {
+    background-color: #334155 !important;
+}
+
+/* ── Expert badge ───────────────────────────────────────────────── */
+html.dark .pe-expert-badge {
+    background-color: #451a03 !important;
+    border-color: #78350f !important;
+    color: #fbbf24 !important;
+}
+
+/* ── Outline / Ghost / Green buttons ────────────────────────────── */
+html.dark .pe-btn-outline {
+    background-color: #1e293b !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
+html.dark .pe-btn-outline:hover {
+    background-color: #1e3a5f !important;
+}
+html.dark .pe-btn-green {
+    background-color: #059669 !important;
+    color: #fff !important;
+}
+html.dark .pe-btn-ghost {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #94a3b8 !important;
+}
+html.dark .pe-btn-ghost:hover {
+    border-color: #64748b !important;
+    color: #e2e8f0 !important;
+}
+
+/* ── Nav items ──────────────────────────────────────────────────── */
+html.dark .pe-nav-item {
+    color: #94a3b8 !important;
+}
+html.dark .pe-nav-item:hover {
+    background-color: #1a2332 !important;
+    color: #60a5fa !important;
+}
+html.dark .pe-nav-item.active {
+    background-color: #1e3a5f !important;
+    color: #60a5fa !important;
+}
+html.dark .pe-nav-item i {
+    color: #64748b !important;
+}
+html.dark .pe-nav-item.active i {
+    color: #60a5fa !important;
+}
+
+/* ── Edit inline button ─────────────────────────────────────────── */
+html.dark .pe-edit-inline {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #64748b !important;
+}
+html.dark .pe-edit-inline:hover {
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+    background-color: #1e3a5f !important;
+}
+
+/* ── Stat boxes ─────────────────────────────────────────────────── */
+html.dark .pe-stat-box {
+    border-bottom-color: #334155 !important;
+}
+html.dark .pe-stat-val {
+    color: #f1f5f9 !important;
+}
+html.dark .pe-stat-label {
+    color: #64748b !important;
+}
+
+/* ── Field group rows ───────────────────────────────────────────── */
+html.dark .pe-field-row {
+    border-bottom-color: #334155 !important;
+}
+html.dark .pe-field-title {
+    color: #f1f5f9 !important;
+}
+html.dark .pe-field-sub {
+    color: #64748b !important;
+}
+html.dark .pe-field-value {
+    color: #94a3b8 !important;
+}
+html.dark .pe-bio-text {
+    color: #94a3b8 !important;
+}
+
+/* ── Modal overlay & box ────────────────────────────────────────── */
+html.dark .pe-modal-overlay {
+    background: rgba(0, 0, 0, .6) !important;
+}
+html.dark .pe-modal-box {
+    background-color: #1e293b !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, .5) !important;
+}
+html.dark .pe-modal-title {
+    color: #f1f5f9 !important;
+}
+html.dark .pe-modal-box .text-gray-700 {
+    color: #cbd5e1 !important;
+}
+
+/* ── Modal inputs / textarea / select ───────────────────────────── */
+html.dark .pe-input {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+html.dark .pe-input:focus {
+    background-color: #0f172a !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .2) !important;
+}
+html.dark .pe-textarea {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+html.dark .pe-textarea:focus {
+    background-color: #0f172a !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .2) !important;
+}
+
+/* ── Consultation card ──────────────────────────────────────────── */
+html.dark .pe-consult-card {
+    background: linear-gradient(135deg, #1e3a5f 0%, #083344 100%) !important;
+    border-color: #1e40af !important;
+}
+
+/* ── Bottom border divider ──────────────────────────────────────── */
+html.dark .border-t.border-gray-100 {
+    border-color: #334155 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Additional Dark Mode Overrides (gap fixes)
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Pink skill colors (freelancer/home.php Design category) ────── */
+html.dark .bg-pink-50 { background-color: #4c1d36 !important; }
+html.dark .text-pink-600 { color: #f472b6 !important; }
+html.dark .border-pink-100 { border-color: #831843 !important; }
+
+/* ── Rose skill colors (freelancer/home.php Data Science category) ─ */
+html.dark .bg-rose-50 { background-color: #4c1d2a !important; }
+html.dark .text-rose-600 { color: #fb7185 !important; }
+html.dark .border-rose-100 { border-color: #9f1239 !important; }
+
+/* ── Amber-100 borders (reviews pending cards) ──────────────────── */
+html.dark .border-amber-100 { border-color: #78350f !important; }
+
+/* ── Gray-50 borders (chat room items) ──────────────────────────── */
+html.dark [class*="border-gray-50"] { border-color: #334155 !important; }
+
+/* ── Gray-200/60 borders (skill count pill) ─────────────────────── */
+html.dark [class*="border-gray-200/60"] { border-color: rgba(71,85,105,.5) !important; }
+
+/* ── Purple skill colors ────────────────────────────────────────── */
+html.dark .bg-purple-50 { background-color: #3b1764 !important; }
+html.dark .text-purple-600 { color: #c084fc !important; }
+
+/* ── Pink-100/80, Rose-100/80 (check icon backgrounds) ─────────── */
+html.dark .bg-pink-100\/80 { background-color: rgba(136,19,55,.4) !important; }
+html.dark .bg-rose-100\/80 { background-color: rgba(159,18,57,.4) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Milestone & Contract Page Dark Mode Overrides
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Stat cards on milestone/contract pages ──────────────────────── */
+html.dark .stat-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+html.dark .stat-card p.text-lg {
+    color: #f1f5f9 !important;
+}
+html.dark .stat-card p.text-xs {
+    color: #64748b !important;
+}
+
+/* ── Modal dark mode (generic modals in milestone pages) ─────────── */
+html.dark #createModal .bg-white,
+html.dark #editModal .bg-white,
+html.dark #fundModal .bg-white,
+html.dark #approveModal .bg-white,
+html.dark #revisionModal .bg-white,
+html.dark #disputeModal .bg-white,
+html.dark #resolveModal .bg-white,
+html.dark #loadingOverlay .bg-white,
+html.dark .bg-white.rounded-2xl.shadow-2xl {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* ── Modal text colors ───────────────────────────────────────────── */
+html.dark #createModal .text-gray-900,
+html.dark #editModal .text-gray-900,
+html.dark #fundModal .text-gray-900,
+html.dark #approveModal .text-gray-900,
+html.dark #revisionModal .text-gray-900,
+html.dark #disputeModal .text-gray-900,
+html.dark #resolveModal .text-gray-900 {
+    color: #f1f5f9 !important;
+}
+
+html.dark #createModal .text-gray-500,
+html.dark #editModal .text-gray-500,
+html.dark #fundModal .text-gray-500,
+html.dark #approveModal .text-gray-500,
+html.dark #revisionModal .text-gray-500,
+html.dark #disputeModal .text-gray-500,
+html.dark #resolveModal .text-gray-500 {
+    color: #94a3b8 !important;
+}
+
+html.dark #createModal .text-gray-700,
+html.dark #editModal .text-gray-700,
+html.dark #disputeModal .text-gray-700,
+html.dark #resolveModal .text-gray-700 {
+    color: #cbd5e1 !important;
+}
+
+/* ── Modal form inputs ──────────────────────────────────────────── */
+html.dark #createModal input[type="text"],
+html.dark #createModal input[type="number"],
+html.dark #editModal input[type="text"],
+html.dark #editModal input[type="number"],
+html.dark #revisionModal textarea,
+html.dark #disputeModal textarea,
+html.dark #disputeModal select,
+html.dark #resolveModal select,
+html.dark #resolveModal textarea {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+/* ── Modal border separators ────────────────────────────────────── */
+html.dark #createModal .border-b,
+html.dark #editModal .border-b,
+html.dark #revisionModal .border-b,
+html.dark #disputeModal .border-b,
+html.dark #resolveModal .border-b {
+    border-color: #334155 !important;
+}
+
+/* ── Modal cancel buttons ───────────────────────────────────────── */
+html.dark #createModal button[class*="border-gray-200"],
+html.dark #editModal button[class*="border-gray-200"],
+html.dark #fundModal button[class*="border-gray-200"],
+html.dark #approveModal button[class*="border-gray-200"],
+html.dark #revisionModal button[class*="border-gray-200"],
+html.dark #disputeModal button[class*="border-gray-200"],
+html.dark #resolveModal button[class*="border-gray-200"] {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #94a3b8 !important;
+}
+html.dark #createModal button[class*="border-gray-200"]:hover,
+html.dark #editModal button[class*="border-gray-200"]:hover,
+html.dark #fundModal button[class*="border-gray-200"]:hover,
+html.dark #approveModal button[class*="border-gray-200"]:hover,
+html.dark #revisionModal button[class*="border-gray-200"]:hover,
+html.dark #disputeModal button[class*="border-gray-200"]:hover,
+html.dark #resolveModal button[class*="border-gray-200"]:hover {
+    background-color: #334155 !important;
+}
+
+/* ── Modal close button ─────────────────────────────────────────── */
+html.dark #createModal .bg-gray-100,
+html.dark #editModal .bg-gray-100,
+html.dark #disputeModal .bg-gray-100,
+html.dark #resolveModal .bg-gray-100 {
+    background-color: #334155 !important;
+}
+html.dark #createModal .text-gray-400,
+html.dark #editModal .text-gray-400,
+html.dark #disputeModal .text-gray-400,
+html.dark #resolveModal .text-gray-400 {
+    color: #94a3b8 !important;
+}
+
+/* ── Milestone items hover ──────────────────────────────────────── */
+html.dark .hover\:bg-gray-50\/50:hover {
+    background-color: rgba(30,41,59,.5) !important;
+}
+
+/* ── Milestone empty state ──────────────────────────────────────── */
+html.dark .bg-gray-100.flex.items-center.justify-center {
+    background-color: #334155 !important;
+}
+
+/* ── Progress bar backgrounds ───────────────────────────────────── */
+html.dark .bg-gray-100.rounded-full {
+    background-color: #334155 !important;
+}
+
+/* ── Table admin milestones ─────────────────────────────────────── */
+html.dark table thead tr {
+    border-color: #334155 !important;
+}
+html.dark table thead th {
+    color: #64748b !important;
+}
+html.dark table tbody tr {
+    border-color: #334155 !important;
+}
+html.dark table tbody tr:hover {
+    background-color: #1a2332 !important;
+}
+html.dark table tbody td {
+    color: #cbd5e1 !important;
+}
+
+/* ── Filter buttons inactive state ──────────────────────────────── */
+html.dark a[class*="text-gray-500"][class*="bg-gray-50"]:not([class*="border-current"]) {
+    background-color: #1e293b !important;
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+}
+html.dark a[class*="text-gray-500"][class*="bg-gray-50"]:not([class*="border-current"]):hover {
+    background-color: #334155 !important;
+}
+
+/* ── Pagination buttons ─────────────────────────────────────────── */
+html.dark a[class*="border-gray-200"][class*="text-gray-500"] {
+    border-color: #475569 !important;
+    color: #94a3b8 !important;
+}
+html.dark a[class*="border-gray-200"][class*="text-gray-500"]:hover {
+    background-color: #334155 !important;
+}
+
+/* ── Empty state icon containers ────────────────────────────────── */
+html.dark .bg-gradient-to-br.from-blue-50.to-cyan-50 {
+    background: linear-gradient(135deg, rgba(30,58,95,.5) 0%, rgba(8,51,68,.5) 100%) !important;
+}
+html.dark .border-blue-100 {
+    border-color: #1e40af !important;
+}
+
+/* ── Submission detail boxes ────────────────────────────────────── */
+html.dark .bg-blue-50 {
+    background-color: #1e3a5f !important;
+}
+html.dark .border-blue-100 {
+    border-color: #1e40af !important;
+}
+html.dark .text-blue-700 {
+    color: #93c5fd !important;
+}
+html.dark .text-blue-600 {
+    color: #60a5fa !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Chat Module Dark Mode Overrides
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Chat container ──────────────────────────────────────────────── */
+html.dark .chat-messages {
+    background-color: #0f172a !important;
+}
+
+/* ── Chat bubbles ────────────────────────────────────────────────── */
+html.dark [class*="bg-gray-100"][class*="rounded-2xl"][class*="rounded-bl-md"] {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+}
+
+html.dark [class*="bg-gradient-to-br"][class*="from-blue-500"][class*="to-blue-600"] {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+}
+
+/* ── Chat input area ─────────────────────────────────────────────── */
+html.dark #chatInputArea {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+html.dark #chatInput {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+html.dark #chatInput::placeholder {
+    color: #64748b !important;
+}
+
+/* ── Chat header ─────────────────────────────────────────────────── */
+html.dark #chatHeader {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+html.dark #chatHeaderName {
+    color: #f1f5f9 !important;
+}
+
+html.dark #chatHeaderStatus {
+    color: #64748b !important;
+}
+
+/* ── Emoji picker ────────────────────────────────────────────────── */
+html.dark #emojiPicker {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+html.dark .emoji-btn:hover {
+    background-color: #334155 !important;
+}
+
+/* ── Room list items ─────────────────────────────────────────────── */
+html.dark .room-item {
+    border-color: rgba(51,65,85,.5) !important;
+}
+
+html.dark .room-item:hover {
+    background-color: rgba(51,65,85,.3) !important;
+}
+
+html.dark .room-item.active {
+    background-color: rgba(30,58,95,.5) !important;
+}
+
+/* ── Date separator ──────────────────────────────────────────────── */
+html.dark [class*="bg-gray-50"][class*="px-3"][class*="py-1"][class*="rounded-full"] {
+    background-color: #1e293b !important;
+    color: #64748b !important;
+}
+
+html.dark [class*="h-px"][class*="bg-gray-200"] {
+    background-color: #334155 !important;
+}
+
+/* ── Typing indicator ────────────────────────────────────────────── */
+html.dark #typingIndicator [class*="bg-gray-100"] {
+    background-color: #1e293b !important;
+}
+
+/* ── File preview ────────────────────────────────────────────────── */
+html.dark [class*="bg-blue-50"][class*="border-blue-200"] {
+    background-color: rgba(30,58,95,.3) !important;
+    border-color: #1e40af !important;
+}
+
+/* ── Unread badge ────────────────────────────────────────────────── */
+html.dark .unread-badge {
+    background-color: #ef4444 !important;
+    color: white !important;
+}
+
+/* ── Online indicator ────────────────────────────────────────────── */
+html.dark .online-indicator {
+    border-color: #1e293b !important;
+}
+
+/* ── Conversation search ─────────────────────────────────────────── */
+html.dark #conversationSearch {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+html.dark #conversationSearch::placeholder {
+    color: #64748b !important;
+}
+
+/* ── Chat placeholder ────────────────────────────────────────────── */
+html.dark #chatPlaceholder {
+    background-color: #0f172a !important;
+}
+
+html.dark #chatPlaceholder .bg-gradient-to-br {
+    background: linear-gradient(135deg, rgba(30,58,95,.3) 0%, rgba(8,51,68,.3) 100%) !important;
+    border-color: #1e40af !important;
+}
+
+/* ── Empty chat message ──────────────────────────────────────────── */
+html.dark #emptyChatMsg {
+    background-color: #0f172a !important;
+}
+
+/* ── Message bubble avatars ──────────────────────────────────────── */
+html.dark [class*="rounded-full"][class*="object-cover"][class*="border-2"][class*="border-gray-100"] {
+    border-color: #334155 !important;
+}
+
+/* ── Attach and emoji buttons ────────────────────────────────────── */
+html.dark #attachBtn,
+html.dark #emojiBtn {
+    background-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+html.dark #attachBtn:hover,
+html.dark #emojiBtn:hover {
+    background-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+/* ── Scrollbar for chat ──────────────────────────────────────────── */
+html.dark .chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+html.dark .chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html.dark .chat-messages::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+}
+
+html.dark .chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
