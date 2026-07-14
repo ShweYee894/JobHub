@@ -560,13 +560,14 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
 
                     <!-- My Jobs Dropdown -->
                     <div class="relative" id="myJobsDropdown">
-                        <button onmouseover="toggleDropdown('myJobsDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_ctbActive, ['my_jobs', 'post_job', 'proposals', 'job_detail', 'proposal_detail']) ? 'nav-active' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white' ?> transition-all">
+                        <button onmouseover="toggleDropdown('myJobsDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_ctbActive, ['my_jobs', 'post_job', 'proposals', 'job_detail', 'proposal_detail', 'invite_jobs']) ? 'nav-active' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white' ?> transition-all">
                             My Jobs <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                         </button>
                         <div class="dropdown-menu">
                             <a href="my_jobs.php" class="dropdown-item <?= $_ctbActive === 'my_jobs' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-briefcase"></i> My Jobs</a>
                             <a href="post_job.php" class="dropdown-item <?= $_ctbActive === 'post_job' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-plus-circle"></i> Post a Job</a>
                             <a href="proposals.php" class="dropdown-item <?= $_ctbActive === 'proposals' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-file-alt"></i> Proposals</a>
+                            <a href="invite_jobs.php" class="dropdown-item <?= $_ctbActive === 'invite_jobs' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-paper-plane"></i> Invite to Job</a>
                         </div>
                     </div>
 
@@ -619,7 +620,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                 <?php endif; ?>
 
                 <!-- Notifications -->
-                <a href="../shared/notifications.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all">
+                <a href="../shared/notifications_page.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all">
                     <i class="fas fa-bell text-[13px] hidden sm:inline"></i>
                     <?php if ($_ctbUnread > 0): ?>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -680,6 +681,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
             <a href="my_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'my_jobs' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-briefcase w-5 text-center text-[13px]"></i> My Jobs</a>
             <a href="post_job.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'post_job' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-plus-circle w-5 text-center text-[13px]"></i> Post a Job</a>
             <a href="proposals.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'proposals' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-file-alt w-5 text-center text-[13px]"></i> Proposals</a>
+            <a href="invite_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'invite_jobs' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-paper-plane w-5 text-center text-[13px]"></i> Invite to Job</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 px-3 mb-2 mt-4">Find Talent</p>
             <a href="recommended_freelancers.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'recommended_freelancers' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-search w-5 text-center text-[13px]"></i> Find Freelancers</a>

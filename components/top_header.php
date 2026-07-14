@@ -47,7 +47,7 @@ $_badgeStyle = $_roleBadgeClasses[$_thRoleColor] ?? $_roleBadgeClasses['blue'];
         </div>
 
         <!-- Notifications -->
-        <a href="../shared/notifications.php" class="header-icon-btn" title="Notifications" style="position:relative;">
+        <a href="../shared/notifications_page.php" class="header-icon-btn" title="Notifications" style="position:relative;">
             <i class="fas fa-bell" style="font-size:16px;"></i>
             <?php if ($_thUnread > 0): ?>
                 <span class="notification-dot"></span>

@@ -84,7 +84,54 @@ $jobStatusColors = ['open' => 'bg-emerald-50 text-emerald-600 border-emerald-200
 $proposalStatusColors = ['pending' => 'bg-amber-50 text-amber-600 border-amber-200', 'accepted' => 'bg-emerald-50 text-emerald-600 border-emerald-200', 'rejected' => 'bg-red-50 text-red-600 border-red-200', 'withdrawn' => 'bg-gray-50 text-gray-600 border-gray-200'];
 $contractStatusColors = ['active' => 'bg-emerald-50 text-emerald-600 border-emerald-200', 'completed' => 'bg-blue-50 text-blue-600 border-blue-200', 'pending' => 'bg-amber-50 text-amber-600 border-amber-200', 'cancelled' => 'bg-gray-50 text-gray-600 border-gray-200', 'disputed' => 'bg-red-50 text-red-600 border-red-200'];
 
-$fraudScore = (int) $user['fraud_score'];
+$fraudScore = 0;
+
+// Auto-recalculate this user's fraud score on load
+if ($userId > 0) {
+    $fscore = 0;
+
+    $fq1 = $conn->prepare('SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)');
+    $fq1->bind_param('i', $userId);
+    $fq1->execute();
+    if ((int) $fq1->get_result()->fetch_assoc()['cnt'] > 10) $fscore += 20;
+    $fq1->close();
+
+    $fq2 = $conn->prepare('SELECT COUNT(DISTINCT ip_address) AS cnt FROM user_behavior_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)');
+    $fq2->bind_param('i', $userId);
+    $fq2->execute();
+    if ((int) $fq2->get_result()->fetch_assoc()['cnt'] > 1) $fscore += 15;
+    $fq2->close();
+
+    $fq3 = $conn->prepare("SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type = 'proposal_submit' AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+    $fq3->bind_param('i', $userId);
+    $fq3->execute();
+    if ((int) $fq3->get_result()->fetch_assoc()['cnt'] > 5) $fscore += 25;
+    $fq3->close();
+
+    $fq4 = $conn->prepare("SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type = 'login_failed' AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+    $fq4->bind_param('i', $userId);
+    $fq4->execute();
+    $fq4Cnt = (int) $fq4->get_result()->fetch_assoc()['cnt'];
+    $fq4->close();
+    if ($fq4Cnt > 0) $fscore += min($fq4Cnt * 10, 30);
+
+    $ftypes = ['spam', 'phishing', 'fake_review', 'payment_fraud', 'account_takeover', 'suspicious_download'];
+    $fph = implode(',', array_fill(0, count($ftypes), '?'));
+    $fq5 = $conn->prepare("SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type IN ({$fph}) AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+    $fq5T = array_merge([$userId], $ftypes);
+    $fq5->bind_param(str_repeat('s', count($fq5T)), ...$fq5T);
+    $fq5->execute();
+    $fscore += (int) $fq5->get_result()->fetch_assoc()['cnt'] * 10;
+    $fq5->close();
+
+    $fscore = min($fscore, 100);
+    $fraudScore = $fscore;
+
+    $fqUp = $conn->prepare('UPDATE users SET fraud_score = ? WHERE id = ?');
+    $fqUp->bind_param('ii', $fscore, $userId);
+    $fqUp->execute();
+    $fqUp->close();
+}
 if ($fraudScore <= 30) {
     $fraudColor = 'text-emerald-500';
     $fraudBg = 'bg-emerald-50';

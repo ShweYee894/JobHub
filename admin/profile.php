@@ -4,7 +4,6 @@
  * Admin Profile Page
  * View and update admin profile, change password.
  */
-require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../auth/auth.php';
 require_role('admin');
 require_once __DIR__ . '/../config/db.php';

@@ -198,7 +198,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 </div>
                 <div class="px-6 pb-6 flex gap-3">
                     <button type="button" onclick="closeModal('createModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
-                    <button type="submit" class="flex-1 btn-grad px-4 py-2.5 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25">Create Milestone</button>
+                    <button type="submit" class="flex-1 btn-grad items-center justify-center px-4 py-2.5 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25 ">Create Milestone</button>
                 </div>
             </form>
         </div>

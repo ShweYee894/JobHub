@@ -4,7 +4,6 @@
  * Profile Update Handler
  * Processes POST from profile_edit.php with full validation and transactions.
  */
-require_once '../config/helpers.php';
 require_once '../auth/auth.php';
 require_role('freelancer');
 require_once '../config/db.php';

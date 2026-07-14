@@ -620,7 +620,7 @@ $conn->close();
                                                                 <i class="fas fa-check text-[10px]"></i> Applied
                                                             </span>
                                                         <?php else: ?>
-                                                            <button onclick="openProposalModal(<?= $job['id'] ?>, '<?= sanitize_string(addslashes($job['title'])) ?>', <?= $job['budget'] ?>)"
+                                                            <button type="button" onclick="openProposalModal(<?= $job['id'] ?>, '<?= sanitize_string(addslashes($job['title'])) ?>', <?= $job['budget'] ?>)"
                                                                 class="inline-flex items-center justify-center gap-2 px-4 py-2.5 btn-grad text-white text-xs font-semibold rounded-xl shadow-sm shadow-blue-500/25">
                                                                 <i class="fas fa-paper-plane text-[10px]"></i> Apply Now
                                                             </button>

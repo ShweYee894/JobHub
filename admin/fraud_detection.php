@@ -1,10 +1,71 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../auth/auth.php';
 require_role('admin');
 
 $currentPage = 'fraud';
+
+// ── Auto-recalculate fraud scores before counting ──────────────────────
+$recalcStmt = $conn->prepare('SELECT DISTINCT user_id FROM user_behavior_logs');
+$recalcStmt->execute();
+$recalcResult = $recalcStmt->get_result();
+$recalcUserIds = [];
+while ($recalcRow = $recalcResult->fetch_assoc()) {
+    $recalcUserIds[] = (int) $recalcRow['user_id'];
+}
+$recalcStmt->close();
+
+foreach ($recalcUserIds as $recalcUid) {
+    $recalcScore = 0;
+
+    $q1 = $conn->prepare('SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)');
+    $q1->bind_param('i', $recalcUid);
+    $q1->execute();
+    if ((int) $q1->get_result()->fetch_assoc()['cnt'] > 10) $recalcScore += 20;
+    $q1->close();
+
+    $q2 = $conn->prepare('SELECT COUNT(DISTINCT ip_address) AS cnt FROM user_behavior_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)');
+    $q2->bind_param('i', $recalcUid);
+    $q2->execute();
+    if ((int) $q2->get_result()->fetch_assoc()['cnt'] > 1) $recalcScore += 15;
+    $q2->close();
+
+    $q3 = $conn->prepare("SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type = 'proposal_submit' AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+    $q3->bind_param('i', $recalcUid);
+    $q3->execute();
+    if ((int) $q3->get_result()->fetch_assoc()['cnt'] > 5) $recalcScore += 25;
+    $q3->close();
+
+    $q4 = $conn->prepare("SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type = 'login_failed' AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+    $q4->bind_param('i', $recalcUid);
+    $q4->execute();
+    $q4Cnt = (int) $q4->get_result()->fetch_assoc()['cnt'];
+    $q4->close();
+    if ($q4Cnt > 0) $recalcScore += min($q4Cnt * 10, 30);
+
+    $flaggedTypes = ['spam', 'phishing', 'fake_review', 'payment_fraud', 'account_takeover', 'suspicious_download'];
+    $placeholders = implode(',', array_fill(0, count($flaggedTypes), '?'));
+    $q5 = $conn->prepare("SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type IN ({$placeholders}) AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+    $q5Types = array_merge([$recalcUid], $flaggedTypes);
+    $q5->bind_param(str_repeat('s', count($q5Types)), ...$q5Types);
+    $q5->execute();
+    $recalcScore += (int) $q5->get_result()->fetch_assoc()['cnt'] * 10;
+    $q5->close();
+
+    $recalcScore = min($recalcScore, 100);
+
+    $qUp = $conn->prepare('UPDATE users SET fraud_score = ? WHERE id = ?');
+    $qUp->bind_param('ii', $recalcScore, $recalcUid);
+    $qUp->execute();
+    $qUp->close();
+
+    if ($recalcScore >= 70) {
+        $qFl = $conn->prepare("UPDATE users SET status = 'flagged' WHERE id = ? AND status = 'active'");
+        $qFl->bind_param('i', $recalcUid);
+        $qFl->execute();
+        $qFl->close();
+    }
+}
 
 // ── Overview Counts ───────────────────────────────────────────────────
 $counts = [];

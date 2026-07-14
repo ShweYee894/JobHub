@@ -24,7 +24,6 @@ if (!isset($_SESSION['_created'])) {
 
 // ── Remember Me Auto-Login Check ────────────────────────────────────────
 if (!isset($_SESSION['user_id']) && isset($_COOKIE['fh_remember'])) {
-    require_once __DIR__ . '/../config/helpers.php';
     require_once __DIR__ . '/../config/db.php';
 
     $token = $_COOKIE['fh_remember'];

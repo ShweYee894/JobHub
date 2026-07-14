@@ -21,6 +21,18 @@ async function refreshScores() {
     icon.classList.add('fa-spin');
 
     try {
+        // Step 1: Recalculate all scores
+        const calcResponse = await fetch(`${BASE_URL}/api/fraud_api.php?action=recalculate_all`, {
+            credentials: 'same-origin'
+        });
+        const calcData = await calcResponse.json();
+
+        if (!calcData.success) {
+            showToast('Failed to recalculate scores.', 'error');
+            return;
+        }
+
+        // Step 2: Fetch updated suspicious users list
         const response = await fetch(`${BASE_URL}/api/fraud_api.php?action=suspicious`, {
             credentials: 'same-origin'
         });
@@ -28,9 +40,24 @@ async function refreshScores() {
 
         if (data.success && data.users) {
             updateSuspiciousTable(data.users);
-            showToast('Scores refreshed successfully.', 'success');
+
+            // Step 3: Update overview card counts
+            let flagged = 0, highRisk = 0, mediumRisk = 0;
+            data.users.forEach(u => {
+                if (u.status === 'flagged') flagged++;
+                if (u.fraud_score >= 70) highRisk++;
+                if (u.fraud_score >= 40 && u.fraud_score <= 69) mediumRisk++;
+            });
+            const elFlagged = document.getElementById('countFlagged');
+            const elHigh = document.getElementById('countHigh');
+            const elMedium = document.getElementById('countMedium');
+            if (elFlagged) elFlagged.textContent = flagged;
+            if (elHigh) elHigh.textContent = highRisk;
+            if (elMedium) elMedium.textContent = mediumRisk;
+
+            showToast(calcData.message || 'Scores recalculated successfully.', 'success');
         } else {
-            showToast('Failed to refresh scores.', 'error');
+            showToast('Failed to load suspicious users.', 'error');
         }
     } catch (err) {
         console.error('Score refresh error:', err);

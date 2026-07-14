@@ -21,13 +21,14 @@ require_once __DIR__ . '/../config/db.php';
 
 $userId = $_SESSION['user_id'];
 $userName = $_SESSION['user_name'] ?? 'Freelancer';
+$userProfile = $_SESSION['profile_image'];
 $pageTitle = 'Messages';
 $csrfToken = generate_csrf_token();
 $activePage = 'messages';
 
 $pageTitle = 'Messages';
 $pageSubtitle = 'Communicate with your clients';
-$user = ['name' => $userName ?? 'Freelancer', 'profile_image' => null];
+$user = ['name' => $userName ?? 'Freelancer', 'profile_image' => $userProfile ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
 require_once __DIR__ . '/../components/freelancer_header.php';
 ?>
@@ -76,7 +77,7 @@ if (emojiGrid) {
     });
 }
 </script>
-<script src="/finalproject/assets/js/chat.js"></script>
+<script src="/finalproject/assets/js/chat.js?v=<?= filemtime(__DIR__ . '/../assets/js/chat.js') ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     window.chat = new Chat({
@@ -85,6 +86,15 @@ document.addEventListener('DOMContentLoaded', () => {
         baseUrl: '/finalproject',
         csrfToken: '<?= $csrfToken ?>'
     });
+
+    setTimeout(() => {
+        if (window.chat && !window.chat.selectedRoomId && window.chat.conversations.length > 0) {
+            const latest = window.chat.conversations[0];
+            if (latest && latest.room_id) {
+                window.chat.openRoom(latest.room_id, latest);
+            }
+        }
+    }, 300);
 });
 </script>
 <?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

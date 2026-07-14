@@ -1,6 +1,131 @@
 <?php
-require_once __DIR__ . '/config/helpers.php';
+require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/auth/auth.php';
+
+// ── Fetch 6 featured open jobs with skills ───────────────────────────────
+$_featuredJobs = [];
+$_featStmt = $conn->prepare(
+    "SELECT j.id, j.title, j.description, j.budget, j.job_type, j.category, j.status,
+            j.proposal_count, j.created_at,
+            c.company_name
+     FROM jobs j
+     JOIN clients c ON j.client_id = c.client_id
+     WHERE j.status = 'open'
+     ORDER BY j.created_at DESC
+     LIMIT 6"
+);
+$_featStmt->execute();
+$_featResult = $_featStmt->get_result();
+while ($_fRow = $_featResult->fetch_assoc()) {
+    $_fRow['skills'] = [];
+    $_featuredJobs[$_fRow['id']] = $_fRow;
+}
+$_featStmt->close();
+
+if (!empty($_featuredJobs)) {
+    $_fids = array_keys($_featuredJobs);
+    $_fph = implode(',', array_fill(0, count($_fids), '?'));
+    $_ftypes = str_repeat('i', count($_fids));
+    $_fSkillStmt = $conn->prepare(
+        "SELECT js.job_id, s.skill_name, s.category
+         FROM job_skills js
+         JOIN skills s ON js.skill_id = s.id
+         WHERE js.job_id IN ($_fph)
+         ORDER BY s.skill_name"
+    );
+    $_fSkillStmt->bind_param($_ftypes, ...$_fids);
+    $_fSkillStmt->execute();
+    $_fSkillRes = $_fSkillStmt->get_result();
+    while ($_fsRow = $_fSkillRes->fetch_assoc()) {
+        if (isset($_featuredJobs[$_fsRow['job_id']])) {
+            $_featuredJobs[$_fsRow['job_id']]['skills'][] = $_fsRow;
+        }
+    }
+    $_fSkillStmt->close();
+}
+
+// ── Category icon map for job cards ───────────────────────────────────────
+$_catIcons = [
+    'web'        => ['icon' => 'fas fa-code',              'color' => 'blue'],
+    'mobile'     => ['icon' => 'fas fa-mobile-alt',        'color' => 'cyan'],
+    'design'     => ['icon' => 'fas fa-paint-brush',       'color' => 'pink'],
+    'graphic'    => ['icon' => 'fas fa-palette',           'color' => 'pink'],
+    'ai'         => ['icon' => 'fas fa-brain',             'color' => 'violet'],
+    'ml'         => ['icon' => 'fas fa-brain',             'color' => 'violet'],
+    'data'       => ['icon' => 'fas fa-chart-pie',         'color' => 'emerald'],
+    'devops'     => ['icon' => 'fab fa-aws',               'color' => 'orange'],
+    'cloud'      => ['icon' => 'fab fa-aws',               'color' => 'orange'],
+    'security'   => ['icon' => 'fas fa-shield-alt',        'color' => 'red'],
+    'cyber'      => ['icon' => 'fas fa-shield-alt',        'color' => 'red'],
+    'database'   => ['icon' => 'fas fa-database',          'color' => 'teal'],
+    'game'       => ['icon' => 'fas fa-gamepad',           'color' => 'yellow'],
+    'ecommerce'  => ['icon' => 'fas fa-shopping-cart',     'color' => 'blue'],
+    'saas'       => ['icon' => 'fas fa-cloud',             'color' => 'indigo'],
+    'api'        => ['icon' => 'fas fa-plug',              'color' => 'green'],
+    'automation' => ['icon' => 'fas fa-robot',             'color' => 'sky'],
+];
+$_defaultCatIcon = ['icon' => 'fas fa-briefcase', 'color' => 'blue'];
+
+function _getCatIcon(?string $cat, array $map, array $def): array
+{
+    if (!$cat) return $def;
+    $lower = strtolower($cat);
+    foreach ($map as $key => $val) {
+        if (strpos($lower, $key) !== false) return $val;
+    }
+    return $def;
+}
+
+// ── Fetch 4 top freelancers with skills and ratings ──────────────────────
+$_topFreelancers = [];
+$_tfStmt = $conn->prepare(
+    "SELECT u.id, u.name, u.profile_image,
+            f.title, f.hourly_rate, f.availability,
+            COALESCE(r.avg_rating, 0) AS avg_rating,
+            COALESCE(r.review_count, 0) AS review_count
+     FROM users u
+     JOIN freelancers f ON u.id = f.user_id
+     LEFT JOIN (
+         SELECT reviewee_id,
+                ROUND(AVG(rating), 1) AS avg_rating,
+                COUNT(*) AS review_count
+         FROM reviews
+         GROUP BY reviewee_id
+     ) r ON u.id = r.reviewee_id
+     WHERE u.role = 'freelancer' AND u.status = 'active'
+     ORDER BY r.avg_rating DESC, r.review_count DESC, f.years_of_experience DESC
+     LIMIT 4"
+);
+$_tfStmt->execute();
+$_tfResult = $_tfStmt->get_result();
+while ($_tfRow = $_tfResult->fetch_assoc()) {
+    $_tfRow['skills'] = [];
+    $_topFreelancers[$_tfRow['id']] = $_tfRow;
+}
+$_tfStmt->close();
+
+if (!empty($_topFreelancers)) {
+    $_tfids = array_keys($_topFreelancers);
+    $_tfph = implode(',', array_fill(0, count($_tfids), '?'));
+    $_tftypes = str_repeat('i', count($_tfids));
+    $_tfSkillStmt = $conn->prepare(
+        "SELECT fs.freelancer_id, s.skill_name
+         FROM freelancer_skills fs
+         JOIN skills s ON fs.skill_id = s.id
+         WHERE fs.freelancer_id IN ($_tfph)
+         ORDER BY s.skill_name"
+    );
+    $_tfSkillStmt->bind_param($_tftypes, ...$_tfids);
+    $_tfSkillStmt->execute();
+    $_tfSkillRes = $_tfSkillStmt->get_result();
+    while ($_tfsRow = $_tfSkillRes->fetch_assoc()) {
+        if (isset($_topFreelancers[$_tfsRow['freelancer_id']])) {
+            $_topFreelancers[$_tfsRow['freelancer_id']]['skills'][] = $_tfsRow['skill_name'];
+        }
+    }
+    $_tfSkillStmt->close();
+}
+
 $_ixLoggedIn = isset($_SESSION['user_id']);
 $_ixAvatar = $_ixLoggedIn ? get_profile_image($_SESSION['profile_image'] ?? null) : '';
 $_ixName = $_ixLoggedIn ? ($_SESSION['user_name'] ?? 'User') : '';
@@ -659,186 +784,59 @@ $_ixDash = match ($_ixRole) {
           <span class="text-xs font-bold uppercase tracking-widest text-cyan-600/70 bg-cyan-50 px-3 py-1 rounded-full">Latest Listings</span>
           <h2 class="text-4xl font-extrabold mt-4 text-gray-900">Featured <span class="grad-text">Jobs</span></h2>
         </div>
-        <a href="jobs/browse.php" class="btn-grad text-white font-semibold px-6 py-3 rounded-xl text-sm self-start sm:self-center shadow-lg shadow-blue-500/20">Browse All Jobs →</a>
+        <a href="freelancer/browse_jobs.php" class="btn-grad text-white font-semibold px-6 py-3 rounded-xl text-sm self-start sm:self-center shadow-lg shadow-blue-500/20">Browse All Jobs →</a>
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        <!-- Job Card 1 -->
-        <div class="job-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-              <i class="fas fa-shopping-cart text-blue-600 text-lg"></i>
+        <?php if (!empty($_featuredJobs)): ?>
+          <?php foreach ($_featuredJobs as $_fj):
+            $_ci = _getCatIcon($_fj['category'], $_catIcons, $_defaultCatIcon);
+            $_budgetDisp = $_fj['job_type'] === 'hourly'
+              ? '$' . number_format($_fj['budget'], 0) . '/hr'
+              : '$' . number_format($_fj['budget'], 0);
+            $_typeLabel = $_fj['job_type'] === 'hourly' ? 'Hourly' : 'Fixed Price';
+            $_typeColor = $_fj['job_type'] === 'hourly' ? 'text-purple-600' : 'text-cyan-600';
+          ?>
+          <div class="job-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <div class="flex items-start justify-between mb-4">
+              <div class="w-12 h-12 rounded-xl bg-<?php echo $_ci['color']; ?>-50 flex items-center justify-center">
+                <i class="<?php echo $_ci['icon']; ?> text-<?php echo $_ci['color']; ?>-600 text-lg"></i>
+              </div>
+              <span class="text-xs font-bold bg-green-50 text-green-600 px-3 py-1 rounded-full">Open</span>
             </div>
-            <span class="text-xs font-bold bg-green-50 text-green-600 px-3 py-1 rounded-full">Open</span>
-          </div>
-          <h3 class="font-bold text-gray-900 text-lg mb-2">Build E-Commerce Website</h3>
-          <p class="text-gray-500 text-sm mb-4 leading-relaxed">Full-featured online store with product management, cart, payment gateway integration (Stripe/PayPal), and admin panel.</p>
-          <div class="flex flex-wrap gap-2 mb-5">
-            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md font-medium">PHP</span>
-            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md font-medium">MySQL</span>
-            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md font-medium">React</span>
-            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md font-medium">Tailwind</span>
-          </div>
-          <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-            <div>
-              <p class="text-xs text-gray-400 mb-1">Budget</p>
-              <p class="text-xl font-black text-gray-900">$500</p>
+            <h3 class="font-bold text-gray-900 text-lg mb-2"><?php echo sanitize_string($_fj['title']); ?></h3>
+            <p class="text-gray-500 text-sm mb-4 leading-relaxed"><?php echo sanitize_string(mb_strimwidth($_fj['description'], 0, 120, '...')); ?></p>
+            <?php if (!empty($_fj['skills'])): ?>
+              <div class="flex flex-wrap gap-2 mb-5">
+                <?php foreach (array_slice($_fj['skills'], 0, 4) as $_sk): ?>
+                  <span class="text-xs bg-<?php echo $_ci['color']; ?>-50 text-<?php echo $_ci['color']; ?>-600 px-2 py-1 rounded-md font-medium"><?php echo sanitize_string($_sk['skill_name']); ?></span>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+            <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+              <div>
+                <p class="text-xs text-gray-400 mb-1">Budget</p>
+                <p class="text-xl font-black text-gray-900"><?php echo $_budgetDisp; ?></p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-400 mb-1">Type</p>
+                <p class="text-sm font-semibold <?php echo $_typeColor; ?>"><?php echo $_typeLabel; ?></p>
+              </div>
+              <a href="freelancer/job_detail.php?id=<?php echo $_fj['id']; ?>" class="btn-grad text-white text-sm font-semibold px-4 py-2 rounded-lg">Apply</a>
             </div>
-            <div class="text-right">
-              <p class="text-xs text-gray-400 mb-1">Type</p>
-              <p class="text-sm font-semibold text-cyan-600">Fixed Price</p>
-            </div>
-            <a href="jobs/view.php?id=1" class="btn-grad text-white text-sm font-semibold px-4 py-2 rounded-lg">Apply</a>
+            <p class="text-xs text-gray-400 mt-3"><i class="fas fa-clock mr-1"></i>Posted <?php echo time_ago($_fj['created_at']); ?> · <?php echo $_fj['proposal_count']; ?> proposals</p>
           </div>
-          <p class="text-xs text-gray-400 mt-3"><i class="fas fa-clock mr-1"></i>Posted 2 hours ago · 8 proposals</p>
-        </div>
-
-        <!-- Job Card 2 -->
-        <div class="job-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center">
-              <i class="fab fa-android text-cyan-600 text-lg"></i>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="col-span-full text-center py-16">
+            <div class="w-20 h-20 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-briefcase text-blue-300 text-3xl"></i>
             </div>
-            <span class="text-xs font-bold bg-green-50 text-green-600 px-3 py-1 rounded-full">Open</span>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">No jobs posted yet</h3>
+            <p class="text-sm text-gray-400 mb-5">Be the first to post a job and find great talent.</p>
+            <a href="auth/register.php?role=client" class="btn-grad inline-block text-white font-semibold px-6 py-3 rounded-xl text-sm shadow-lg shadow-blue-500/20">Post a Job</a>
           </div>
-          <h3 class="font-bold text-gray-900 text-lg mb-2">Android App Development</h3>
-          <p class="text-gray-500 text-sm mb-4 leading-relaxed">Native Android delivery tracking app with real-time GPS, push notifications, Firebase backend, and driver/customer views.</p>
-          <div class="flex flex-wrap gap-2 mb-5">
-            <span class="text-xs bg-cyan-50 text-cyan-600 px-2 py-1 rounded-md font-medium">Kotlin</span>
-            <span class="text-xs bg-cyan-50 text-cyan-600 px-2 py-1 rounded-md font-medium">Firebase</span>
-            <span class="text-xs bg-cyan-50 text-cyan-600 px-2 py-1 rounded-md font-medium">GPS API</span>
-          </div>
-          <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-            <div>
-              <p class="text-xs text-gray-400 mb-1">Budget</p>
-              <p class="text-xl font-black text-gray-900">$1,000</p>
-            </div>
-            <div class="text-right">
-              <p class="text-xs text-gray-400 mb-1">Type</p>
-              <p class="text-sm font-semibold text-cyan-600">Fixed Price</p>
-            </div>
-            <a href="jobs/view.php?id=2" class="btn-grad text-white text-sm font-semibold px-4 py-2 rounded-lg">Apply</a>
-          </div>
-          <p class="text-xs text-gray-400 mt-3"><i class="fas fa-clock mr-1"></i>Posted 5 hours ago · 14 proposals</p>
-        </div>
-
-        <!-- Job Card 3 -->
-        <div class="job-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center">
-              <i class="fas fa-brain text-violet-600 text-lg"></i>
-            </div>
-            <span class="text-xs font-bold bg-green-50 text-green-600 px-3 py-1 rounded-full">Open</span>
-          </div>
-          <h3 class="font-bold text-gray-900 text-lg mb-2">ML Chatbot Integration</h3>
-          <p class="text-gray-500 text-sm mb-4 leading-relaxed">Train and integrate a customer-support chatbot using OpenAI API, with context memory and CRM data retrieval.</p>
-          <div class="flex flex-wrap gap-2 mb-5">
-            <span class="text-xs bg-violet-50 text-violet-600 px-2 py-1 rounded-md font-medium">Python</span>
-            <span class="text-xs bg-violet-50 text-violet-600 px-2 py-1 rounded-md font-medium">OpenAI</span>
-            <span class="text-xs bg-violet-50 text-violet-600 px-2 py-1 rounded-md font-medium">FastAPI</span>
-          </div>
-          <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-            <div>
-              <p class="text-xs text-gray-400 mb-1">Budget</p>
-              <p class="text-xl font-black text-gray-900">$35/hr</p>
-            </div>
-            <div class="text-right">
-              <p class="text-xs text-gray-400 mb-1">Type</p>
-              <p class="text-sm font-semibold text-purple-600">Hourly</p>
-            </div>
-            <a href="jobs/view.php?id=3" class="btn-grad text-white text-sm font-semibold px-4 py-2 rounded-lg">Apply</a>
-          </div>
-          <p class="text-xs text-gray-400 mt-3"><i class="fas fa-clock mr-1"></i>Posted 1 day ago · 22 proposals</p>
-        </div>
-
-        <!-- Job Card 4 -->
-        <div class="job-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center">
-              <i class="fas fa-paint-brush text-pink-600 text-lg"></i>
-            </div>
-            <span class="text-xs font-bold bg-green-50 text-green-600 px-3 py-1 rounded-full">Open</span>
-          </div>
-          <h3 class="font-bold text-gray-900 text-lg mb-2">SaaS Dashboard UI Design</h3>
-          <p class="text-gray-500 text-sm mb-4 leading-relaxed">Design a modern analytics dashboard with dark/light mode, data visualizations, and a complete Figma component library.</p>
-          <div class="flex flex-wrap gap-2 mb-5">
-            <span class="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded-md font-medium">Figma</span>
-            <span class="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded-md font-medium">UI/UX</span>
-            <span class="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded-md font-medium">Prototyping</span>
-          </div>
-          <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-            <div>
-              <p class="text-xs text-gray-400 mb-1">Budget</p>
-              <p class="text-xl font-black text-gray-900">$750</p>
-            </div>
-            <div class="text-right">
-              <p class="text-xs text-gray-400 mb-1">Type</p>
-              <p class="text-sm font-semibold text-cyan-600">Fixed Price</p>
-            </div>
-            <a href="jobs/view.php?id=4" class="btn-grad text-white text-sm font-semibold px-4 py-2 rounded-lg">Apply</a>
-          </div>
-          <p class="text-xs text-gray-400 mt-3"><i class="fas fa-clock mr-1"></i>Posted 3 hours ago · 5 proposals</p>
-        </div>
-
-        <!-- Job Card 5 -->
-        <div class="job-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
-              <i class="fas fa-shield-alt text-red-600 text-lg"></i>
-            </div>
-            <span class="text-xs font-bold bg-yellow-50 text-yellow-600 px-3 py-1 rounded-full">Urgent</span>
-          </div>
-          <h3 class="font-bold text-gray-900 text-lg mb-2">Penetration Testing Report</h3>
-          <p class="text-gray-500 text-sm mb-4 leading-relaxed">Full security audit of a web application — OWASP Top 10 vulnerabilities, API security, and final penetration test report.</p>
-          <div class="flex flex-wrap gap-2 mb-5">
-            <span class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded-md font-medium">Burp Suite</span>
-            <span class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded-md font-medium">OWASP</span>
-            <span class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded-md font-medium">Kali Linux</span>
-          </div>
-          <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-            <div>
-              <p class="text-xs text-gray-400 mb-1">Budget</p>
-              <p class="text-xl font-black text-gray-900">$600</p>
-            </div>
-            <div class="text-right">
-              <p class="text-xs text-gray-400 mb-1">Type</p>
-              <p class="text-sm font-semibold text-cyan-600">Fixed Price</p>
-            </div>
-            <a href="jobs/view.php?id=5" class="btn-grad text-white text-sm font-semibold px-4 py-2 rounded-lg">Apply</a>
-          </div>
-          <p class="text-xs text-gray-400 mt-3"><i class="fas fa-clock mr-1"></i>Posted 6 hours ago · 3 proposals</p>
-        </div>
-
-        <!-- Job Card 6 -->
-        <div class="job-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center">
-              <i class="fab fa-aws text-orange-600 text-lg"></i>
-            </div>
-            <span class="text-xs font-bold bg-green-50 text-green-600 px-3 py-1 rounded-full">Open</span>
-          </div>
-          <h3 class="font-bold text-gray-900 text-lg mb-2">AWS Cloud Infrastructure Setup</h3>
-          <p class="text-gray-500 text-sm mb-4 leading-relaxed">Set up scalable AWS infrastructure using ECS, RDS, CloudFront CDN, S3, and CI/CD pipelines with GitHub Actions.</p>
-          <div class="flex flex-wrap gap-2 mb-5">
-            <span class="text-xs bg-orange-50 text-orange-600 px-2 py-1 rounded-md font-medium">AWS</span>
-            <span class="text-xs bg-orange-50 text-orange-600 px-2 py-1 rounded-md font-medium">Docker</span>
-            <span class="text-xs bg-orange-50 text-orange-600 px-2 py-1 rounded-md font-medium">Terraform</span>
-          </div>
-          <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
-            <div>
-              <p class="text-xs text-gray-400 mb-1">Budget</p>
-              <p class="text-xl font-black text-gray-900">$45/hr</p>
-            </div>
-            <div class="text-right">
-              <p class="text-xs text-gray-400 mb-1">Type</p>
-              <p class="text-sm font-semibold text-purple-600">Hourly</p>
-            </div>
-            <a href="jobs/view.php?id=6" class="btn-grad text-white text-sm font-semibold px-4 py-2 rounded-lg">Apply</a>
-          </div>
-          <p class="text-xs text-gray-400 mt-3"><i class="fas fa-clock mr-1"></i>Posted 12 hours ago · 9 proposals</p>
-        </div>
-
+        <?php endif; ?>
       </div>
     </div>
   </section>
@@ -854,133 +852,67 @@ $_ixDash = match ($_ixRole) {
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        <!-- Freelancer 1 -->
-        <div class="fl-card bg-white rounded-2xl p-6 text-center border border-gray-100 shadow-sm">
-          <div class="relative inline-block mb-4">
-            <div class="w-20 h-20 mx-auto rounded-full overflow-hidden ring-2 ring-blue-200 ring-offset-2 ring-offset-white">
-              <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                <rect width="80" height="80" fill="#eff6ff" />
-                <circle cx="40" cy="30" r="16" fill="#3b82f6" />
-                <ellipse cx="40" cy="72" rx="26" ry="20" fill="#3b82f6" />
-                <circle cx="40" cy="29" r="13" fill="#fde68a" />
-                <rect x="27" y="27" width="26" height="14" rx="7" fill="#1e3a5f" />
-                <circle cx="35" cy="33" r="3" fill="#fff" />
-                <circle cx="45" cy="33" r="3" fill="#fff" />
-              </svg>
+        <?php if (!empty($_topFreelancers)): ?>
+          <?php foreach ($_topFreelancers as $_tf):
+            $_isTopRated = $_tf['avg_rating'] >= 4.8 && $_tf['review_count'] >= 50;
+            $_ringColor = $_isTopRated ? 'yellow' : 'blue';
+            $_profileImg = get_profile_image($_tf['profile_image']);
+          ?>
+          <div class="fl-card bg-white rounded-2xl p-6 text-center border border-gray-100 shadow-sm<?php echo $_isTopRated ? ' relative' : ''; ?>">
+            <?php if ($_isTopRated): ?>
+              <div class="absolute top-3 right-3 text-xs font-bold bg-yellow-50 text-yellow-600 px-2 py-1 rounded-full"><i class="fas fa-crown mr-1"></i>Top Rated</div>
+            <?php endif; ?>
+            <div class="relative inline-block mb-4">
+              <div class="w-20 h-20 mx-auto rounded-full overflow-hidden ring-2 ring-<?php echo $_ringColor; ?>-200 ring-offset-2 ring-offset-white">
+                <img src="<?php echo $_profileImg; ?>" alt="<?php echo sanitize_string($_tf['name']); ?>" class="w-full h-full object-cover">
+              </div>
+              <?php if ($_tf['availability'] === 'Available'): ?>
+                <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></span>
+              <?php elseif ($_tf['availability'] === 'Busy'): ?>
+                <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full border-2 border-white"></span>
+              <?php else: ?>
+                <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-gray-400 rounded-full border-2 border-white"></span>
+              <?php endif; ?>
             </div>
-            <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></span>
-          </div>
-          <h3 class="font-bold text-gray-900 text-base">Arjun Patel</h3>
-          <p class="text-blue-600 text-xs font-medium mb-3">Full Stack Developer</p>
-          <div class="flex flex-wrap gap-1 justify-center mb-4">
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">PHP</span>
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">React</span>
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">MySQL</span>
-          </div>
-          <div class="flex items-center justify-center gap-1 mb-1 stars text-sm">
-            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-          </div>
-          <p class="text-xs text-gray-400 mb-3">4.8 (126 reviews)</p>
-          <p class="text-lg font-black text-gray-900">$45<span class="text-xs font-normal text-gray-400">/hr</span></p>
-          <a href="freelancers/profile.php?id=1" class="mt-4 block btn-grad text-white text-sm font-semibold py-2 rounded-xl">View Profile</a>
-        </div>
-
-        <!-- Freelancer 2 -->
-        <div class="fl-card bg-white rounded-2xl p-6 text-center border border-gray-100 shadow-sm relative">
-          <div class="absolute top-3 right-3 text-xs font-bold bg-yellow-50 text-yellow-600 px-2 py-1 rounded-full"><i class="fas fa-crown mr-1"></i>Top Rated</div>
-          <div class="relative inline-block mb-4">
-            <div class="w-20 h-20 mx-auto rounded-full overflow-hidden ring-2 ring-yellow-200 ring-offset-2 ring-offset-white">
-              <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                <rect width="80" height="80" fill="#fef3c7" />
-                <circle cx="40" cy="30" r="16" fill="#2dd4bf" />
-                <ellipse cx="40" cy="72" rx="26" ry="20" fill="#2dd4bf" />
-                <circle cx="40" cy="29" r="13" fill="#f97316" />
-                <circle cx="35" cy="31" r="3" fill="#1a3340" />
-                <circle cx="45" cy="31" r="3" fill="#1a3340" />
-                <path d="M34 37 Q40 42 46 37" stroke="#1a3340" stroke-width="2" fill="none" />
-              </svg>
+            <h3 class="font-bold text-gray-900 text-base"><?php echo sanitize_string($_tf['name']); ?></h3>
+            <p class="text-blue-600 text-xs font-medium mb-3"><?php echo sanitize_string($_tf['title'] ?? 'Freelancer'); ?></p>
+            <?php if (!empty($_tf['skills'])): ?>
+              <div class="flex flex-wrap gap-1 justify-center mb-4">
+                <?php foreach (array_slice($_tf['skills'], 0, 3) as $_skill): ?>
+                  <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md"><?php echo sanitize_string($_skill); ?></span>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+            <div class="flex items-center justify-center gap-1 mb-1 stars text-sm">
+              <?php
+              $_fullStars = floor($_tf['avg_rating']);
+              $_halfStar = ($_tf['avg_rating'] - $_fullStars) >= 0.5;
+              for ($_si = 0; $_si < $_fullStars; $_si++): ?>
+                <i class="fas fa-star"></i>
+              <?php endfor;
+              if ($_halfStar): ?>
+                <i class="fas fa-star-half-alt"></i>
+              <?php endif;
+              $_emptyStars = 5 - $_fullStars - ($_halfStar ? 1 : 0);
+              for ($_si = 0; $_si < $_emptyStars; $_si++): ?>
+                <i class="far fa-star"></i>
+              <?php endfor; ?>
             </div>
-            <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></span>
+            <p class="text-xs text-gray-400 mb-3"><?php echo number_format($_tf['avg_rating'], 1); ?> (<?php echo $_tf['review_count']; ?> reviews)</p>
+            <p class="text-lg font-black text-gray-900">$<?php echo number_format($_tf['hourly_rate'], 0); ?><span class="text-xs font-normal text-gray-400">/hr</span></p>
+            <a href="freelancer/profile.php?id=<?php echo $_tf['id']; ?>" class="mt-4 block btn-grad text-white text-sm font-semibold py-2 rounded-xl">View Profile</a>
           </div>
-          <h3 class="font-bold text-gray-900 text-base">Amara Osei</h3>
-          <p class="text-cyan-600 text-xs font-medium mb-3">UI/UX Designer</p>
-          <div class="flex flex-wrap gap-1 justify-center mb-4">
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">Figma</span>
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">Adobe XD</span>
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">Webflow</span>
-          </div>
-          <div class="flex items-center justify-center gap-1 mb-1 stars text-sm">
-            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-          </div>
-          <p class="text-xs text-gray-400 mb-3">5.0 (204 reviews)</p>
-          <p class="text-lg font-black text-gray-900">$60<span class="text-xs font-normal text-gray-400">/hr</span></p>
-          <a href="freelancers/profile.php?id=2" class="mt-4 block btn-grad text-white text-sm font-semibold py-2 rounded-xl">View Profile</a>
-        </div>
-
-        <!-- Freelancer 3 -->
-        <div class="fl-card bg-white rounded-2xl p-6 text-center border border-gray-100 shadow-sm">
-          <div class="relative inline-block mb-4">
-            <div class="w-20 h-20 mx-auto rounded-full overflow-hidden ring-2 ring-purple-200 ring-offset-2 ring-offset-white">
-              <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                <rect width="80" height="80" fill="#f5f3ff" />
-                <circle cx="40" cy="30" r="16" fill="#7c3aed" />
-                <ellipse cx="40" cy="72" rx="26" ry="20" fill="#7c3aed" />
-                <circle cx="40" cy="29" r="13" fill="#dbeafe" />
-                <circle cx="35" cy="31" r="3" fill="#1e1b4b" />
-                <circle cx="45" cy="31" r="3" fill="#1e1b4b" />
-                <rect x="28" y="17" width="24" height="12" rx="6" fill="#7c3aed" />
-              </svg>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="col-span-full text-center py-16">
+            <div class="w-20 h-20 rounded-2xl bg-purple-50 flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-users text-purple-300 text-3xl"></i>
             </div>
-            <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full border-2 border-white"></span>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">No freelancers yet</h3>
+            <p class="text-sm text-gray-400 mb-5">Be the first to join as a freelancer.</p>
+            <a href="auth/register.php?role=freelancer" class="btn-grad inline-block text-white font-semibold px-6 py-3 rounded-xl text-sm shadow-lg shadow-blue-500/20">Join as Freelancer</a>
           </div>
-          <h3 class="font-bold text-gray-900 text-base">Marcus Weber</h3>
-          <p class="text-purple-600 text-xs font-medium mb-3">Data Scientist / ML</p>
-          <div class="flex flex-wrap gap-1 justify-center mb-4">
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">Python</span>
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">TensorFlow</span>
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">SQL</span>
-          </div>
-          <div class="flex items-center justify-center gap-1 mb-1 stars text-sm">
-            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-          </div>
-          <p class="text-xs text-gray-400 mb-3">4.9 (88 reviews)</p>
-          <p class="text-lg font-black text-gray-900">$80<span class="text-xs font-normal text-gray-400">/hr</span></p>
-          <a href="freelancers/profile.php?id=3" class="mt-4 block btn-grad text-white text-sm font-semibold py-2 rounded-xl">View Profile</a>
-        </div>
-
-        <!-- Freelancer 4 -->
-        <div class="fl-card bg-white rounded-2xl p-6 text-center border border-gray-100 shadow-sm">
-          <div class="relative inline-block mb-4">
-            <div class="w-20 h-20 mx-auto rounded-full overflow-hidden ring-2 ring-cyan-200 ring-offset-2 ring-offset-white">
-              <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                <rect width="80" height="80" fill="#ecfeff" />
-                <circle cx="40" cy="30" r="16" fill="#06b6d4" />
-                <ellipse cx="40" cy="72" rx="26" ry="20" fill="#06b6d4" />
-                <circle cx="40" cy="29" r="13" fill="#fca5a5" />
-                <circle cx="35" cy="31" r="3" fill="#0c1a2e" />
-                <circle cx="45" cy="31" r="3" fill="#0c1a2e" />
-                <path d="M34 38 Q40 44 46 38" stroke="#0c1a2e" stroke-width="2" fill="none" />
-                <path d="M28 20 Q40 14 52 20" stroke="#333" stroke-width="4" fill="#1a1a2e" />
-              </svg>
-            </div>
-            <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></span>
-          </div>
-          <h3 class="font-bold text-gray-900 text-base">Yuki Tanaka</h3>
-          <p class="text-cyan-600 text-xs font-medium mb-3">Mobile Developer</p>
-          <div class="flex flex-wrap gap-1 justify-center mb-4">
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">Flutter</span>
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">Swift</span>
-            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">Firebase</span>
-          </div>
-          <div class="flex items-center justify-center gap-1 mb-1 stars text-sm">
-            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-          </div>
-          <p class="text-xs text-gray-400 mb-3">4.7 (155 reviews)</p>
-          <p class="text-lg font-black text-gray-900">$55<span class="text-xs font-normal text-gray-400">/hr</span></p>
-          <a href="freelancers/profile.php?id=4" class="mt-4 block btn-grad text-white text-sm font-semibold py-2 rounded-xl">View Profile</a>
-        </div>
-
+        <?php endif; ?>
       </div>
 
       <div class="text-center mt-10">
@@ -1646,6 +1578,7 @@ $_ixDash = match ($_ixRole) {
       }
     });
   </script>
+<?php $conn->close(); ?>
 </body>
 
 </html>

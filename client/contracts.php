@@ -372,12 +372,13 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                     <!-- More Actions Dropdown -->
                                     <div class="relative" id="dropdown-<?= (int) $c['id'] ?>">
                                         <button
+                                            type="button"
                                             onclick="toggleDropdown(<?= (int) $c['id'] ?>)"
                                             class="action-btn inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-xs font-semibold rounded-xl transition-all w-full dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 dark:text-gray-300">
                                             <i class="fas fa-ellipsis-v text-[10px]"></i> Actions
                                         </button>
 
-                                        <div class="dropdown-menu hidden absolute right-0 mt-2 w-52 bg-white rounded-xl border border-gray-100 shadow-xl z-30 py-1.5 dark:bg-gray-800 dark:border-gray-700">
+                                        <div class="contract-actions-menu absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl border border-gray-100 shadow-xl z-40 py-1.5 dark:bg-gray-800 dark:border-gray-700">
                                             <a href="contract_detail.php?id=<?= (int) $c['id'] ?>#milestones"
                                                 class="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-blue-400">
                                                 <i class="fas fa-tasks w-4 text-center text-violet-400"></i> View Milestones
@@ -490,32 +491,39 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <?php endif; ?>
 </main>
 
+<style>
+    .contract-actions-menu { display: none; }
+    .contract-actions-menu.show { display: block; }
+</style>
 <script>
     function toggleDropdown(id) {
-        var menu = document.getElementById('dropdown-' + id).querySelector('.dropdown-menu');
-        var isOpen = !menu.classList.contains('hidden');
+        var wrapper = document.getElementById('dropdown-' + id);
+        if (!wrapper) return;
+        var menu = wrapper.querySelector('.contract-actions-menu');
+        if (!menu) return;
+        var isOpen = menu.classList.contains('show');
 
-        document.querySelectorAll('.dropdown-menu').forEach(function(m) {
-            m.classList.add('hidden');
+        document.querySelectorAll('.contract-actions-menu').forEach(function(m) {
+            m.classList.remove('show');
         });
 
         if (!isOpen) {
-            menu.classList.remove('hidden');
+            menu.classList.add('show');
         }
     }
 
     document.addEventListener('click', function(e) {
         if (!e.target.closest('[id^="dropdown-"]')) {
-            document.querySelectorAll('.dropdown-menu').forEach(function(m) {
-                m.classList.add('hidden');
+            document.querySelectorAll('.contract-actions-menu').forEach(function(m) {
+                m.classList.remove('show');
             });
         }
     });
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            document.querySelectorAll('.dropdown-menu').forEach(function(m) {
-                m.classList.add('hidden');
+            document.querySelectorAll('.contract-actions-menu').forEach(function(m) {
+                m.classList.remove('show');
             });
         }
     });

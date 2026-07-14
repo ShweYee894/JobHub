@@ -239,6 +239,7 @@ if ($job_id) {
 
             $recommended[] = [
                 'freelancer_id' => $fl['id'],
+                'user_id' => $fl['user_id'],
                 'name' => $fl['name'],
                 'profile_image' => $fl['profile_image'],
                 'title' => $fl['title'],
@@ -291,100 +292,105 @@ require_once __DIR__ . '/../includes/client_topbar.php';
 
     <!-- Results -->
     <?php if ($job_id && empty($recommended)): ?>
-    <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
-        <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-user-slash text-2xl text-gray-400"></i>
+        <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
+            <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-user-slash text-2xl text-gray-400"></i>
+            </div>
+            <p class="text-gray-500 text-sm mb-2">No matching freelancers found</p>
+            <p class="text-gray-400 text-xs">Try posting a job with different requirements or skills.</p>
         </div>
-        <p class="text-gray-500 text-sm mb-2">No matching freelancers found</p>
-        <p class="text-gray-400 text-xs">Try posting a job with different requirements or skills.</p>
-    </div>
     <?php elseif ($job_id && !empty($recommended)): ?>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <?php foreach ($recommended as $match): ?>
-        <?php
-        $scoreColor = ($match['total_score'] >= 60)
-            ? 'text-emerald-600'
-            : (($match['total_score'] >= 40)
-                ? 'text-blue-600'
-                : (($match['total_score'] >= 20) ? 'text-amber-600' : 'text-gray-600'));
-        $scoreBg = ($match['total_score'] >= 60)
-            ? 'bg-emerald-50 border-emerald-200'
-            : (($match['total_score'] >= 40)
-                ? 'bg-blue-50 border-blue-200'
-                : (($match['total_score'] >= 20) ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'));
-        ?>
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="<?= get_profile_image($match['profile_image']) ?>" class="w-14 h-14 rounded-full object-cover border-2 border-gray-100 flex-shrink-0">
-                <div class="flex-1 min-w-0">
-                    <p class="font-bold text-gray-900 text-sm"><?= sanitize_string($match['name']) ?></p>
-                    <p class="text-xs text-gray-400"><?= sanitize_string($match['title'] ?? 'Freelancer') ?></p>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-xs text-gray-500"><i class="fas fa-clock mr-1"></i><?= $match['years_of_experience'] ?>yr</span>
-                        <span class="text-xs <?= $match['availability'] === 'Available' ? 'text-emerald-600' : 'text-amber-600' ?>">
-                            <i class="fas fa-circle text-[6px] mr-1"></i><?= $match['availability'] ?>
-                        </span>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <?php foreach ($recommended as $match): ?>
+                <?php
+                $scoreColor = ($match['total_score'] >= 60)
+                    ? 'text-emerald-600'
+                    : (($match['total_score'] >= 40)
+                        ? 'text-blue-600'
+                        : (($match['total_score'] >= 20) ? 'text-amber-600' : 'text-gray-600'));
+                $scoreBg = ($match['total_score'] >= 60)
+                    ? 'bg-emerald-50 border-emerald-200'
+                    : (($match['total_score'] >= 40)
+                        ? 'bg-blue-50 border-blue-200'
+                        : (($match['total_score'] >= 20) ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'));
+                ?>
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-start gap-4 mb-4">
+                        <img src="<?= get_profile_image($match['profile_image']) ?>" class="w-14 h-14 rounded-full object-cover border-2 border-gray-100 flex-shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-gray-900 text-sm"><?= sanitize_string($match['name']) ?></p>
+                            <p class="text-xs text-gray-400"><?= sanitize_string($match['title'] ?? 'Freelancer') ?></p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-xs text-gray-500"><i class="fas fa-clock mr-1"></i><?= $match['years_of_experience'] ?>yr</span>
+                                <span class="text-xs <?= $match['availability'] === 'Available' ? 'text-emerald-600' : 'text-amber-600' ?>">
+                                    <i class="fas fa-circle text-[6px] mr-1"></i><?= $match['availability'] ?>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="px-3 py-1.5 rounded-xl border <?= $scoreBg ?> text-center">
+                                <p class="text-lg font-black <?= $scoreColor ?>"><?= round($match['total_score']) ?>%</p>
+                                <p class="text-[9px] font-semibold text-gray-400 uppercase">Match</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1 mb-3">
+                        <?php foreach (array_slice($match['skill_names'], 0, 5) as $skill): ?>
+                            <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold"><?= sanitize_string($skill) ?></span>
+                        <?php endforeach; ?>
+                        <?php if (count($match['skill_names']) > 5): ?>
+                            <span class="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-semibold">+<?= count($match['skill_names']) - 5 ?></span>
+                        <?php endif; ?>
+                        <!--  REMOVED: $conn->close(); statement from here to prevent crash -->
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-[11px] mb-4">
+                        <div class="bg-gray-50 rounded-lg p-2">
+                            <span class="text-gray-400">Skill Match</span>
+                            <div class="flex items-center gap-1 mt-1">
+                                <div class="flex-1 bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-500 h-1.5 rounded-full" style="width:<?= min(100, $match['breakdown']['skill_match'] / 50 * 100) ?>%"></div>
+                                </div>
+                                <span class="font-bold text-gray-600"><?= $match['breakdown']['skill_match'] ?>/50</span>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-2">
+                            <span class="text-gray-400">Rate Fit</span>
+                            <p class="font-bold <?= $match['breakdown']['rate_fit'] >= 20 ? 'text-emerald-600' : ($match['breakdown']['rate_fit'] >= 10 ? 'text-amber-600' : 'text-gray-400') ?> mt-1"><?= $match['breakdown']['rate_fit'] ?>/20</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-2">
+                            <span class="text-gray-400">Experience</span>
+                            <p class="font-bold text-gray-600 mt-1"><?= $match['breakdown']['experience'] ?>/15</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-2">
+                            <span class="text-gray-400">Availability</span>
+                            <p class="font-bold <?= $match['breakdown']['availability'] >= 15 ? 'text-emerald-600' : 'text-gray-400' ?> mt-1"><?= $match['breakdown']['availability'] ?>/15</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <span class="text-sm font-bold text-gray-900"><?= format_currency($match['hourly_rate']) ?><span class="text-xs font-normal text-gray-400">/hr</span></span>
+
+                        <!--  FIXED: Changed $row['freelancer_id'] to $match['freelancer_id'] and styled beautifully -->
+                        <a href="/finalproject/freelancer/profile.php?id=<?= $match['user_id'] ?>"
+                            class="text-xs text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-1 transition-colors">
+                            View Profile <i class="fas fa-arrow-right text-[9px]"></i>
+                        </a>
                     </div>
                 </div>
-                <div class="flex-shrink-0">
-                    <div class="px-3 py-1.5 rounded-xl border <?= $scoreBg ?> text-center">
-                        <p class="text-lg font-black <?= $scoreColor ?>"><?= round($match['total_score']) ?>%</p>
-                        <p class="text-[9px] font-semibold text-gray-400 uppercase">Match</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex flex-wrap gap-1 mb-3">
-                <?php foreach (array_slice($match['skill_names'], 0, 5) as $skill): ?>
-                    <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold"><?= sanitize_string($skill) ?></span>
-                <?php endforeach; ?>
-                <?php if (count($match['skill_names']) > 5): ?>
-                    <span class="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-semibold">+<?= count($match['skill_names']) - 5 ?></span>
-                <?php endif; ?>
-                <?php $conn->close(); ?>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 text-[11px] mb-4">
-                <div class="bg-gray-50 rounded-lg p-2">
-                    <span class="text-gray-400">Skill Match</span>
-                    <div class="flex items-center gap-1 mt-1">
-                        <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="bg-blue-500 h-1.5 rounded-full" style="width:<?= min(100, $match['breakdown']['skill_match'] / 50 * 100) ?>%"></div></div>
-                        <span class="font-bold text-gray-600"><?= $match['breakdown']['skill_match'] ?>/50</span>
-                    </div>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-2">
-                    <span class="text-gray-400">Rate Fit</span>
-                    <p class="font-bold <?= $match['breakdown']['rate_fit'] >= 20 ? 'text-emerald-600' : ($match['breakdown']['rate_fit'] >= 10 ? 'text-amber-600' : 'text-gray-400') ?> mt-1"><?= $match['breakdown']['rate_fit'] ?>/20</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-2">
-                    <span class="text-gray-400">Experience</span>
-                    <p class="font-bold text-gray-600 mt-1"><?= $match['breakdown']['experience'] ?>/15</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-2">
-                    <span class="text-gray-400">Availability</span>
-                    <p class="font-bold <?= $match['breakdown']['availability'] >= 15 ? 'text-emerald-600' : 'text-gray-400' ?> mt-1"><?= $match['breakdown']['availability'] ?>/15</p>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                <span class="text-sm font-bold text-gray-900"><?= format_currency($match['hourly_rate']) ?><span class="text-xs font-normal text-gray-400">/hr</span></span>
-                <a href="proposal_detail.php?freelancer_id=<?= $match['freelancer_id'] ?>&job_id=<?= $job_id ?>" class="text-xs text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-1 transition-colors">
-                    View Profile <i class="fas fa-arrow-right text-[9px]"></i>
-                </a>
-            </div>
+            <?php endforeach; ?>
         </div>
-        <?php endforeach; ?>
-    </div>
 
     <?php elseif (!$job_id): ?>
-    <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
-        <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-brain text-2xl text-blue-400"></i>
+        <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
+            <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-brain text-2xl text-blue-400"></i>
+            </div>
+            <p class="text-gray-500 text-sm mb-2">Select a job to see AI recommendations</p>
+            <p class="text-gray-400 text-xs">Our AI analyzes skill requirements, budget, and experience to find the best matches.</p>
         </div>
-        <p class="text-gray-500 text-sm mb-2">Select a job to see AI recommendations</p>
-        <p class="text-gray-400 text-xs">Our AI analyzes skill requirements, budget, and experience to find the best matches.</p>
-    </div>
     <?php endif; ?>
 </main>
 <?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

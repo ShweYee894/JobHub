@@ -5,7 +5,6 @@
  */
 session_start();
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../config/helpers.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'freelancer') {
     header('Location: ../auth/login.php');
@@ -181,7 +180,85 @@ $stmt->execute();
 $weeklyViews = (int) $stmt->get_result()->fetch_assoc()['cnt'];
 $stmt->close();
 
-$weeklyInvites = rand(0, 5); // Placeholder - invite tracking would need a table
+$stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND type = 'job_invitation' AND is_read = 0");
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$weeklyInvites = (int) $stmt->get_result()->fetch_assoc()['cnt'];
+$stmt->close();
+
+// ── Invited Jobs (job invitations from clients) ─────────────────
+$invitedJobsArr = [];
+$invStmt = $conn->prepare("
+    SELECT n.id AS invitation_id, n.link, n.created_at, n.is_read, n.message
+    FROM notifications n
+    WHERE n.user_id = ? AND n.type = 'job_invitation'
+    ORDER BY n.created_at DESC LIMIT 10
+");
+$invStmt->bind_param('i', $userId);
+$invStmt->execute();
+$invResult = $invStmt->get_result();
+while ($inv = $invResult->fetch_assoc()) {
+    // Parse job_id and client_id from link: /finalproject/freelancer/invitation_action.php?invitation_id=X&action=view
+    $inv['job_id'] = 0;
+    $inv['client_id'] = 0;
+    if (preg_match('/job_id=(\d+)/', $inv['link'], $m)) {
+        $inv['job_id'] = (int) $m[1];
+    }
+    if (preg_match('/client_id=(\d+)/', $inv['link'], $m)) {
+        $inv['client_id'] = (int) $m[1];
+    }
+    // Parse invitation_id from link
+    if (preg_match('/invitation_id=(\d+)/', $inv['link'], $m)) {
+        $inv['invitation_id_parsed'] = (int) $m[1];
+    }
+    $invitedJobsArr[] = $inv;
+}
+$invStmt->close();
+
+// Enrich invited jobs with job and client data
+if (!empty($invitedJobsArr)) {
+    $invJobIds = array_unique(array_filter(array_column($invitedJobsArr, 'job_id')));
+    $invClientIds = array_unique(array_filter(array_column($invitedJobsArr, 'client_id')));
+    $invJobData = [];
+    $invClientData = [];
+
+    if (!empty($invJobIds)) {
+        $jidPH = implode(',', array_fill(0, count($invJobIds), '?'));
+        $jidTypes = str_repeat('i', count($invJobIds));
+        $jStmt = $conn->prepare("SELECT id, title, budget, description, created_at FROM jobs WHERE id IN ($jidPH)");
+        $jStmt->bind_param($jidTypes, ...$invJobIds);
+        $jStmt->execute();
+        $jRes = $jStmt->get_result();
+        while ($jr = $jRes->fetch_assoc()) $invJobData[$jr['id']] = $jr;
+        $jStmt->close();
+    }
+
+    if (!empty($invClientIds)) {
+        $cidPH = implode(',', array_fill(0, count($invClientIds), '?'));
+        $cidTypes = str_repeat('i', count($invClientIds));
+        $cStmt = $conn->prepare("SELECT u.id, u.name, u.profile_image FROM users u WHERE u.id IN ($cidPH)");
+        $cStmt->bind_param($cidTypes, ...$invClientIds);
+        $cStmt->execute();
+        $cRes = $cStmt->get_result();
+        while ($cr = $cRes->fetch_assoc()) $invClientData[$cr['id']] = $cr;
+        $cStmt->close();
+    }
+
+    foreach ($invitedJobsArr as &$inv) {
+        $inv['job'] = $invJobData[$inv['job_id']] ?? null;
+        $inv['client'] = $invClientData[$inv['client_id']] ?? null;
+        // Check if already has a proposal for this job
+        $inv['has_proposal'] = false;
+        if ($inv['job_id'] > 0) {
+            $pStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM proposals WHERE freelancer_id = ? AND job_id = ?");
+            $pStmt->bind_param('ii', $freelancerId, $inv['job_id']);
+            $pStmt->execute();
+            $inv['has_proposal'] = (int) $pStmt->get_result()->fetch_assoc()['cnt'] > 0;
+            $pStmt->close();
+        }
+    }
+    unset($inv);
+}
 
 // ── Monthly Earnings Chart ─────────────────────────────────────
 $earningsChart = [];
@@ -408,7 +485,81 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             </div>
 
             <!-- Invited Jobs Tab (hidden by default) -->
-            <div id="panel-invited" class="job-panel hidden">
+            <div id="panel-invited" class="job-panel hidden space-y-4">
+                <?php if (!empty($invitedJobsArr)): ?>
+                <?php $invIdx = 0; foreach ($invitedJobsArr as $inv):
+                    $job = $inv['job'];
+                    $client = $inv['client'];
+                    if (!$job) continue;
+                ?>
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:<?= 0.2 + ($invIdx * 0.05) ?>s">
+                    <div class="flex flex-col lg:flex-row lg:items-start gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start gap-3 mb-3">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-envelope text-white text-sm"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                                        <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                                            <?= htmlspecialchars($job['title']) ?>
+                                        </a>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-50 text-violet-600 text-[10px] font-bold rounded-full border border-violet-200">
+                                            <i class="fas fa-user-tie"></i> Invitation
+                                        </span>
+                                        <?php if ($inv['has_proposal']): ?>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full border border-emerald-200">
+                                                <i class="fas fa-check-circle"></i> Applied
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php if ($client): ?>
+                                    <div class="flex items-center gap-2 text-xs text-gray-400">
+                                        <span class="font-medium text-gray-600"><?= htmlspecialchars($client['name']) ?></span>
+                                        <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                        <span><?= time_ago($inv['created_at']) ?></span>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php if (!empty($job['description'])): ?>
+                            <p class="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(mb_strimwidth($job['description'], 0, 150, '...')) ?></p>
+                            <?php endif; ?>
+                            <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fas fa-dollar-sign text-emerald-500"></i>
+                                    <span class="font-bold text-gray-900"><?= format_currency($job['budget']) ?></span>
+                                </span>
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fas fa-clock text-blue-400"></i> <?= time_ago($job['created_at']) ?>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:flex-col lg:items-stretch lg:min-w-[140px]">
+                            <a href="job_detail.php?id=<?= $job['id'] ?>"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 text-xs font-semibold rounded-xl transition-all">
+                                <i class="fas fa-eye text-[10px]"></i> View Details
+                            </a>
+                            <?php if (!$inv['has_proposal']): ?>
+                            <a href="invitation_action.php?job_id=<?= $job['id'] ?>&client_id=<?= $inv['client_id'] ?>&action=accept"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 btn-grad text-white text-xs font-semibold rounded-xl shadow-sm shadow-blue-500/25">
+                                <i class="fas fa-check text-[10px]"></i> Accept & Apply
+                            </a>
+                            <a href="invitation_action.php?job_id=<?= $job['id'] ?>&client_id=<?= $inv['client_id'] ?>&action=decline"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold rounded-xl transition-all">
+                                <i class="fas fa-times text-[10px]"></i> Decline
+                            </a>
+                            <?php else: ?>
+                            <a href="proposal_detail.php?job_id=<?= $job['id'] ?>"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-emerald-200 text-emerald-600 hover:bg-emerald-50 text-xs font-semibold rounded-xl transition-all">
+                                <i class="fas fa-file-alt text-[10px]"></i> View Proposal
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <?php $invIdx++; endforeach; ?>
+                <?php else: ?>
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
                     <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center mx-auto mb-4 border border-violet-100">
                         <i class="fas fa-envelope-open text-3xl text-violet-300"></i>
@@ -416,6 +567,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                     <h3 class="text-lg font-bold text-gray-900 mb-2">No invitations yet</h3>
                     <p class="text-sm text-gray-400">Complete your profile and deliver great work to get invited by clients.</p>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
 

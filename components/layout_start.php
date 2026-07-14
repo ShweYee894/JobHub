@@ -604,7 +604,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                 <?php endif; ?>
 
                 <!-- Notifications -->
-                <a href="../shared/notifications.php" class="relative w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700 no-underline transition">
+                <a href="../shared/notifications_page.php" class="relative w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700 no-underline transition">
                     <i class="fas fa-bell text-base"></i>
                     <?php if ($_layoutUnread > 0): ?>
                         <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>

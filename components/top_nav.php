@@ -157,7 +157,7 @@ $_navItems = $navItems ?? [];
                 <input type="text" placeholder="Search..." class="w-56 py-2 pl-9 pr-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-300 transition">
             </div>
             <!-- Notifications -->
-            <a href="../shared/notifications.php" class="relative w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700 no-underline">
+            <a href="../shared/notifications_page.php" class="relative w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700 no-underline">
                 <i class="fas fa-bell text-base"></i>
                 <?php if ($_navUnread > 0): ?>
                     <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>

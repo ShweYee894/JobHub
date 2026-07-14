@@ -428,7 +428,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                     <i class="fas fa-file-excel text-emerald-500"></i> Export Excel
                                 </button>
                                 <button type="button" onclick="exportPDF()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                                    <i class="fas fa-file-pdf text-red-500"></i> Export PDF
+                                    <i class="fas fa-file-invoice text-red-500"></i> Payment Report
                                 </button>
                             </div>
                         </div>

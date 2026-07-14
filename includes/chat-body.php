@@ -51,11 +51,16 @@
 
 <!-- Placeholder (no room selected) -->
 <div id="chatPlaceholder" class="flex-1 flex items-center justify-center bg-white dark:bg-slate-800" style="min-height: 0;">
-    <div class="text-center">
-        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center mx-auto mb-5 border border-blue-100 dark:border-slate-600">
-            <i class="fas fa-comments text-3xl text-blue-300 dark:text-blue-400"></i>
+    <div class="text-center px-6">
+        <div class="w-24 h-24 mx-auto mb-6 relative">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-slate-700 dark:to-slate-600 rounded-3xl rotate-6 opacity-60"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-600 rounded-3xl flex items-center justify-center border border-blue-100 dark:border-slate-600">
+                <svg class="w-10 h-10 text-blue-400 dark:text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+                </svg>
+            </div>
         </div>
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Select a Conversation</h3>
-        <p class="text-sm text-gray-400 dark:text-gray-500 max-w-sm mx-auto">Choose a conversation from the left to start messaging.</p>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">No conversations yet</h3>
+        <p class="text-sm text-gray-400 dark:text-gray-500 max-w-xs mx-auto leading-relaxed">Start by applying to a job or hiring a freelancer. Your messages will appear here.</p>
     </div>
 </div>

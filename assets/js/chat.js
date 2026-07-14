@@ -278,6 +278,14 @@ class Chat {
 
             this._renderConversationList(this.conversations);
             this._updateTotalUnread();
+
+            // Auto-open latest conversation
+            if (this.conversations.length > 0 && !this.selectedRoomId) {
+                const latest = this.conversations[0];
+                if (latest && latest.room_id) {
+                    this.openRoom(latest.room_id, latest);
+                }
+            }
         })
         .catch(err => {
             console.error('loadConversations error:', err);
@@ -1006,10 +1014,23 @@ class Chat {
        MOBILE NAVIGATION
        ═══════════════════════════════════════════════════════════════════════ */
 
+    _isDesktop() {
+        return window.matchMedia('(min-width: 640px)').matches;
+    }
+
     _showChatOnMobile() {
-        if (this.els.roomsPanel) {
-            this.els.roomsPanel.classList.add('hidden');
-            this.els.roomsPanel.classList.remove('flex');
+        if (this._isDesktop()) {
+            // Desktop: show both panels side by side
+            if (this.els.roomsPanel) {
+                this.els.roomsPanel.classList.remove('hidden');
+                this.els.roomsPanel.classList.add('flex');
+            }
+        } else {
+            // Mobile: hide rooms panel, show chat area
+            if (this.els.roomsPanel) {
+                this.els.roomsPanel.classList.add('hidden');
+                this.els.roomsPanel.classList.remove('flex');
+            }
         }
         if (this.els.chatArea) {
             this.els.chatArea.classList.remove('hidden');
@@ -1018,13 +1039,26 @@ class Chat {
     }
 
     _showListOnMobile() {
-        if (this.els.chatArea) {
-            this.els.chatArea.classList.add('hidden');
-            this.els.chatArea.classList.remove('flex');
-        }
-        if (this.els.roomsPanel) {
-            this.els.roomsPanel.classList.remove('hidden');
-            this.els.roomsPanel.classList.add('flex');
+        if (this._isDesktop()) {
+            // Desktop: both panels stay visible
+            if (this.els.chatArea) {
+                this.els.chatArea.classList.remove('hidden');
+                this.els.chatArea.classList.add('flex');
+            }
+            if (this.els.roomsPanel) {
+                this.els.roomsPanel.classList.remove('hidden');
+                this.els.roomsPanel.classList.add('flex');
+            }
+        } else {
+            // Mobile: show rooms list, hide chat
+            if (this.els.chatArea) {
+                this.els.chatArea.classList.add('hidden');
+                this.els.chatArea.classList.remove('flex');
+            }
+            if (this.els.roomsPanel) {
+                this.els.roomsPanel.classList.remove('hidden');
+                this.els.roomsPanel.classList.add('flex');
+            }
         }
         this.disconnectSSE();
         this.selectedRoomId = null;

@@ -5,13 +5,13 @@
  *
  * GET ?action=log              - Log a user action
  * GET ?action=calculate_score  - Calculate fraud score for a user
+ * GET ?action=recalculate_all  - Batch recalculate all users' fraud scores
  * GET ?action=suspicious       - List suspicious users
  * GET ?action=activity_log     - List recent behavior logs
  */
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../auth/auth.php';
 
 header('Content-Type: application/json');
@@ -268,6 +268,109 @@ switch ($action) {
             'success'    => true,
             'logs'       => $logs,
             'pagination' => $pagination,
+        ]);
+        break;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // RECALCULATE ALL user fraud scores (batch)
+    // ═══════════════════════════════════════════════════════════════════
+    case 'recalculate_all':
+        if (!is_logged_in()) {
+            json_response(['success' => false, 'message' => 'Authentication required.'], 401);
+        }
+
+        // Get all users who have any behavior logs
+        $stmt = $conn->prepare('SELECT DISTINCT user_id FROM user_behavior_logs');
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $userIds = [];
+        while ($row = $result->fetch_assoc()) {
+            $userIds[] = (int) $row['user_id'];
+        }
+        $stmt->close();
+
+        $updated = 0;
+        $flagged = 0;
+
+        foreach ($userIds as $uid) {
+            $score = 0;
+
+            // 1. Rapid actions: >10 in last 1 minute
+            $stmt = $conn->prepare(
+                'SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)'
+            );
+            $stmt->bind_param('i', $uid);
+            $stmt->execute();
+            $rapidCount = (int) $stmt->get_result()->fetch_assoc()['cnt'];
+            $stmt->close();
+            if ($rapidCount > 10) $score += 20;
+
+            // 2. Multiple IPs in 24h
+            $stmt = $conn->prepare(
+                'SELECT COUNT(DISTINCT ip_address) AS ip_count FROM user_behavior_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)'
+            );
+            $stmt->bind_param('i', $uid);
+            $stmt->execute();
+            $ipCount = (int) $stmt->get_result()->fetch_assoc()['ip_count'];
+            $stmt->close();
+            if ($ipCount > 1) $score += 15;
+
+            // 3. Rapid proposals: >5 in 1 hour
+            $stmt = $conn->prepare(
+                "SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type = 'proposal_submit' AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)"
+            );
+            $stmt->bind_param('i', $uid);
+            $stmt->execute();
+            $proposalCount = (int) $stmt->get_result()->fetch_assoc()['cnt'];
+            $stmt->close();
+            if ($proposalCount > 5) $score += 25;
+
+            // 4. Failed logins in 24h
+            $stmt = $conn->prepare(
+                "SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type = 'login_failed' AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+            );
+            $stmt->bind_param('i', $uid);
+            $stmt->execute();
+            $failedLogins = (int) $stmt->get_result()->fetch_assoc()['cnt'];
+            $stmt->close();
+            if ($failedLogins > 0) $score += min($failedLogins * 10, 30);
+
+            // 5. Flagged action types in 7 days
+            $flaggedTypes = ['spam', 'phishing', 'fake_review', 'payment_fraud', 'account_takeover', 'suspicious_download'];
+            $placeholders = implode(',', array_fill(0, count($flaggedTypes), '?'));
+            $stmt = $conn->prepare(
+                "SELECT COUNT(*) AS cnt FROM user_behavior_logs WHERE user_id = ? AND action_type IN ({$placeholders}) AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)"
+            );
+            $types = array_merge([$uid], $flaggedTypes);
+            $stmt->bind_param(str_repeat('s', count($types)), ...$types);
+            $stmt->execute();
+            $flaggedCount = (int) $stmt->get_result()->fetch_assoc()['cnt'];
+            $stmt->close();
+            $score += $flaggedCount * 10;
+
+            $score = min($score, 100);
+
+            $stmt = $conn->prepare('UPDATE users SET fraud_score = ? WHERE id = ?');
+            $stmt->bind_param('ii', $score, $uid);
+            $stmt->execute();
+            $stmt->close();
+            $updated++;
+
+            // Auto-flag if score >= 70
+            if ($score >= 70) {
+                $stmt = $conn->prepare("UPDATE users SET status = 'flagged' WHERE id = ? AND status = 'active'");
+                $stmt->bind_param('i', $uid);
+                $stmt->execute();
+                if ($stmt->affected_rows > 0) $flagged++;
+                $stmt->close();
+            }
+        }
+
+        json_response([
+            'success'  => true,
+            'message'  => "Recalculated {$updated} users. {$flagged} auto-flagged.",
+            'updated'  => $updated,
+            'flagged'  => $flagged,
         ]);
         break;
 

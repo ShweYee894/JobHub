@@ -5,7 +5,6 @@
  */
 session_start();
 
-require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../config/db.php';
 
 // ── Remove remember token from DB if present ───────────────────────────

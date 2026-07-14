@@ -274,7 +274,7 @@ while ($job = $jobs_result->fetch_assoc()) {
 usort($matches, fn($a, $b) => $b['total_score'] <=> $a['total_score']);
 $recommended = array_slice($matches, 0, 20);
 
-$activePage = 'home';
+$activePage = 'recommended_jobs';
 $pageTitle = 'Recommended Jobs';
 $pageSubtitle = 'Jobs matched to your skills and experience';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];

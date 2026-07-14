@@ -147,7 +147,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                             </div>
                             <div class="flex items-center gap-0.5 mb-2">
                                 <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <i class="fas fa-star text-xs <?= $i <= $sr['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
+                                <i class="fas fa-star text-xs text-yellow-500 <?= $i <= $sr['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
                                 <?php endfor; ?>
                                 <span class="text-xs font-semibold text-gray-600 ml-1"><?= $sr['rating'] ?>/5</span>
                             </div>

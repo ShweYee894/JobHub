@@ -114,7 +114,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                     <div class="text-5xl font-black text-gray-900 mb-1"><?= $totalReviews > 0 ? number_format($avgRating, 1) : '—' ?></div>
                     <div class="flex items-center justify-center gap-0.5 mb-1">
                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                            <i class="fas fa-star text-lg <?= $i <= round($avgRating) ? 'star-filled' : 'star-empty' ?>"></i>
+                            <i class="fas fa-star text-lg text-yellow-500 <?= $i <= round($avgRating) ? 'star-filled' : 'star-empty' ?>"></i>
                         <?php endfor; ?>
                     </div>
                     <p class="text-xs text-gray-400"><?= $totalReviews ?> review<?= $totalReviews !== 1 ? 's' : '' ?></p>
@@ -127,7 +127,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         $pct = $totalReviews > 0 ? round(($dist[$s] / $totalReviews) * 100) : 0;
                         ?>
                         <div class="flex items-center gap-3">
-                            <span class="text-xs font-semibold text-gray-500 w-8 text-right"><?= $s ?> <i class="fas fa-star text-[10px] star-filled"></i></span>
+                            <span class="text-xs font-semibold text-gray-500 w-8 text-right"><?= $s ?> <i class="fas fa-star text-[10px] star-filled text-yellow-500"></i></span>
                             <div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
                                 <div class="h-full rounded-full bg-amber-400 transition-all duration-500" style="width: <?= $pct ?>%"></div>
                             </div>
@@ -224,7 +224,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                     </div>
                                     <div class="flex items-center gap-0.5 mb-2">
                                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star text-xs <?= $i <= $rv['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
+                                            <i class="fas fa-star text-xs text-amber-500 <?= $i <= $rv['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
                                         <?php endfor; ?>
                                         <span class="text-xs font-semibold text-gray-600 ml-1"><?= $rv['rating'] ?>/5</span>
                                     </div>
@@ -279,7 +279,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                     </div>
                                     <div class="flex items-center gap-0.5 mb-2">
                                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star text-xs <?= $i <= $gv['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
+                                            <i class="fas fa-star text-xs text-amber-500 <?= $i <= $gv['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
                                         <?php endfor; ?>
                                         <span class="text-xs font-semibold text-gray-600 ml-1"><?= $gv['rating'] ?>/5</span>
                                     </div>

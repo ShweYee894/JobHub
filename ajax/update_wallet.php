@@ -7,7 +7,6 @@
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../auth/auth.php';
 require_once __DIR__ . '/../includes/wallet_functions.php';
 

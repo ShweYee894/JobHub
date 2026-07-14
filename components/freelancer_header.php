@@ -414,17 +414,20 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
 
                 <!-- Desktop Nav Links -->
                 <div class="hidden lg:flex items-center gap-1">
+
+                    <a href="../index.php" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= $_fhActive === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' ?> transition-all">
+                        Home</a>
+
                     <!-- Find Work Dropdown -->
                     <div class="relative" id="findWorkDropdown">
-                        <button onclick="toggleDropdown('findWorkDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_fhActive, ['home', 'browse_jobs', 'job_detail', 'recommended_jobs', 'saved_jobs', 'invited_jobs', 'proposals']) ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' ?> transition-all">
+                        <button onclick="toggleDropdown('findWorkDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_fhActive, ['browse_jobs', 'job_detail', 'recommended_jobs', 'saved_jobs', 'invited_jobs', 'proposals']) ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' ?> transition-all">
                             Find Work <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                         </button>
                         <div class="dropdown-menu">
-                            <a href="../index.php" class="dropdown-item <?= $_fhActive === 'home' ? 'text-blue-600 bg-blue-50' : '' ?>"><i class="fas fa-home"></i> Home</a>
                             <a href="browse_jobs.php" class="dropdown-item <?= $_fhActive === 'browse_jobs' ? 'text-blue-600 bg-blue-50' : '' ?>"><i class="fas fa-search"></i> Browse Jobs</a>
                             <a href="recommended_jobs.php" class="dropdown-item <?= $_fhActive === 'recommended_jobs' ? 'text-blue-600 bg-blue-50' : '' ?>"><i class="fas fa-magic"></i> AI Job Matches</a>
-                            <a href="browse_jobs.php?saved=1" class="dropdown-item"><i class="fas fa-bookmark"></i> Saved Jobs</a>
-                            <a href="browse_jobs.php?invited=1" class="dropdown-item"><i class="fas fa-envelope-open"></i> Invited Jobs</a>
+                            <!-- <a href="browse_jobs.php?saved=1" class="dropdown-item"><i class="fas fa-bookmark"></i> Saved Jobs</a>
+                            <a href="browse_jobs.php?invited=1" class="dropdown-item"><i class="fas fa-envelope-open"></i> Invited Jobs</a> -->
                             <div class="border-t border-gray-100 my-1"></div>
                             <a href="proposals.php" class="dropdown-item <?= $_fhActive === 'proposals' ? 'text-blue-600 bg-blue-50' : '' ?>"><i class="fas fa-file-alt"></i> My Proposals</a>
                         </div>
@@ -436,9 +439,9 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
                             Deliver Work <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                         </button>
                         <div class="dropdown-menu">
-                            <a href="contracts.php" class="dropdown-item <?= $_fhActive === 'contracts' ? 'text-blue-600 bg-blue-50' : '' ?>"><i class="fas fa-file-contract"></i> Active Contracts</a>
-                            <a href="contract_detail.php" class="dropdown-item"><i class="fas fa-tasks"></i> My Milestones</a>
-                            <a href="contracts.php?view=submitted" class="dropdown-item"><i class="fas fa-paper-plane"></i> Submitted Work</a>
+                            <a href="contracts.php?status=active" class="dropdown-item <?= $_fhActive === 'contracts' ? 'text-blue-600 bg-blue-50' : '' ?>"><i class="fas fa-file-contract"></i> Active Contracts</a>
+                            <!-- <a href="contract_detail.php" class="dropdown-item"><i class="fas fa-tasks"></i> My Milestones</a> -->
+                            <a href="contracts.php?status=completed" class="dropdown-item"><i class="fas fa-paper-plane"></i> Submitted Work</a>
                             <a href="contracts.php?view=history" class="dropdown-item"><i class="fas fa-history"></i> Contract History</a>
                         </div>
                     </div>
@@ -450,8 +453,8 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
                         </button>
                         <div class="dropdown-menu">
                             <a href="earnings.php" class="dropdown-item <?= $_fhActive === 'earnings' ? 'text-blue-600 bg-blue-50' : '' ?>"><i class="fas fa-chart-line"></i> Financial Overview</a>
-                            <a href="earnings.php#earnings" class="dropdown-item"><i class="fas fa-dollar-sign"></i> Earnings</a>
-                            <a href="earnings.php#transactions" class="dropdown-item"><i class="fas fa-receipt"></i> Transactions</a>
+                            <!-- <a href="earnings.php#earnings" class="dropdown-item"><i class="fas fa-dollar-sign"></i> Earnings</a>
+                            <a href="earnings.php#transactions" class="dropdown-item"><i class="fas fa-receipt"></i> Transactions</a> -->
                             <a href="reviews.php" class="dropdown-item <?= $_fhActive === 'reviews' ? 'text-blue-600 bg-blue-50' : '' ?>"><i class="fas fa-star"></i> Reviews</a>
                         </div>
                     </div>
@@ -485,7 +488,7 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
                 </div>
 
                 <!-- Notifications -->
-                <a href="../shared/notifications.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <a href="../shared/notifications_page.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all">
                     <i class="fas fa-bell text-[13px] hidden sm:inline"></i>
                     <?php if ($_fhUnread > 0): ?>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -540,10 +543,11 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
             </button>
         </div>
         <div class="p-4 space-y-1">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-2">Find Work</p>
             <a href="home.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_fhActive === 'home' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' ?>"><i class="fas fa-home w-5 text-center text-[13px]"></i> Home</a>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-2">Find Work</p>
+            <!-- <a href="home.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_fhActive === 'home' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' ?>"><i class="fas fa-home w-5 text-center text-[13px]"></i> Home</a> -->
             <a href="browse_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_fhActive === 'browse_jobs' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' ?>"><i class="fas fa-search w-5 text-center text-[13px]"></i> Browse Jobs</a>
-            <a href="recommended_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50"><i class="fas fa-magic w-5 text-center text-[13px]"></i> AI Job Matches</a>
+            <a href="recommended_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_fhActive === 'recommended_jobs' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' ?>"><i class="fas fa-magic w-5 text-center text-[13px]"></i> AI Job Matches</a>
             <a href="proposals.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_fhActive === 'proposals' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50' ?>"><i class="fas fa-file-alt w-5 text-center text-[13px]"></i> My Proposals</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-2 mt-4">Deliver Work</p>

@@ -10,7 +10,7 @@ $avatarUrl = $otherImage
     : 'https://ui-avatars.com/api/?name=' . urlencode($otherName) . '&background=6366f1&color=fff&bold=true&size=40';
 ?>
 <div id="chatHeader" class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 items-center gap-3 hidden sm:flex bg-white dark:bg-slate-800" style="flex-shrink: 0;">
-    <button onclick="chat._showRoomsOnMobile()" class="sm:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-2 transition-colors">
+    <button onclick="chat._showListOnMobile()" class="sm:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-2 transition-colors">
         <i class="fas fa-arrow-left"></i>
     </button>
     <img id="chatHeaderAvatar" src="<?= $avatarUrl ?>"

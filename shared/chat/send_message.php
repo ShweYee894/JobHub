@@ -26,7 +26,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // ── Authentication ───────────────────────────────────────────────────────────
-require_once __DIR__ . '/../../config/helpers.php';
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -129,6 +128,7 @@ if ($hasPayload) {
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/chat_functions.php';
+require_once __DIR__ . '/../notification_helper.php';
 
 // ── Verify room ownership ───────────────────────────────────────────────────
 if (!chat_verify_room_access($conn, $roomId, $userId, $role)) {
@@ -146,9 +146,37 @@ if ($messageId === null) {
     exit;
 }
 
+// ── Send notification to recipient ────────────────────────────────────────────
+$senderName = htmlspecialchars($_SESSION['user_name'] ?? 'Someone', ENT_QUOTES, 'UTF-8');
+
+$recipientStmt = $conn->prepare(
+    'SELECT c.client_id, c.freelancer_id, uc.role AS client_role, uf.role AS freelancer_role
+     FROM chat_rooms cr
+     JOIN contracts c ON cr.contract_id = c.id
+     JOIN users uc ON c.client_id = uc.id
+     JOIN users uf ON c.freelancer_id = uf.id
+     WHERE cr.id = ? LIMIT 1'
+);
+if ($recipientStmt) {
+    $recipientStmt->bind_param('i', $roomId);
+    $recipientStmt->execute();
+    $recipientRow = $recipientStmt->get_result()->fetch_assoc();
+    $recipientStmt->close();
+
+    if ($recipientRow) {
+        $recipientId = ($userId === (int) $recipientRow['client_id'])
+            ? (int) $recipientRow['freelancer_id']
+            : (int) $recipientRow['client_id'];
+        $recipientRole = ($userId === (int) $recipientRow['client_id'])
+            ? $recipientRow['freelancer_role']
+            : $recipientRow['client_role'];
+
+        notifyNewMessage($recipientId, $senderName, $roomId, $recipientRole);
+    }
+}
+
 // ── Response ─────────────────────────────────────────────────────────────────
 // Build the message directly from session data — avoids a redundant DB round-trip.
-$senderName  = htmlspecialchars($_SESSION['user_name'] ?? 'You', ENT_QUOTES, 'UTF-8');
 $senderImage = $_SESSION['user_profile_image'] ?? null;
 if ($senderImage) {
     $senderImage = htmlspecialchars($senderImage, ENT_QUOTES, 'UTF-8');

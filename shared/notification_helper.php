@@ -96,15 +96,16 @@ function notifyPaymentReleased(int $freelancerId, float $amount, int $contractId
 /**
  * Notify a user about a new message.
  */
-function notifyNewMessage(int $userId, string $senderName, int $roomId): void
+function notifyNewMessage(int $userId, string $senderName, int $roomId, string $role = 'freelancer'): void
 {
     $ns = getNotificationService();
+    $messagesPage = $role === 'client' ? 'client/messages.php' : 'freelancer/messages.php';
     $ns->create(
         $userId,
         'new_message',
         'New Message',
         "You have a new message from {$senderName}.",
-        "/finalproject/freelancer/messages.php?room={$roomId}"
+        "/finalproject/{$messagesPage}?room={$roomId}"
     );
 }
 
@@ -121,5 +122,54 @@ function notifyReviewReceived(int $userId, string $reviewerName, int $rating): v
         'Review Received',
         "{$reviewerName} left you a review: {$stars}",
         '/finalproject/freelancer/reviews.php'
+    );
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// INVITATION NOTIFICATION HELPERS
+// ══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Notify a freelancer that a client has invited them to a job.
+ */
+function notifyJobInvitation(int $freelancerId, string $clientName, string $jobTitle, int $jobId, int $clientId): void
+{
+    $ns = getNotificationService();
+    $ns->create(
+        $freelancerId,
+        'job_invitation',
+        'New Job Invitation',
+        "{$clientName} has invited you to apply for: \"{$jobTitle}\".",
+        "/finalproject/freelancer/invitation_action.php?job_id={$jobId}&client_id={$clientId}"
+    );
+}
+
+/**
+ * Notify a client that a freelancer accepted their job invitation.
+ */
+function notifyInvitationAccepted(int $clientId, string $freelancerName, string $jobTitle, int $jobId): void
+{
+    $ns = getNotificationService();
+    $ns->create(
+        $clientId,
+        'invitation_accepted',
+        'Invitation Accepted',
+        "{$freelancerName} accepted your invitation to apply for: \"{$jobTitle}\".",
+        "/finalproject/client/proposals.php"
+    );
+}
+
+/**
+ * Notify a client that a freelancer declined their job invitation.
+ */
+function notifyInvitationDeclined(int $clientId, string $freelancerName, string $jobTitle, int $jobId): void
+{
+    $ns = getNotificationService();
+    $ns->create(
+        $clientId,
+        'invitation_declined',
+        'Invitation Declined',
+        "{$freelancerName} declined your invitation to apply for: \"{$jobTitle}\".",
+        "/finalproject/client/invite_jobs.php"
     );
 }

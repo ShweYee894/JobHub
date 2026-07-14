@@ -1,6 +1,5 @@
 <?php
 $page_title = 'Profile Settings';
-require_once '../config/helpers.php';
 require_once '../auth/auth.php';
 require_role('freelancer');
 require_once '../config/db.php';
@@ -98,23 +97,26 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         background: #fff;
         border: 1px solid #e5edf6;
         border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(15,23,42,.04);
+        box-shadow: 0 2px 12px rgba(15, 23, 42, .04);
         padding: 28px 32px;
     }
+
     .pe-avatar-wrap {
         position: relative;
         width: 96px;
         height: 96px;
         flex-shrink: 0;
     }
+
     .pe-avatar-img {
         width: 96px;
         height: 96px;
         border-radius: 50%;
         object-fit: cover;
         border: 3px solid #fff;
-        box-shadow: 0 2px 12px rgba(0,0,0,.08);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, .08);
     }
+
     .pe-avatar-edit {
         position: absolute;
         bottom: 2px;
@@ -129,9 +131,14 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         justify-content: center;
         cursor: pointer;
         transition: all .15s;
-        box-shadow: 0 1px 4px rgba(0,0,0,.1);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .1);
     }
-    .pe-avatar-edit:hover { border-color: #2563eb; background: #eff6ff; }
+
+    .pe-avatar-edit:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+
     .pe-verified-badge {
         display: inline-flex;
         align-items: center;
@@ -145,6 +152,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         margin-left: 4px;
         flex-shrink: 0;
     }
+
     .pe-available-pill {
         display: inline-flex;
         align-items: center;
@@ -157,23 +165,27 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         font-weight: 600;
         color: #059669;
     }
+
     .pe-available-dot {
         width: 7px;
         height: 7px;
         border-radius: 50%;
         background: #059669;
     }
+
     .pe-success-bar {
         height: 6px;
         border-radius: 3px;
         background: #e2e8f0;
         overflow: hidden;
     }
+
     .pe-success-fill {
         height: 100%;
         border-radius: 3px;
         background: linear-gradient(90deg, #059669, #10b981);
     }
+
     .pe-expert-badge {
         display: inline-flex;
         align-items: center;
@@ -187,6 +199,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         color: #b45309;
         letter-spacing: 0.04em;
     }
+
     .pe-btn-outline {
         display: inline-flex;
         align-items: center;
@@ -202,7 +215,12 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         transition: all .15s;
         text-decoration: none;
     }
-    .pe-btn-outline:hover { background: #eff6ff; border-color: #1d4ed8; }
+
+    .pe-btn-outline:hover {
+        background: #eff6ff;
+        border-color: #1d4ed8;
+    }
+
     .pe-btn-green {
         display: inline-flex;
         align-items: center;
@@ -218,14 +236,19 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         transition: all .15s;
         text-decoration: none;
     }
-    .pe-btn-green:hover { background: #047857; }
+
+    .pe-btn-green:hover {
+        background: #047857;
+    }
+
     .pe-sidebar-card {
         background: #fff;
         border: 1px solid #e5edf6;
         border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(15,23,42,.04);
+        box-shadow: 0 2px 12px rgba(15, 23, 42, .04);
         padding: 24px;
     }
+
     .pe-section-label {
         font-size: 12px;
         font-weight: 700;
@@ -234,6 +257,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         letter-spacing: 0.05em;
         margin-bottom: 12px;
     }
+
     .pe-edit-inline {
         display: inline-flex;
         align-items: center;
@@ -249,25 +273,37 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         flex-shrink: 0;
         font-size: 11px;
     }
-    .pe-edit-inline:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+
+    .pe-edit-inline:hover {
+        border-color: #2563eb;
+        color: #2563eb;
+        background: #eff6ff;
+    }
+
     .pe-stat-box {
         text-align: center;
         padding: 12px 0;
         border-bottom: 1px solid #f1f5f9;
     }
-    .pe-stat-box:last-child { border-bottom: none; }
+
+    .pe-stat-box:last-child {
+        border-bottom: none;
+    }
+
     .pe-stat-val {
         font-size: 20px;
         font-weight: 800;
         color: #0f172a;
         line-height: 1.2;
     }
+
     .pe-stat-label {
         font-size: 11px;
         color: #94a3b8;
         font-weight: 500;
         margin-top: 2px;
     }
+
     .pe-nav-item {
         display: flex;
         align-items: center;
@@ -281,18 +317,38 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         transition: all .15s;
         text-decoration: none;
     }
-    .pe-nav-item:hover { background: #f8fafc; color: #2563eb; }
-    .pe-nav-item.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
-    .pe-nav-item i { width: 18px; text-align: center; font-size: 14px; color: #94a3b8; }
-    .pe-nav-item.active i { color: #2563eb; }
+
+    .pe-nav-item:hover {
+        background: #f8fafc;
+        color: #2563eb;
+    }
+
+    .pe-nav-item.active {
+        background: #eff6ff;
+        color: #2563eb;
+        font-weight: 600;
+    }
+
+    .pe-nav-item i {
+        width: 18px;
+        text-align: center;
+        font-size: 14px;
+        color: #94a3b8;
+    }
+
+    .pe-nav-item.active i {
+        color: #2563eb;
+    }
+
     .pe-field-group {
         background: #fff;
         border: 1px solid #e5edf6;
         border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(15,23,42,.04);
+        box-shadow: 0 2px 12px rgba(15, 23, 42, .04);
         padding: 24px;
         margin-bottom: 16px;
     }
+
     .pe-field-row {
         display: flex;
         align-items: center;
@@ -300,55 +356,69 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         padding: 10px 0;
         border-bottom: 1px solid #f1f5f9;
     }
-    .pe-field-row:last-child { border-bottom: none; }
+
+    .pe-field-row:last-child {
+        border-bottom: none;
+    }
+
     .pe-field-title {
         font-size: 14px;
         font-weight: 700;
         color: #0f172a;
     }
+
     .pe-field-sub {
         font-size: 12px;
         color: #94a3b8;
         margin-top: 2px;
     }
+
     .pe-field-value {
         font-size: 14px;
         color: #334155;
         font-weight: 500;
     }
+
     .pe-bio-text {
         font-size: 13px;
         color: #475569;
         line-height: 1.7;
         white-space: pre-line;
     }
+
     .pe-modal-overlay {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,.4);
+        background: rgba(0, 0, 0, .4);
         z-index: 50;
         align-items: center;
         justify-content: center;
         backdrop-filter: blur(2px);
     }
-    .pe-modal-overlay.active { display: flex; }
+
+    .pe-modal-overlay.active {
+        display: flex;
+    }
+
     .pe-modal-box {
         background: #fff;
         border-radius: 16px;
-        box-shadow: 0 25px 60px rgba(0,0,0,.2);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, .2);
         width: 100%;
         max-width: 520px;
         max-height: 90vh;
         overflow-y: auto;
         padding: 28px;
     }
+
     .pe-modal-title {
         font-size: 16px;
         font-weight: 700;
         color: #0f172a;
         margin-bottom: 20px;
     }
+
     .pe-input {
         width: 100%;
         padding: 10px 14px;
@@ -360,7 +430,13 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         transition: all .15s;
         outline: none;
     }
-    .pe-input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
+    .pe-input:focus {
+        border-color: #2563eb;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+    }
+
     .pe-textarea {
         width: 100%;
         padding: 12px 14px;
@@ -375,7 +451,13 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         min-height: 100px;
         line-height: 1.6;
     }
-    .pe-textarea:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
+    .pe-textarea:focus {
+        border-color: #2563eb;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+    }
+
     .pe-btn-primary {
         display: inline-flex;
         align-items: center;
@@ -389,9 +471,14 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
         cursor: pointer;
         transition: all .15s;
-        box-shadow: 0 2px 8px rgba(37,99,235,.25);
+        box-shadow: 0 2px 8px rgba(37, 99, 235, .25);
     }
-    .pe-btn-primary:hover { box-shadow: 0 4px 16px rgba(37,99,235,.35); transform: translateY(-1px); }
+
+    .pe-btn-primary:hover {
+        box-shadow: 0 4px 16px rgba(37, 99, 235, .35);
+        transform: translateY(-1px);
+    }
+
     .pe-btn-ghost {
         display: inline-flex;
         align-items: center;
@@ -406,7 +493,12 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         cursor: pointer;
         transition: all .15s;
     }
-    .pe-btn-ghost:hover { border-color: #cbd5e1; color: #334155; }
+
+    .pe-btn-ghost:hover {
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
     .pe-skill-pill {
         display: inline-flex;
         align-items: center;
@@ -419,6 +511,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         font-weight: 500;
         color: #475569;
     }
+
     .pe-consult-card {
         background: linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%);
         border: 1px solid #e0f2fe;
@@ -438,14 +531,14 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             <!-- Avatar -->
             <div class="pe-avatar-wrap flex-shrink-0">
                 <img id="avatarPreview"
-                     src="<?= get_profile_image($profile['profile_image']) . '?v=' . time() ?>"
-                     alt="<?= sanitize_string($profile['name']) ?>"
-                     class="pe-avatar-img">
+                    src="<?= get_profile_image($profile['profile_image']) . '?v=' . time() ?>"
+                    alt="<?= sanitize_string($profile['name']) ?>"
+                    class="pe-avatar-img">
                 <label for="profileImageInput" class="pe-avatar-edit" title="Change photo">
                     <i class="fas fa-pen text-[10px]"></i>
                 </label>
                 <input type="file" name="profile_image" id="profileImageInput"
-                       accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
+                    accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
             </div>
 
             <!-- Name + Info -->
@@ -604,7 +697,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             </div>
 
             <!-- Consultation Card -->
-            <div class="pe-consult-card ">
+            <!-- <div class="pe-consult-card ">
                 <div class="flex items-center justify-between">
                     <div>
                         <h3 class="text-base font-bold text-gray-900 mb-1">Consultation</h3>
@@ -614,23 +707,53 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         Set Up a Consultation
                     </button>
                 </div>
+            </div> -->
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-6 fade-in">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                        <i class="fas fa-paper-plane text-base"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900">Interested in working together?</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">Send a direct job invitation or project inquiry.</p>
+                    </div>
+                </div>
+
+                <p class="text-xs text-gray-600 mb-5 leading-relaxed">
+                    Invite this freelancer to bid on your active project listings. They will review your requirements and respond within 24 hours.
+                </p>
+
+                <?php
+                // If the logged-in user's ID matches the profile ID, they own it!
+                $isOwner = ($_SESSION['user_id'] == $profile['user_id']);
+                if (!$isOwner):
+                    ?>
+                    <a href="/finalproject/client/invite_jobs.php?freelancer_id=<?= $profile['freelancer_id'] ?>"
+                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 btn-grad text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-500/25 hover:opacity-95 transition-all">
+                        <i class="fas fa-envelope text-[11px]"></i> Invite to Job
+                    </a>
+                <?php else: ?>
+                    <div class="w-full text-center py-2 bg-gray-50 text-gray-400 text-xs font-medium rounded-xl border border-dashed border-gray-200">
+                        Visible to clients visiting your profile
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Skills Section -->
             <?php if (!empty($skills)): ?>
-            <div class="mt-6">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="pe-section-label mb-0">Skills</h3>
-                    <button onclick="openModal('skillsModal')" class="pe-edit-inline" title="Edit skills">
-                        <i class="fas fa-pen"></i>
-                    </button>
+                <div class="mt-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="pe-section-label mb-0">Skills</h3>
+                        <button onclick="openModal('skillsModal')" class="pe-edit-inline" title="Edit skills">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <?php foreach ($skills as $s): ?>
+                            <span class="pe-skill-pill"><?= sanitize_string($s['skill_name']) ?></span>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <?php foreach ($skills as $s): ?>
-                        <span class="pe-skill-pill"><?= sanitize_string($s['skill_name']) ?></span>
-                    <?php endforeach; ?>
-                </div>
-            </div>
             <?php endif; ?>
 
             <!-- Full Edit Form (hidden, submits to profile_update.php) -->
@@ -746,18 +869,18 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         </div>
         <div class="space-y-4 max-h-[50vh] overflow-y-auto mb-5">
             <?php foreach ($allSkills as $category => $catSkills): ?>
-            <div>
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"><?= sanitize_string($category) ?></p>
-                <div class="flex flex-wrap gap-2">
-                    <?php foreach ($catSkills as $skill): ?>
-                    <label class="modal-skill-tag pe-skill-pill cursor-pointer transition-all <?= in_array($skill['id'], $selectedSkills) ? 'selected' : '' ?>"
-                           data-skill-id="<?= $skill['id'] ?>" style="<?= in_array($skill['id'], $selectedSkills) ? 'background:#eff6ff;border-color:#bfdbfe;color:#2563eb;' : '' ?>">
-                        <input type="checkbox" name="modal_skills[]" value="<?= $skill['id'] ?>" class="hidden" <?= in_array($skill['id'], $selectedSkills) ? 'checked' : '' ?>>
-                        <?= sanitize_string($skill['skill_name']) ?>
-                    </label>
-                    <?php endforeach; ?>
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"><?= sanitize_string($category) ?></p>
+                    <div class="flex flex-wrap gap-2">
+                        <?php foreach ($catSkills as $skill): ?>
+                            <label class="modal-skill-tag pe-skill-pill cursor-pointer transition-all <?= in_array($skill['id'], $selectedSkills) ? 'selected' : '' ?>"
+                                data-skill-id="<?= $skill['id'] ?>" style="<?= in_array($skill['id'], $selectedSkills) ? 'background:#eff6ff;border-color:#bfdbfe;color:#2563eb;' : '' ?>">
+                                <input type="checkbox" name="modal_skills[]" value="<?= $skill['id'] ?>" class="hidden" <?= in_array($skill['id'], $selectedSkills) ? 'checked' : '' ?>>
+                                <?= sanitize_string($skill['skill_name']) ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-            </div>
             <?php endforeach; ?>
         </div>
         <div class="flex justify-end gap-3">
@@ -784,158 +907,184 @@ require_once __DIR__ . '/../components/freelancer_header.php';
 </div>
 
 <script>
-// ── Modal Helpers ──────────────────────────────────────────────
-function openModal(id) {
-    document.getElementById(id).classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-// ── Save Functions (update hidden fields + UI) ────────────────
-function saveName() {
-    const val = document.getElementById('modalName').value.trim();
-    if (!val) { alert('Name is required.'); return; }
-    document.getElementById('fieldName').value = val;
-    document.querySelector('.pe-header-card h1').textContent = val;
-    closeModal('nameModal');
-    markDirty();
-}
-
-function saveTitle() {
-    const title = document.getElementById('modalTitle').value.trim();
-    const rate = parseFloat(document.getElementById('modalRate').value) || 0;
-    const years = parseInt(document.getElementById('modalYears').value) || 0;
-    if (!title) { alert('Title is required.'); return; }
-    document.getElementById('fieldTitle').value = title;
-    document.getElementById('fieldRate').value = rate.toFixed(2);
-    document.getElementById('fieldYears').value = years;
-    document.querySelector('.pe-field-title').textContent = title;
-    document.querySelector('.pe-field-group .text-lg.font-bold').textContent = '$' + rate.toFixed(2) + '/hr';
-    closeModal('titleModal');
-    markDirty();
-}
-
-function saveBio() {
-    const val = document.getElementById('modalBio').value.trim();
-    if (!val) { alert('Bio is required.'); return; }
-    document.getElementById('fieldBio').value = val;
-    const bioEl = document.querySelector('.pe-bio-text');
-    if (bioEl) {
-        bioEl.textContent = val;
-    } else {
-        const container = document.querySelector('.pe-field-group .flex-1');
-        container.innerHTML = '<p class="pe-bio-text">' + val.replace(/\n/g, '<br>') + '</p>';
+    // ── Modal Helpers ──────────────────────────────────────────────
+    function openModal(id) {
+        document.getElementById(id).classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
-    closeModal('bioModal');
-    markDirty();
-}
 
-function saveAvailability() {
-    const val = document.getElementById('modalAvailability').value;
-    document.getElementById('fieldAvailability').value = val;
-    const pill = document.querySelector('.pe-available-pill');
-    pill.innerHTML = '<span class="pe-available-dot"></span> ' + val;
-    closeModal('availabilityModal');
-    markDirty();
-}
-
-function savePortfolio() {
-    const val = document.getElementById('modalPortfolio').value.trim();
-    document.getElementById('fieldPortfolio').value = val;
-    closeModal('linkModal');
-    markDirty();
-}
-
-function saveSkills() {
-    const checked = document.querySelectorAll('.modal-skill-tag input:checked');
-    const container = document.querySelector('.skill-hidden-input')?.parentElement;
-    // Remove all existing hidden skill inputs
-    document.querySelectorAll('.skill-hidden-input').forEach(el => el.remove());
-    // Add new ones
-    const form = document.getElementById('profileForm');
-    checked.forEach(cb => {
-        const inp = document.createElement('input');
-        inp.type = 'hidden';
-        inp.name = 'skills[]';
-        inp.value = cb.value;
-        inp.className = 'skill-hidden-input';
-        form.appendChild(inp);
-    });
-    // Update sidebar skill display
-    const skillsContainer = document.querySelector('.pe-sidebar-card .space-y-1');
-    // Update skills pills in main content
-    const mainSkills = document.querySelector('.flex.flex-wrap.gap-2');
-    if (mainSkills) {
-        mainSkills.innerHTML = '';
-        checked.forEach(cb => {
-            const label = cb.closest('label');
-            const span = document.createElement('span');
-            span.className = 'pe-skill-pill';
-            span.textContent = label.textContent.trim();
-            mainSkills.appendChild(span);
-        });
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+        document.body.style.overflow = '';
     }
-    closeModal('skillsModal');
-    markDirty();
-}
 
-// ── Modal Skill Tags Toggle ──────────────────────────────────
-document.querySelectorAll('.modal-skill-tag').forEach(tag => {
-    tag.addEventListener('click', function(e) {
-        e.preventDefault();
-        const cb = this.querySelector('input[type="checkbox"]');
-        cb.checked = !cb.checked;
-        this.classList.toggle('selected', cb.checked);
-        if (cb.checked) {
-            this.style.background = '#eff6ff';
-            this.style.borderColor = '#bfdbfe';
-            this.style.color = '#2563eb';
+    // ── Save Functions (update hidden fields + UI) ────────────────
+    function saveName() {
+        const val = document.getElementById('modalName').value.trim();
+        if (!val) {
+            alert('Name is required.');
+            return;
+        }
+        document.getElementById('fieldName').value = val;
+        document.querySelector('.pe-header-card h1').textContent = val;
+        closeModal('nameModal');
+        markDirty();
+    }
+
+    function saveTitle() {
+        const title = document.getElementById('modalTitle').value.trim();
+        const rate = parseFloat(document.getElementById('modalRate').value) || 0;
+        const years = parseInt(document.getElementById('modalYears').value) || 0;
+        if (!title) {
+            alert('Title is required.');
+            return;
+        }
+        document.getElementById('fieldTitle').value = title;
+        document.getElementById('fieldRate').value = rate.toFixed(2);
+        document.getElementById('fieldYears').value = years;
+        document.querySelector('.pe-field-title').textContent = title;
+        document.querySelector('.pe-field-group .text-lg.font-bold').textContent = '$' + rate.toFixed(2) + '/hr';
+        closeModal('titleModal');
+        markDirty();
+    }
+
+    function saveBio() {
+        const val = document.getElementById('modalBio').value.trim();
+        if (!val) {
+            alert('Bio is required.');
+            return;
+        }
+        document.getElementById('fieldBio').value = val;
+        const bioEl = document.querySelector('.pe-bio-text');
+        if (bioEl) {
+            bioEl.textContent = val;
         } else {
-            this.style.background = '';
-            this.style.borderColor = '';
-            this.style.color = '';
+            const container = document.querySelector('.pe-field-group .flex-1');
+            container.innerHTML = '<p class="pe-bio-text">' + val.replace(/\n/g, '<br>') + '</p>';
+        }
+        closeModal('bioModal');
+        markDirty();
+    }
+
+    function saveAvailability() {
+        const val = document.getElementById('modalAvailability').value;
+        document.getElementById('fieldAvailability').value = val;
+        const pill = document.querySelector('.pe-available-pill');
+        pill.innerHTML = '<span class="pe-available-dot"></span> ' + val;
+        closeModal('availabilityModal');
+        markDirty();
+    }
+
+    function savePortfolio() {
+        const val = document.getElementById('modalPortfolio').value.trim();
+        document.getElementById('fieldPortfolio').value = val;
+        closeModal('linkModal');
+        markDirty();
+    }
+
+    function saveSkills() {
+        const checked = document.querySelectorAll('.modal-skill-tag input:checked');
+        const container = document.querySelector('.skill-hidden-input')?.parentElement;
+        // Remove all existing hidden skill inputs
+        document.querySelectorAll('.skill-hidden-input').forEach(el => el.remove());
+        // Add new ones
+        const form = document.getElementById('profileForm');
+        checked.forEach(cb => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'skills[]';
+            inp.value = cb.value;
+            inp.className = 'skill-hidden-input';
+            form.appendChild(inp);
+        });
+        // Update sidebar skill display
+        const skillsContainer = document.querySelector('.pe-sidebar-card .space-y-1');
+        // Update skills pills in main content
+        const mainSkills = document.querySelector('.flex.flex-wrap.gap-2');
+        if (mainSkills) {
+            mainSkills.innerHTML = '';
+            checked.forEach(cb => {
+                const label = cb.closest('label');
+                const span = document.createElement('span');
+                span.className = 'pe-skill-pill';
+                span.textContent = label.textContent.trim();
+                mainSkills.appendChild(span);
+            });
+        }
+        closeModal('skillsModal');
+        markDirty();
+    }
+
+    // ── Modal Skill Tags Toggle ──────────────────────────────────
+    document.querySelectorAll('.modal-skill-tag').forEach(tag => {
+        tag.addEventListener('click', function(e) {
+            e.preventDefault();
+            const cb = this.querySelector('input[type="checkbox"]');
+            cb.checked = !cb.checked;
+            this.classList.toggle('selected', cb.checked);
+            if (cb.checked) {
+                this.style.background = '#eff6ff';
+                this.style.borderColor = '#bfdbfe';
+                this.style.color = '#2563eb';
+            } else {
+                this.style.background = '';
+                this.style.borderColor = '';
+                this.style.color = '';
+            }
+        });
+    });
+
+    // ── Bio Character Count ──────────────────────────────────────
+    const bioModal = document.getElementById('modalBio');
+    const bioCount = document.getElementById('modalBioCount');
+    if (bioModal && bioCount) {
+        bioModal.addEventListener('input', () => bioCount.textContent = bioModal.value.length);
+        bioCount.textContent = bioModal.value.length;
+    }
+
+    // ── Profile Image Preview ────────────────────────────────────
+    document.getElementById('profileImageInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be under 5MB.');
+            this.value = '';
+            return;
+        }
+        if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+            alert('Only JPG, PNG, GIF, WebP allowed.');
+            this.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            document.getElementById('avatarPreview').src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+        markDirty();
+    });
+
+    // ── Dirty Tracking & Auto-Save on Submit ─────────────────────
+    let isDirty = false;
+
+    function markDirty() {
+        isDirty = true;
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        const btn = document.querySelector('.pe-btn-primary:last-of-type');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
         }
     });
-});
 
-// ── Bio Character Count ──────────────────────────────────────
-const bioModal = document.getElementById('modalBio');
-const bioCount = document.getElementById('modalBioCount');
-if (bioModal && bioCount) {
-    bioModal.addEventListener('input', () => bioCount.textContent = bioModal.value.length);
-    bioCount.textContent = bioModal.value.length;
-}
-
-// ── Profile Image Preview ────────────────────────────────────
-document.getElementById('profileImageInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('File size must be under 5MB.'); this.value = ''; return; }
-    if (!['image/jpeg','image/png','image/gif','image/webp'].includes(file.type)) { alert('Only JPG, PNG, GIF, WebP allowed.'); this.value = ''; return; }
-    const reader = new FileReader();
-    reader.onload = function(ev) { document.getElementById('avatarPreview').src = ev.target.result; };
-    reader.readAsDataURL(file);
-    markDirty();
-});
-
-// ── Dirty Tracking & Auto-Save on Submit ─────────────────────
-let isDirty = false;
-function markDirty() { isDirty = true; }
-
-document.getElementById('profileForm').addEventListener('submit', function(e) {
-    const btn = document.querySelector('.pe-btn-primary:last-of-type');
-    if (btn) {
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        btn.disabled = true;
-    }
-});
-
-window.addEventListener('beforeunload', function(e) {
-    if (isDirty) { e.preventDefault(); e.returnValue = ''; }
-});
+    window.addEventListener('beforeunload', function(e) {
+        if (isDirty) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
 </script>
 <?php $conn->close(); ?>
 <?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

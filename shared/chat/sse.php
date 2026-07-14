@@ -20,7 +20,6 @@
 session_start();
 
 // ── Authentication ───────────────────────────────────────────────────────────
-require_once __DIR__ . '/../../config/helpers.php';
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);

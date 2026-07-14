@@ -11,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../config/db.php';
 
 // ── CSRF Verification ──────────────────────────────────────────────────
