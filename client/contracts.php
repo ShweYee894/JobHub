@@ -63,6 +63,7 @@ $pagination = paginate($totalFiltered, $perPage, $page);
 
 // ── Fetch Contracts ───────────────────────────────────────────────────
 $querySql = "SELECT c.id, c.contract_type, c.status, c.total_budget, c.created_at,
+             c.dispute_status, c.cancellation_reason,
              j.title AS job_title, j.budget AS job_budget,
              u.name AS freelancer_name, u.email AS freelancer_email, u.id AS freelancer_user_id,
              (SELECT COUNT(*) FROM milestones m WHERE m.contract_id = c.id) AS milestone_count,
@@ -97,10 +98,11 @@ $contractColors = [
 ];
 
 $contractIcons = [
-    'active' => 'fa-check-circle',
-    'completed' => 'fa-trophy',
-    'cancelled' => 'fa-ban',
-    'disputed' => 'fa-exclamation-triangle',
+    'active' => 'circle-check',
+    'completed' => 'trophy',
+    'cancelled' => 'ban',
+    'disputed' => 'triangle-alert',
+    'terminated' => 'circle-x',
 ];
 
 // Build query string base for pagination & search links
@@ -143,10 +145,10 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     ?>
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">  
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 fade-in">
-        <div class="stat-card bg-white rounded-2xl p-4 border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class=" p-4 border-x border-gray-100  dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <i class="fas fa-layer-group text-blue-500"></i>
+                <div class="w-10 h-10 rounded-[10px] bg-blue-50 flex items-center justify-center">
+                    <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>
                 </div>
                 <div>
                     <p class="text-[11px] text-gray-400 font-medium">Total</p>
@@ -154,10 +156,10 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 </div>
             </div>
         </div>
-        <div class="stat-card bg-white rounded-2xl p-4 border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class=" p-4 border-r border-gray-100  dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <i class="fas fa-check-circle text-emerald-500"></i>
+                <div class="w-10 h-10 rounded-[10px] bg-emerald-50 flex items-center justify-center">
+                    <i data-lucide="circle-check" class="w-5 h-5 text-emerald-500"></i>
                 </div>
                 <div>
                     <p class="text-[11px] text-gray-400 font-medium">Active</p>
@@ -165,10 +167,10 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 </div>
             </div>
         </div>
-        <div class="stat-card bg-white rounded-2xl p-4 border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class=" p-4 border-r border-gray-100 dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <i class="fas fa-trophy text-blue-500"></i>
+                <div class="w-10 h-10 rounded-[10px] bg-blue-50 flex items-center justify-center">
+                    <i data-lucide="trophy" class="w-5 h-5 text-blue-500"></i>
                 </div>
                 <div>
                     <p class="text-[11px] text-gray-400 font-medium">Completed</p>
@@ -176,10 +178,10 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 </div>
             </div>
         </div>
-        <div class="stat-card bg-white rounded-2xl p-4 border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class=" p-4 border-r border-gray-100  dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-                    <i class="fas fa-exclamation-triangle text-red-500"></i>
+                <div class="w-10 h-10 rounded-[10px] bg-red-50 flex items-center justify-center">
+                    <i data-lucide="triangle-alert" class="w-5 h-5 text-red-500"></i>
                 </div>
                 <div>
                     <p class="text-[11px] text-gray-400 font-medium">Disputed</p>
@@ -187,10 +189,10 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 </div>
             </div>
         </div>
-        <div class="stat-card bg-white rounded-2xl p-4 border border-gray-100 shadow-sm col-span-2 lg:col-span-1 dark:bg-gray-800 dark:border-gray-700">
+        <div class="p-4 border-r border-gray-100 col-span-2 lg:col-span-1 dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
-                    <i class="fas fa-dollar-sign text-violet-500"></i>
+                <div class="w-10 h-10 rounded-[10px] bg-violet-50 flex items-center justify-center">
+                    <i data-lucide="dollar-sign" class="w-5 h-5 text-violet-500"></i>
                 </div>
                 <div>
                     <p class="text-[11px] text-gray-400 font-medium">Total Budget</p>
@@ -204,7 +206,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.1s">
         <form method="GET" action="" class="flex flex-col sm:flex-row gap-3">
             <div class="flex-1 relative">
-                <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
                 <input
                     type="search"
                     name="q"
@@ -214,23 +216,24 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 />
                 <?php if ($searchQuery !== ''): ?>
                     <a href="?status=<?= $statusFilter ?>" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xs"></i>
+                        <i data-lucide="x" class="w-4 h-4"></i>
                     </a>
                 <?php endif; ?>
             </div>
             <button type="submit" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 btn-grad text-white text-xs font-semibold rounded-xl shadow-lg shadow-blue-500/25">
-                <i class="fas fa-search text-[10px]"></i> Search
+                <i data-lucide="search" class="w-4 h-4"></i> Search
             </button>
         </form>
 
         <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
             <?php
             $filters = [
-                'all' => ['All', 'fa-layer-group', 'text-gray-600', 'bg-gray-100'],
-                'active' => ['Active', 'fa-check-circle', 'text-emerald-600', 'bg-emerald-50'],
-                'completed' => ['Completed', 'fa-trophy', 'text-blue-600', 'bg-blue-50'],
-                'cancelled' => ['Cancelled', 'fa-ban', 'text-gray-500', 'bg-gray-100'],
-                'disputed' => ['Disputed', 'fa-exclamation-triangle', 'text-red-500', 'bg-red-50'],
+                'all' => ['All', 'layers', 'text-gray-600', 'bg-gray-100'],
+                'active' => ['Active', 'circle-check', 'text-emerald-600', 'bg-emerald-50'],
+                'completed' => ['Completed', 'trophy', 'text-blue-600', 'bg-blue-50'],
+                'cancelled' => ['Cancelled', 'ban', 'text-gray-500', 'bg-gray-100'],
+                'disputed' => ['Disputed', 'triangle-alert', 'text-red-500', 'bg-red-50'],
+                'terminated' => ['Terminated', 'circle-x', 'text-orange-500', 'bg-orange-50'],
             ];
             foreach ($filters as $key => $label):
                 $isActive = $statusFilter === $key;
@@ -238,13 +241,13 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 ?>
                 <a href="<?= $linkParams ?>"
                     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all <?= $isActive ? $label[3] . ' ' . $label[2] . ' border border-current/20' : 'text-gray-500 bg-gray-50 hover:bg-gray-100 border border-transparent dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400' ?>">
-                    <i class="fas <?= $label[1] ?> text-[10px]"></i> <?= $label[0] ?>
+                    <i data-lucide="<?= $label[1] ?>" class="w-3 h-3"></i> <?= $label[0] ?>
                 </a>
             <?php endforeach; ?>
 
             <?php if ($searchQuery !== '' || $statusFilter !== 'all'): ?>
                 <a href="contracts.php" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 transition-all ml-auto">
-                    <i class="fas fa-times text-[10px]"></i> Clear All
+                    <i data-lucide="x" class="w-3 h-3"></i> Clear All
                 </a>
             <?php endif; ?>
         </div>
@@ -253,7 +256,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <!-- ═══ ACTIVE SEARCH INFO ═════════════════════════════ -->
     <?php if ($searchQuery !== '' || $statusFilter !== 'all'): ?>
         <div class="flex items-center gap-2 text-xs text-gray-400 fade-in">
-            <i class="fas fa-info-circle"></i>
+            <i data-lucide="circle-info" class="w-4 h-4"></i>
             <span>
                 Showing <span class="font-semibold text-gray-600"><?= $totalFiltered ?></span> result<?= $totalFiltered !== 1 ? 's' : '' ?>
                 <?php if ($searchQuery !== ''): ?>
@@ -279,7 +282,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 $paymentPct = $totalBudget > 0 ? round(($totalPaid / $totalBudget) * 100) : 0;
                 $chatRoomId = $c['chat_room_id'] ? (int) $c['chat_room_id'] : 0;
                 ?>
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all fade-in dark:bg-gray-800 dark:border-gray-700">
+                <div class=" bg-slate-50 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all fade-in dark:bg-gray-800 dark:border-gray-700">
                     <div class="p-6">
                         <div class="flex flex-col xl:flex-row xl:items-start gap-4">
 
@@ -291,7 +294,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                         <?= sanitize_string($c['job_title']) ?>
                                     </a>
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold <?= $contractColors[$c['status']] ?? 'bg-gray-100 text-gray-500 border border-gray-200' ?>">
-                                        <i class="fas <?= $contractIcons[$c['status']] ?? 'fa-circle' ?> text-[9px]"></i>
+                                         <i data-lucide="<?= $contractIcons[$c['status']] ?? 'circle' ?>" class="w-3 h-3"></i>
                                         <?= sanitize_string(ucfirst($c['status'])) ?>
                                     </span>
                                     <?php if ($c['contract_type']): ?>
@@ -304,21 +307,21 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                 <!-- Meta Row -->
                                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-400 mb-3">
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-user text-blue-400"></i>
+                                        <i data-lucide="user" class="w-4 h-4 text-blue-400"></i>
                                         Freelancer: <span class="font-semibold text-gray-700 dark:text-gray-300"><?= sanitize_string($c['freelancer_name']) ?></span>
                                     </span>
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-dollar-sign text-emerald-500"></i>
+                                        <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-500"></i>
                                         Budget: <span class="font-semibold text-gray-700"><?= format_currency($totalBudget) ?></span>
                                     </span>
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-credit-card text-violet-400"></i>
+                                        <i data-lucide="credit-card" class="w-4 h-4 text-violet-400"></i>
                                         Paid: <span class="font-semibold <?= $totalPaid >= $totalBudget ? 'text-emerald-600' : 'text-gray-700' ?>"><?= format_currency($totalPaid) ?></span>
                                         <span class="text-gray-300">/</span>
                                         <span class="text-gray-300"><?= $paymentPct ?>%</span>
                                     </span>
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-calendar text-gray-400"></i>
+                                        <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
                                         <?= date('M d, Y', strtotime($c['created_at'])) ?>
                                     </span>
                                 </div>
@@ -330,17 +333,17 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                         <?php if ($milestoneCount > 0): ?>
                                             <div class="flex items-center justify-between text-xs mb-1">
                                                 <span class="text-gray-400 flex items-center gap-1.5 dark:text-gray-500">
-                                                    <i class="fas fa-tasks text-violet-400"></i>
+                                                    <i data-lucide="list-checks" class="w-4 h-4 text-violet-400"></i>
                                                     Milestones: <span class="font-semibold text-gray-600 dark:text-gray-300"><?= $releasedCount ?>/<?= $milestoneCount ?></span>
                                                 </span>
                                                 <span class="font-bold <?= $progress === 100 ? 'text-emerald-600' : 'text-blue-600' ?>"><?= $progress ?>%</span>
                                             </div>
-                                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                                <div class="h-2 rounded-full transition-all duration-700 <?= $progress === 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'btn-grad' ?>" style="width: <?= $progress ?>%"></div>
+                                            <div class="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
+                                                <div class=" h-2 rounded-full transition-all duration-700 <?= $progress === 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'btn-grad' ?>" style="width: <?= $progress ?>%"></div>
                                             </div>
                                         <?php else: ?>
                                             <div class="flex items-center gap-1.5 text-xs text-gray-300">
-                                                <i class="fas fa-tasks"></i>
+                                                <i data-lucide="list-checks" class="w-4 h-4"></i>
                                                 <span>No milestones</span>
                                             </div>
                                         <?php endif; ?>
@@ -353,7 +356,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                                 <span class="text-gray-400">Payments</span>
                                                 <span class="font-semibold text-gray-600"><?= $paymentPct ?>%</span>
                                             </div>
-                                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                            <div class="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
                                                 <div class="h-2 rounded-full transition-all duration-700 <?= $paymentPct >= 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-violet-400 to-purple-500' ?>" style="width: <?= $paymentPct ?>%"></div>
                                             </div>
                                         <?php endif; ?>
@@ -365,7 +368,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                             <div class="flex flex-wrap xl:flex-nowrap items-center gap-2 xl:flex-col xl:items-stretch xl:min-w-[160px]">
                                 <a href="contract_detail.php?id=<?= (int) $c['id'] ?>"
                                     class="inline-flex items-center justify-center gap-2 px-4 py-2 btn-grad text-white text-xs font-semibold rounded-xl shadow-lg shadow-blue-500/25">
-                                    <i class="fas fa-eye text-[10px]"></i> View Contract
+                                    <i data-lucide="eye" class="w-3 h-3"></i> View Contract
                                 </a>
 
                                 <div class="flex gap-2 xl:grid xl:grid-cols-1 xl:gap-2">
@@ -375,26 +378,26 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                             type="button"
                                             onclick="toggleDropdown(<?= (int) $c['id'] ?>)"
                                             class="action-btn inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-xs font-semibold rounded-xl transition-all w-full dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 dark:text-gray-300">
-                                            <i class="fas fa-ellipsis-v text-[10px]"></i> Actions
+                                            <i data-lucide="ellipsis-vertical" class="w-3 h-3"></i> Actions
                                         </button>
 
                                         <div class="contract-actions-menu absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl border border-gray-100 shadow-xl z-40 py-1.5 dark:bg-gray-800 dark:border-gray-700">
                                             <a href="contract_detail.php?id=<?= (int) $c['id'] ?>#milestones"
                                                 class="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                                                <i class="fas fa-tasks w-4 text-center text-violet-400"></i> View Milestones
+                                                <i data-lucide="list-checks" class="w-4 h-4 text-center text-violet-400"></i> View Milestones
                                             </a>
 
                                             <?php if ($c['status'] === 'active' && $milestoneCount > $releasedCount): ?>
                                                 <a href="contract_detail.php?id=<?= (int) $c['id'] ?>#milestones"
                                                     class="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-emerald-400">
-                                                    <i class="fas fa-wallet w-4 text-center text-emerald-400"></i> Fund Milestone
+                                                    <i data-lucide="wallet" class="w-4 h-4 text-center text-emerald-400"></i> Fund Milestone
                                                 </a>
                                             <?php endif; ?>
 
                                             <?php if ($chatRoomId > 0): ?>
                                                 <a href="messages.php?room=<?= $chatRoomId ?>"
                                                     class="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                                                    <i class="fas fa-comment-dots w-4 text-center text-blue-400"></i> Message Freelancer
+                                                    <i data-lucide="message-circle" class="w-4 h-4 text-center text-blue-400"></i> Message Freelancer
                                                 </a>
                                             <?php endif; ?>
 
@@ -405,12 +408,14 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                                     <input type="hidden" name="contract_id" value="<?= (int) $c['id'] ?>">
                                                     <button type="submit"
                                                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-emerald-400">
-                                                        <i class="fas fa-check-double w-4 text-center text-emerald-400"></i> Mark Complete
+                                                        <i data-lucide="check-check" class="w-4 h-4 text-center text-emerald-400"></i> Mark Complete
                                                     </button>
                                                 </form>
                                             <?php endif; ?>
 
-                                            <?php if ($c['status'] === 'active'): ?>
+                                            <?php if ($c['status'] === 'active'):
+                                                $freelancerName = $c['freelancer_name'] ?? 'Freelancer';
+                                            ?>
                                                 <hr class="my-1.5 border-gray-100">
                                                 <form method="POST" action="contract_action.php" class="inline" onsubmit="return confirm('Raise a dispute on this contract? An admin will review.')">
                                                     <?= csrf_field() ?>
@@ -418,9 +423,35 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                                     <input type="hidden" name="contract_id" value="<?= (int) $c['id'] ?>">
                                                     <button type="submit"
                                                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 transition-colors">
-                                                        <i class="fas fa-flag w-4 text-center text-red-400"></i> Raise Dispute
+                                                        <i data-lucide="flag" class="w-4 h-4 text-center text-red-400"></i> Raise Dispute
                                                     </button>
                                                 </form>
+                                            <?php endif; ?>
+
+                                            <?php if ($c['status'] === 'active' && $c['dispute_status'] === 'open' && !empty($c['cancellation_reason'])): ?>
+                                                <hr class="my-1.5 border-gray-100">
+                                                <div class="px-4 py-2">
+                                                    <p class="text-[10px] text-amber-600 font-semibold mb-1"><i data-lucide="triangle-alert" class="w-3 h-3 mr-1"></i>Termination Requested</p>
+                                                    <p class="text-[10px] text-gray-500 mb-2"><?= sanitize_string(truncate($c['cancellation_reason'], 80)) ?></p>
+                                                    <div class="flex gap-2">
+                                                        <form method="POST" action="contract_action.php" class="flex-1" onsubmit="return confirm('Accept termination? This contract will be closed.')">
+                                                            <?= csrf_field() ?>
+                                                            <input type="hidden" name="action" value="accept_termination">
+                                                            <input type="hidden" name="contract_id" value="<?= (int) $c['id'] ?>">
+                                                            <button type="submit" class="w-full px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-semibold rounded-lg transition-all">
+                                                                Accept
+                                                            </button>
+                                                        </form>
+                                                        <form method="POST" action="contract_action.php" class="flex-1" onsubmit="return confirm('Reject termination? The freelancer may file a dispute.')">
+                                                            <?= csrf_field() ?>
+                                                            <input type="hidden" name="action" value="reject_termination">
+                                                            <input type="hidden" name="contract_id" value="<?= (int) $c['id'] ?>">
+                                                            <button type="submit" class="w-full px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-semibold rounded-lg transition-all">
+                                                                Reject
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -443,7 +474,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div class="flex items-center gap-1">
                     <?php if ($pagination['has_prev']): ?>
                         <a href="?<?= $baseQuery . $baseSep ?>page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
-                            <i class="fas fa-chevron-left text-xs"></i>
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
                         </a>
                     <?php endif; ?>
                     <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
@@ -451,7 +482,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <?php endfor; ?>
                     <?php if ($pagination['has_next']): ?>
                         <a href="?<?= $baseQuery . $baseSep ?>page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
-                            <i class="fas fa-chevron-right text-xs"></i>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -462,7 +493,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
             <div class="text-center py-16 px-6">
                 <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mx-auto mb-6 border border-blue-100">
-                    <i class="fas fa-handshake text-4xl text-blue-300"></i>
+                    <i data-lucide="handshake" class="w-5 h-5 text-blue-300"></i>
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 mb-2 dark:text-white">
                     <?= $searchQuery !== '' ? 'No contracts found' : 'No contracts yet' ?>
@@ -479,11 +510,11 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div class="flex items-center justify-center gap-3">
                     <?php if ($searchQuery !== '' || $statusFilter !== 'all'): ?>
                         <a href="contracts.php" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-xl text-xs transition-all">
-                            <i class="fas fa-times text-[10px]"></i> Clear Filters
+                            <i data-lucide="x" class="w-3 h-3"></i> Clear Filters
                         </a>
                     <?php endif; ?>
                     <a href="my_jobs.php" class="btn-grad inline-flex items-center gap-2 text-white font-bold px-6 py-3 rounded-xl text-sm">
-                        <i class="fas fa-briefcase text-xs"></i> View My Jobs
+                        <i data-lucide="briefcase" class="w-4 h-4"></i> View My Jobs
                     </a>
                 </div>
             </div>

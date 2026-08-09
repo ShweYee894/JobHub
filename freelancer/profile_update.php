@@ -7,6 +7,7 @@
 require_once '../auth/auth.php';
 require_role('freelancer');
 require_once '../config/db.php';
+require_once __DIR__ . '/../includes/ai_engine.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('profile.php');
@@ -18,6 +19,54 @@ if (!verify_csrf_token()) {
 }
 
 $userId = $_SESSION['user_id'];
+
+// ── Password-Only Change (from dedicated password form) ────────────
+$action = $_POST['action'] ?? '';
+if ($action === 'password_change') {
+    $currentPassword = $_POST['current_password'] ?? '';
+    $newPassword = $_POST['new_password'] ?? '';
+    $confirmPassword = $_POST['confirm_password'] ?? '';
+
+    $errors = [];
+    if (empty($currentPassword)) {
+        $errors[] = 'Current password is required.';
+    }
+    if (empty($newPassword)) {
+        $errors[] = 'New password is required.';
+    }
+    if ($newPassword !== $confirmPassword) {
+        $errors[] = 'New passwords do not match.';
+    }
+    $pwValidation = validate_password($newPassword);
+    $errors = array_merge($errors, $pwValidation);
+
+    if (empty($errors)) {
+        $stmtPw = $conn->prepare('SELECT password FROM users WHERE id = ?');
+        $stmtPw->bind_param('i', $userId);
+        $stmtPw->execute();
+        $pwRow = $stmtPw->get_result()->fetch_assoc();
+        $stmtPw->close();
+
+        if (!$pwRow || !password_verify($currentPassword, $pwRow['password'])) {
+            $errors[] = 'Current password is incorrect.';
+        }
+    }
+
+    if (!empty($errors)) {
+        set_flash('error', implode(' ', $errors));
+        redirect('profile_edit.php');
+    }
+
+    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+    $updatePw = $conn->prepare('UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?');
+    $updatePw->bind_param('si', $hashedPassword, $userId);
+    $updatePw->execute();
+    $updatePw->close();
+
+    set_flash('success', 'Password updated successfully.');
+    redirect('profile_edit.php');
+}
 
 $stmt = $conn->prepare('SELECT f.id AS freelancer_id, u.profile_image FROM freelancers f JOIN users u ON u.id = f.user_id WHERE u.id = ?');
 $stmt->bind_param('i', $userId);
@@ -48,6 +97,9 @@ $hourlyRate = sanitize_float($_POST['hourly_rate'] ?? 0);
 $yearsOfExperience = sanitize_int($_POST['years_of_experience'] ?? 0);
 $availability = $_POST['availability'] ?? 'Available';
 $portfolioUrl = trim($_POST['portfolio_url'] ?? '');
+$socialLinksWebsite = trim($_POST['social_links_website'] ?? '');
+$socialLinksGithub = trim($_POST['social_links_github'] ?? '');
+$socialLinksLinkedin = trim($_POST['social_links_linkedin'] ?? '');
 $skillIds = $_POST['skills'] ?? [];
 
 $errors = [];
@@ -79,6 +131,16 @@ if (!empty($portfolioUrl) && !filter_var($portfolioUrl, FILTER_VALIDATE_URL)) {
     $errors[] = 'Portfolio URL is invalid.';
 }
 
+if (!empty($socialLinksWebsite) && !filter_var($socialLinksWebsite, FILTER_VALIDATE_URL)) {
+    $errors[] = 'Website URL is invalid.';
+}
+if (!empty($socialLinksGithub) && !filter_var($socialLinksGithub, FILTER_VALIDATE_URL)) {
+    $errors[] = 'GitHub URL is invalid.';
+}
+if (!empty($socialLinksLinkedin) && !filter_var($socialLinksLinkedin, FILTER_VALIDATE_URL)) {
+    $errors[] = 'LinkedIn URL is invalid.';
+}
+
 if (!empty($phone) && mb_strlen($phone) > 20) {
     $errors[] = 'Phone number must be under 20 characters.';
 }
@@ -107,6 +169,14 @@ if (!empty($skillIds)) {
         $validSkillIds = $validIds;
     }
 }
+
+// Build social_links JSON
+$socialLinksData = [
+    'website'  => $socialLinksWebsite ?: null,
+    'github'   => $socialLinksGithub ?: null,
+    'linkedin' => $socialLinksLinkedin ?: null,
+];
+$socialLinksJson = json_encode($socialLinksData, JSON_UNESCAPED_SLASHES);
 
 $newProfileImage = $currentProfileImage;
 if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
@@ -184,11 +254,8 @@ if (!empty($errors)) {
     redirect('profile_edit.php');
 }
 
-$skillsVector = json_encode([
-    'skill_ids' => $validSkillIds,
-    'skill_names' => []
-]);
-
+// Build freelancer vector using ai_engine (includes dense vector for cosine similarity)
+$orderedNames = [];
 if (!empty($validSkillIds)) {
     $placeholders = implode(',', array_fill(0, count($validSkillIds), '?'));
     $types = str_repeat('i', count($validSkillIds));
@@ -196,23 +263,27 @@ if (!empty($validSkillIds)) {
     $stmtNames->bind_param($types, ...$validSkillIds);
     $stmtNames->execute();
     $namesResult = $stmtNames->get_result();
-    $skillNames = [];
+    $skillNamesMap = [];
     while ($nrow = $namesResult->fetch_assoc()) {
-        $skillNames[$nrow['id']] = $nrow['skill_name'];
+        $skillNamesMap[$nrow['id']] = $nrow['skill_name'];
     }
     $stmtNames->close();
-
-    $orderedNames = [];
     foreach ($validSkillIds as $sid) {
-        if (isset($skillNames[$sid])) {
-            $orderedNames[] = $skillNames[$sid];
+        if (isset($skillNamesMap[$sid])) {
+            $orderedNames[] = $skillNamesMap[$sid];
         }
     }
-    $skillsVector = json_encode([
-        'skill_ids' => $validSkillIds,
-        'skill_names' => $orderedNames
-    ]);
 }
+
+$embeddingText = ($title ?? '') . ' ' . ($bio ?? '');
+$skillsVector = ai_generate_freelancer_vector(
+    $validSkillIds,
+    $orderedNames,
+    $hourlyRate,
+    $yearsOfExperience,
+    $availability,
+    $embeddingText
+);
 
 $conn->begin_transaction();
 
@@ -225,14 +296,14 @@ try {
     $updateFreelancer = $conn->prepare('
         UPDATE freelancers
         SET title = ?, bio = ?, hourly_rate = ?, years_of_experience = ?,
-            availability = ?, portfolio_url = ?, resume_file = ?,
+            availability = ?, portfolio_url = ?, social_links = ?, resume_file = ?,
             skills_vector = ?, updated_at = NOW()
         WHERE id = ?
     ');
     $updateFreelancer->bind_param(
-        'ssdissssi',
+        'ssdisssssi',
         $title, $bio, $hourlyRate, $yearsOfExperience,
-        $availability, $portfolioUrl, $newResumeFile,
+        $availability, $portfolioUrl, $socialLinksJson, $newResumeFile,
         $skillsVector, $freelancerId
     );
     $updateFreelancer->execute();

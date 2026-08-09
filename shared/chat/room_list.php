@@ -50,6 +50,10 @@ if ($role !== 'client' && $role !== 'freelancer') {
     exit;
 }
 
+// ── Release session lock ────────────────────────────────────────────────────
+define('SESSION_CLOSED', true);
+session_write_close();
+
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/chat_functions.php';
@@ -152,15 +156,13 @@ while ($row = $result->fetch_assoc()) {
         'contract_id'   => (int) $row['contract_id'],
         'other_user'    => [
             'id'         => (int) $row['other_id'],
-            'name'       => htmlspecialchars($row['other_name'], ENT_QUOTES, 'UTF-8'),
+            'name'       => $row['other_name'],
             'image'      => _roomListProfileImage($row['other_image']),
             'is_online'  => $isOnline,
             'last_seen'  => $row['other_last_active'],
         ],
-        'job_title'         => htmlspecialchars($row['job_title'], ENT_QUOTES, 'UTF-8'),
-        'last_message'      => $row['last_message']
-            ? htmlspecialchars($row['last_message'], ENT_QUOTES, 'UTF-8')
-            : null,
+        'job_title'         => $row['job_title'],
+        'last_message'      => $row['last_message'] ?: null,
         'last_message_time' => $row['last_message_time'],
         'unread_count'      => (int) ($row['unread_count'] ?? 0),
         'contract_status'   => $row['contract_status'],

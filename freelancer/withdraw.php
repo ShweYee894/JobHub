@@ -36,7 +36,6 @@ $stmt->bind_param('iii', $userId, $perPage, $offset);
 $stmt->execute();
 $withdrawalsResult = $stmt->get_result();
 $stmt->close();
-$conn->close();
 
 $errors = [];
 $success = false;
@@ -66,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $newBalance = $walletBalance - $amount;
                 $desc = 'Withdrawal of ' . format_currency($amount);
-                $stmt = $conn->prepare('INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at) VALUES (?, \'withdrawal\', ?, ?, NULL, \'wallet\', ?, NOW())');
+                $stmt = $conn->prepare("INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at) VALUES (?, 'withdrawal', ?, ?, NULL, 'wallet', ?, NOW())");
                 $stmt->bind_param('idds', $userId, $amount, $newBalance, $desc);
                 $stmt->execute();
                 $stmt->close();
@@ -89,69 +88,118 @@ $activePage = 'earnings';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
 require_once __DIR__ . '/../components/freelancer_header.php';
+$conn->close();
 ?>
-    <?= display_flash('success') ?>
-    <?= display_flash('error') ?>
+    <style>
+        * { font-family:'Inter',system-ui,-apple-system,sans-serif; }
+        .wd-card { background:#fff; border:1px solid #E5E8EB; border-radius:10px; padding:24px; }
+        .wd-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .wd-title { font-size:16px; font-weight:700; color:#1A1A2E; margin:0; }
+        .wd-sub { font-size:12px; color:#9CA3AF; margin:2px 0 0; }
+        .wd-bal { background:#108A00; opacity: 0.9; border-radius:10px; padding:24px; color:#fff; margin-bottom:24px; }
+        .wd-bal-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.6); margin:0 0 8px; }
+        .wd-bal-val { font-size:32px; font-weight:900; margin:0; line-height:1.1; font-variant-numeric:tabular-nums; }
+        .wd-bal-note { font-size:12px; color:rgba(255,255,255,.5); margin:8px 0 0; }
+        .wd-input-wrap { position:relative; }
+        .wd-input-wrap .wd-prefix { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:14px; font-weight:600; pointer-events:none; }
+        .wd-input { width:100%; padding:14px 16px 14px 36px; border:1px solid #D1D5DB; border-radius:8px; font-size:15px; color:#1A1A2E; background:#F9FAFB; outline:none; transition:all .15s ease; box-sizing:border-box; }
+        .wd-input:focus { border-color:#108A00; background:#fff; box-shadow:0 0 0 3px rgba(16,138,0,.1); }
+        .wd-hint { font-size:12px; color:#9CA3AF; margin:8px 0 0; }
+        .wd-quick { display:flex; gap:8px; }
+        .wd-quick button { flex:1; padding:10px; border:1px solid #D1D5DB; border-radius:8px; background:#fff; color:#374151; font-size:13px; font-weight:600; cursor:pointer; transition:all .12s ease; }
+        .wd-quick button:hover { background:#F3F4F6; border-color:#9CA3AF; }
+        .wd-submit { width:100%; padding:14px; border:none; border-radius:8px; background:#108A00; color:#fff; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .15s ease; }
+        .wd-submit:hover { background:#0D7200; box-shadow:0 4px 12px rgba(16,138,0,.25); }
+        .wd-submit:disabled { opacity:.5; cursor:not-allowed; }
+        .wd-note { padding:14px 16px; background:#F0FDF4; border:1px solid #DCFCE7; border-radius:8px; margin-top:16px; }
+        .wd-note p { font-size:12px; color:#166534; margin:0; display:flex; align-items:flex-start; gap:8px; line-height:1.6; }
+        .wd-h-item { display:flex; align-items:center; gap:14px; padding:14px 16px; background:#F9FAFB; border:1px solid #E5E8EB; border-radius:8px; transition:background .12s ease; }
+        .wd-h-item:hover { background:#F3F4F6; }
+        .wd-h-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:#FEE2E2; }
+        .wd-h-text { flex:1; min-width:0; }
+        .wd-h-title { font-size:13px; font-weight:600; color:#1A1A2E; margin:0; }
+        .wd-h-date { font-size:11px; color:#9CA3AF; margin:2px 0 0; }
+        .wd-h-amount { text-align:right; flex-shrink:0; }
+        .wd-h-amt { font-size:13px; font-weight:700; color:#DC2626; margin:0; }
+        .wd-h-bal { font-size:11px; color:#9CA3AF; margin:2px 0 0; }
+        .wd-empty { text-align:center; padding:48px 24px; }
+        .wd-empty-icon { width:56px; height:56px; border-radius:14px; background:#F3F4F6; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+        .wd-empty-title { font-size:14px; font-weight:600; color:#6B7280; margin:0; }
+        .wd-empty-sub { font-size:12px; color:#9CA3AF; margin:4px 0 0; }
+        .wd-back { display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:500; color:#6B7280; text-decoration:none; transition:color .12s ease; }
+        .wd-back:hover { color:#1A1A2E; }
+    </style>
+
+    <div style="background:#fff;min-height:100vh">
+    <div class="max-w-7xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+
+    <!-- Back Link -->
+    <a href="earnings.php" class="wd-back" style="margin-bottom:24px">
+        <i data-lucide="arrow-left" class="text-[11px]"></i> Back to transactions
+    </a>
+
+    <?php display_flash('success') ?>
+    <?php display_flash('error') ?>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Withdraw Form -->
         <div class="lg:col-span-1">
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in dark:bg-gray-800 dark:border-gray-700">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><i class="fas fa-wallet text-blue-500"></i></div>
+            <div class="wd-card">
+                <div class="flex items-center gap-3" style="margin-bottom:20px">
+                    <div class="wd-icon" style="background:#F0FDF4"><i data-lucide="wallet" style="color:#108A00"></i></div>
                     <div>
-                        <h3 class="text-base font-bold text-gray-900 dark:text-white">Withdraw Funds</h3>
-                        <p class="text-xs text-gray-400">Transfer to your bank account</p>
+                        <h3 class="wd-title">Withdraw Funds</h3>
+                        <p class="wd-sub">Transfer to your bank account</p>
                     </div>
                 </div>
 
                 <!-- Balance Card -->
-                <div class="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl p-5 text-white mb-6">
-                    <p class="text-xs text-white/70 uppercase tracking-wider font-semibold mb-1">Available Balance</p>
-                    <p class="text-3xl font-black"><?= format_currency($walletBalance) ?></p>
-                    <p class="text-xs text-white/60 mt-1">This month: <?= format_currency($monthWithdrawn) ?> withdrawn</p>
+                <div class="wd-bal">
+                    <p class="wd-bal-label">Available Balance</p>
+                    <p class="wd-bal-val"><?= format_currency($walletBalance) ?></p>
+                    <p class="wd-bal-note">This month: <?= format_currency($monthWithdrawn) ?> withdrawn</p>
                 </div>
 
                 <?php if (!empty($errors)): ?>
-                    <div class="bg-red-50 text-red-800 border border-red-200 rounded-xl p-4 mb-4 dark:bg-red-900/30 dark:border-red-800 dark:text-red-200">
-                        <div class="flex items-start gap-3">
-                            <i class="fas fa-exclamation-circle mt-0.5"></i>
-                            <div class="text-sm">
+                    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:14px 16px;margin-bottom:16px">
+                        <div style="display:flex;align-items:flex-start;gap:10px">
+                            <i data-lucide="circle-alert" style="color:#DC2626;margin-top:2px"></i>
+                            <div style="font-size:13px;color:#991B1B">
                                 <?php foreach ($errors as $err): ?>
-                                    <p><?= sanitize_string($err) ?></p>
+                                    <p style="margin:0 0 2px"><?= sanitize_string($err) ?></p>
                                 <?php endforeach; ?>
                             </div>
                         </div>
                     </div>
                 <?php endif; ?>
 
-                <form method="POST" class="space-y-4">
+                <form method="POST">
                     <?= csrf_field() ?>
-                    <div>
-                        <label for="amount" class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300">Withdrawal Amount</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">$</span>
+                    <div style="margin-bottom:16px">
+                        <label for="amount" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">Withdrawal Amount</label>
+                        <div class="wd-input-wrap">
+                            <span class="wd-prefix">$</span>
                             <input type="number" id="amount" name="amount" step="0.01" min="10" max="<?= $walletBalance ?>"
-                                   class="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                   class="wd-input"
                                    placeholder="0.00" required>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1.5">Minimum: $10.00 | Maximum: <?= format_currency($walletBalance) ?></p>
+                        <p class="wd-hint">Minimum: $10.00 | Maximum: <?= format_currency($walletBalance) ?></p>
                     </div>
 
-                    <div class="flex gap-2">
-                        <button type="button" onclick="document.getElementById('amount').value='<?= $walletBalance ?>'" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300">Max</button>
-                        <button type="button" onclick="document.getElementById('amount').value=Math.min(100, <?= $walletBalance ?>)" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300">$100</button>
-                        <button type="button" onclick="document.getElementById('amount').value=Math.min(500, <?= $walletBalance ?>)" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300">$500</button>
+                    <div class="wd-quick" style="margin-bottom:20px">
+                        <button type="button" onclick="document.getElementById('amount').value='<?= $walletBalance ?>'">Max</button>
+                        <button type="button" onclick="document.getElementById('amount').value=Math.min(100, <?= $walletBalance ?>)">$100</button>
+                        <button type="button" onclick="document.getElementById('amount').value=Math.min(500, <?= $walletBalance ?>)">$500</button>
                     </div>
 
-                    <button type="submit" class="w-full btn-grad px-6 py-3 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2" <?= $walletBalance < 10 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>
-                        <i class="fas fa-money-bill-wave text-[10px]"></i> Withdraw Funds
+                    <button type="submit" class="wd-submit" <?= $walletBalance < 10 ? 'disabled' : '' ?>>
+                        <i data-lucide="banknote" style="font-size:12px"></i> Withdraw Funds
                     </button>
                 </form>
 
-                <div class="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-100 dark:bg-blue-900/30 dark:border-blue-800">
-                    <p class="text-xs text-blue-600 flex items-start gap-2">
-                        <i class="fas fa-info-circle mt-0.5"></i>
+                <div class="wd-note">
+                    <p>
+                        <i data-lucide="info" style="margin-top:2px;flex-shrink:0"></i>
                         <span>Withdrawals are processed within 1-3 business days. Funds will be transferred to your registered payment method.</span>
                     </p>
                 </div>
@@ -160,58 +208,63 @@ require_once __DIR__ . '/../components/freelancer_header.php';
 
         <!-- Withdrawal History -->
         <div class="lg:col-span-2">
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.1s">
-                <div class="flex items-center gap-3 mb-5">
-                    <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center"><i class="fas fa-history text-violet-500"></i></div>
+            <div class="wd-card">
+                <div class="flex items-center gap-3" style="margin-bottom:20px">
+                    <div class="wd-icon" style="background:#F3F4F6"><i data-lucide="history" style="color:#6B7280"></i></div>
                     <div>
-                        <h2 class="text-base font-bold text-gray-900 dark:text-white">Withdrawal History</h2>
-                        <p class="text-xs text-gray-400"><?= $totalWithdrawals ?> withdrawal<?= $totalWithdrawals !== 1 ? 's' : '' ?></p>
+                        <h2 class="wd-title">Withdrawal History</h2>
+                        <p class="wd-sub"><?= $totalWithdrawals ?> withdrawal<?= $totalWithdrawals !== 1 ? 's' : '' ?></p>
                     </div>
                 </div>
 
                 <?php if ($withdrawalsResult->num_rows > 0): ?>
-                    <div class="space-y-3">
+                    <div style="display:flex;flex-direction:column;gap:10px">
                         <?php while ($w = $withdrawalsResult->fetch_assoc()): ?>
-                            <div class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 dark:bg-gray-700 dark:border-gray-600">
-                                <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-arrow-up text-red-500 text-sm"></i>
+                            <div class="wd-h-item">
+                                <div class="wd-h-icon">
+                                    <i data-lucide="arrow-up" style="color:#DC2626;font-size:13px"></i>
                                 </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">Withdrawal</p>
-                                    <p class="text-[11px] text-gray-400"><?= date('M d, Y h:i A', strtotime($w['created_at'])) ?></p>
+                                <div class="wd-h-text">
+                                    <p class="wd-h-title">Withdrawal</p>
+                                    <p class="wd-h-date"><?= date('M d, Y h:i A', strtotime($w['created_at'])) ?></p>
                                 </div>
-                                <div class="text-right flex-shrink-0">
-                                    <p class="text-sm font-bold text-red-600">-<?= format_currency((float) $w['amount']) ?></p>
-                                    <p class="text-[11px] text-gray-400">Balance: <?= format_currency((float) $w['balance_after']) ?></p>
+                                <div class="wd-h-amount">
+                                    <p class="wd-h-amt">-<?= format_currency((float) $w['amount']) ?></p>
+                                    <p class="wd-h-bal">Balance: <?= format_currency((float) $w['balance_after']) ?></p>
                                 </div>
                             </div>
                         <?php endwhile; ?>
                     </div>
 
                     <?php if ($pagination['total_pages'] > 1): ?>
-                        <div class="flex items-center justify-between mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
-                            <p class="text-xs text-gray-400">Page <span class="font-semibold text-gray-600"><?= $pagination['current_page'] ?></span> of <span class="font-semibold text-gray-600"><?= $pagination['total_pages'] ?></span></p>
+                        <div class="flex items-center justify-between" style="margin-top:20px;padding-top:16px;border-top:1px solid #E5E8EB">
+                            <p style="font-size:12px;color:#9CA3AF;margin:0">Page <span style="font-weight:600;color:#6B7280"><?= $pagination['current_page'] ?></span> of <span style="font-weight:600;color:#6B7280"><?= $pagination['total_pages'] ?></span></p>
                             <div class="flex items-center gap-1">
                                 <?php if ($pagination['has_prev']): ?>
-                                    <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-chevron-left text-xs"></i></a>
+                                    <a href="?page=<?= $pagination['current_page'] - 1 ?>" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #D1D5DB;color:#6B7280;font-size:12px"><i data-lucide="chevron-left" style="font-size:10px"></i></a>
                                 <?php endif; ?>
                                 <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
-                                    <a href="?page=<?= $i ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700' ?>"><?= $i ?></a>
+                                    <a href="?page=<?= $i ?>" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;font-weight:500;<?= $i === $pagination['current_page'] ? 'background:#108A00;color:#fff' : 'color:#6B7280;border:1px solid #E5E8EB' ?>"><?= $i ?></a>
                                 <?php endfor; ?>
                                 <?php if ($pagination['has_next']): ?>
-                                    <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-chevron-right text-xs"></i></a>
+                                    <a href="?page=<?= $pagination['current_page'] + 1 ?>" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #D1D5DB;color:#6B7280;font-size:12px"><i data-lucide="chevron-right" style="font-size:10px"></i></a>
                                 <?php endif; ?>
                             </div>
                         </div>
                     <?php endif; ?>
                 <?php else: ?>
-                    <div class="text-center py-12">
-                        <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><i class="fas fa-history text-2xl text-gray-300"></i></div>
-                        <p class="text-gray-500 text-sm font-medium">No withdrawals yet</p>
-                        <p class="text-gray-400 text-xs mt-1">Your withdrawal history will appear here</p>
+                    <div class="wd-empty">
+                        <div class="wd-empty-icon">
+                            <i data-lucide="history" style="font-size:20px;color:#D1D5DB"></i>
+                        </div>
+                        <p class="wd-empty-title">No withdrawals yet</p>
+                        <p class="wd-empty-sub">Your withdrawal history will appear here</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
+    </div>
+
+    </div>
     </div>
 <?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

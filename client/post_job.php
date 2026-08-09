@@ -41,10 +41,10 @@ display_flash('error'); ?>
 <?php if (!empty($errors)): ?>
     <div class="rounded-2xl p-4 bg-red-50 border border-red-200 fade-in dark:bg-red-900/30 dark:border-red-800 mb-6">
         <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 dark:bg-red-900/50"><i class="fas fa-exclamation-triangle text-red-500 text-lg"></i></div>
+            <div class="w-10 h-10 rounded-[10px] bg-red-100 flex items-center justify-center flex-shrink-0 dark:bg-red-900/50"><i data-lucide="triangle-alert" class="w-5 h-5 text-red-500"></i></div>
             <div>
                 <p class="font-bold text-red-700 text-sm mb-1 dark:text-red-300">Please fix the following errors:</p>
-                <ul class="space-y-1"><?php foreach ($errors as $e): ?><li class="text-red-600 text-xs flex items-start gap-2 dark:text-red-400"><i class="fas fa-circle text-[5px] mt-1.5 text-red-400 flex-shrink-0"></i><?= sanitize_string($e) ?></li><?php endforeach; ?></ul>
+                <ul class="space-y-1"><?php foreach ($errors as $e): ?><li class="text-red-600 text-xs flex items-start gap-2 dark:text-red-400"><i data-lucide="circle" class="w-2 h-2 mt-1.5 text-red-400 flex-shrink-0"></i><?= sanitize_string($e) ?></li><?php endforeach; ?></ul>
             </div>
         </div>
     </div>
@@ -57,7 +57,7 @@ display_flash('error'); ?>
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-4">
             <a href="dashboard.php" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors no-underline">
-                <i class="fas fa-arrow-left text-sm"></i>
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </a>
             <h1 class="text-2xl font-extrabold text-slate-800 dark:text-white m-0">Create Job Posting</h1>
         </div>
@@ -121,7 +121,7 @@ display_flash('error'); ?>
                 </div>
 
                 <div class="relative mb-5">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
                     <input type="text" id="skill-search" placeholder="Type to filter skills..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl pl-11 pr-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all">
                 </div>
 
@@ -147,7 +147,7 @@ display_flash('error'); ?>
                                         <label class="skill-tag inline-flex items-center gap-1.5 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-700 cursor-pointer select-none transition-all hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 <?= $isSelected ? 'skill-tag-active border-violet-500 bg-violet-50 dark:bg-violet-900/30' : '' ?>" data-id="<?= $skill['id'] ?>" data-name="<?= sanitize_string(strtolower($skill['skill_name'])) ?>">
                                             <input type="checkbox" name="skills[]" value="<?= $skill['id'] ?>" class="hidden" <?= $isSelected ? 'checked' : '' ?>>
                                             <span class="font-medium"><?= sanitize_string($skill['skill_name']) ?></span>
-                                            <i class="fas fa-check text-[9px] text-violet-600 transition-all <?= $isSelected ? '' : 'hidden' ?>"></i>
+                                                <i data-lucide="check" class="w-3 h-3 text-violet-600 transition-all <?= $isSelected ? '' : 'hidden' ?>"></i>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -158,7 +158,7 @@ display_flash('error'); ?>
                     <?php endif; ?>
                 </div>
                 <div id="skills-empty" class="hidden border border-dashed border-slate-200 dark:border-slate-600 rounded-xl p-8 text-center bg-slate-50/50 dark:bg-slate-700/30">
-                    <i class="fas fa-search text-slate-300 dark:text-slate-500 text-2xl mb-2"></i>
+                        <i data-lucide="search" class="w-8 h-8 text-slate-300 dark:text-slate-500 mb-2"></i>
                     <p class="text-xs text-slate-500 font-medium">No skills match your search.</p>
                 </div>
                 <p id="skills-err" class="text-red-500 text-xs mt-3 hidden"></p>
@@ -267,7 +267,8 @@ display_flash('error'); ?>
                     <?php if ($allCategories && $allCategories->num_rows > 0): ?>
                         <?php
                         $allCategories->data_seek(0);
-                        while ($cat = $allCategories->fetch_assoc()): ?>
+                        while ($cat = $allCategories->fetch_assoc()):
+                            ?>
                             <option value="<?= sanitize_string($cat['category']) ?>" <?= ($form['category'] ?? '') === $cat['category'] ? 'selected' : '' ?>><?= sanitize_string($cat['category']) ?></option>
                         <?php endwhile; ?>
                     <?php endif; ?>
@@ -291,8 +292,8 @@ display_flash('error'); ?>
             <!-- Action Buttons -->
             <div class="flex items-center gap-3 fade-in" style="animation-delay:.35s">
                 <a href="dashboard.php" class="flex-1 px-5 py-3 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-sm font-semibold transition-all text-center no-underline">Cancel</a>
-                <button type="submit" id="submit-btn" class="flex-1 px-5 py-3 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/25 transition-all">
-                   <i class="fas fa-paper-plane" id="submit-icon"></i> <span id="submit-text">Post Job</span>
+                <button type="submit" id="submit-btn" class="flex-1 flex justify-center items-center gap-2.5 px-5 py-3 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-500/25 transition-all">
+                   <i data-lucide="send" id="submit-icon" class="w-4 h-4"></i> <span id="submit-text">Post Job</span>
                 </button>
             </div>
         </div>
@@ -369,7 +370,7 @@ display_flash('error'); ?>
         <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-lg text-xs font-semibold">
             ${c}
             <button type="button" onclick="removeCategory('${c}')" class="hover:text-violet-900 dark:hover:text-white">
-                <i class="fas fa-times text-[10px]"></i>
+                <i data-lucide="x" class="w-3 h-3"></i>
             </button>
         </span>
     `).join('');
@@ -421,7 +422,7 @@ display_flash('error'); ?>
             cb.addEventListener('change', function() {
                 var tag = this.closest('.skill-tag');
                 if (!tag) return;
-                var checkIcon = tag.querySelector('.fa-check');
+                var checkIcon = tag.querySelector('[data-lucide="check"]');
                 tag.classList.toggle('skill-tag-active', this.checked);
                 tag.classList.toggle('border-violet-500', this.checked);
                 tag.classList.toggle('bg-violet-50', this.checked);
@@ -560,7 +561,7 @@ display_flash('error'); ?>
                 btn.disabled = true;
                 btn.classList.add('opacity-75', 'cursor-not-allowed');
             }
-            if (icon) icon.className = 'fas fa-spinner fa-spin';
+            if (icon) { icon.setAttribute('data-lucide', 'loader'); icon.className = 'animate-spin w-4 h-4'; lucide.createIcons(); }
             if (txt) txt.textContent = 'Publishing...';
         });
 

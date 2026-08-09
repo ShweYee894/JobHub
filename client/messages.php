@@ -39,8 +39,8 @@ $profileLink = 'profile.php';
 require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden fade-in" style="height: calc(100vh - 120px);">
+<main class="max-w-full mx-auto px-4 sm:px-6 py-7">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden fade-in " style="height: calc(100vh - 110px);">
         <div class="flex h-full">
 
             <!-- ═══ ROOMS LIST ════════════════════════════════ -->
@@ -48,7 +48,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div class="p-4 border-b border-gray-100 dark:border-slate-700">
                     <h2 class="text-sm font-bold text-gray-900 dark:text-white mb-3">Conversations</h2>
                     <div class="relative">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
                         <input type="text" id="conversationSearch" placeholder="Search by name, job..."
                             class="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all">
                     </div>
@@ -68,7 +68,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         </div>
     </div>
 </main>
-<script src="/finalproject/shared/dark-toggle.js"></script>
+<script src="/jobhub/shared/dark-toggle.js"></script>
 <script>
 
 const emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😗','😙','😚','🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','🥱','😴','😌','😛','😜','🤪','😝','🤑','🤓','😎','🥳','🥺','🤩','💕','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💯','💢','💥','💫','💦','👍','👎','👊','✊','🤛','🤜','👏','🙌','👐','🤝','🙏','✌️','🤞','🤟','🤘','👌','🔥','⭐','🌟','✨','💪','🎉','🎊','✅','❌','⏰','📎','📝','💼','📁','🗂️','📊','📈','🗓️','✏️','🖊️','📌','🔗','💰','🎁','🏆','🎯']; // abbreviated for readability
@@ -90,14 +90,15 @@ if (emojiGrid) {
     });
 }
 </script>
-<script src="/finalproject/assets/js/chat.js?v=<?= filemtime(__DIR__ . '/../assets/js/chat.js') ?>"></script>
+<script src="/jobhub/assets/js/chat.js?v=<?= filemtime(__DIR__ . '/../assets/js/chat.js') ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     window.chat = new Chat({
         userId: <?= $userId ?>,
         role: 'client',
-        baseUrl: '/finalproject',
-        csrfToken: '<?= $csrfToken ?>'
+        baseUrl: '/jobhub',
+        csrfToken: '<?= $csrfToken ?>',
+        userName: '<?= addslashes($userName) ?>'
     });
 
     setTimeout(() => {
@@ -111,4 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <?php $conn->close(); ?>
-<?php require_once __DIR__ . '/../includes/client_footer.php'; ?>
+<?php
+// require_once __DIR__ . '/../includes/client_footer.php';
+?>

@@ -45,31 +45,31 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <?php display_flash('error'); ?>
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">  
     <!-- Balance Summary -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2">
         <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center">
-                <i class="fas fa-wallet text-xl text-white"></i>
+            <div class="w-10 h-10 rounded-[10px] bg-gradient-to-br from-blue-600/80 to-teal-500/60 flex items-center justify-center">
+                <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
             </div>
             <div>
                 <p class="text-xs text-gray-400 dark:text-slate-500 m-0">Current Balance</p>
-                <p class="text-2xl font-black text-gray-900 dark:text-white m-0"><?= wallet_format_currency($balance) ?></p>
+                <p class="text-xl font-black text-gray-900 dark:text-white m-0"><?= wallet_format_currency($balance) ?></p>
             </div>
         </div>
         <div class="flex gap-2">
             <a href="wallet.php" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all no-underline">
-                <i class="fas fa-arrow-left text-xs"></i> Back to Wallet
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Wallet
             </a>
-            <a href="topup_wallet.php" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 text-white text-sm font-bold shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all no-underline">
-                <i class="fas fa-plus text-xs"></i> Top Up
+            <a href="topup_wallet.php" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-teal-400 text-white text-sm font-bold shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all no-underline">
+                <i data-lucide="plus" class="w-4 h-4"></i> Top Up
             </a>
         </div>
     </div>
 
     <!-- History List -->
-    <div class="dh-card fade-in p-6" style="animation-delay: 0.1s">
-        <div class="flex items-center gap-3 mb-5">
+    <div class="border border-gray-200 dark:border-white/10 rounded-xl fade-in p-6" style="animation-delay: 0.1s">
+        <div class="flex items-center gap-3 mb-5 border-b border-gray-200 dark:border-white/5 pb-5">
             <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                <i class="fas fa-clock-rotate-left text-blue-500"></i>
+                <i data-lucide="history" class="w-5 h-5 text-blue-500"></i>
             </div>
             <div>
                 <h3 class="text-base font-bold text-gray-900 dark:text-white m-0">Transaction History</h3>
@@ -98,7 +98,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <div class="flex items-center gap-1">
                         <?php if ($page > 1): ?>
                             <a href="?page=<?= $page - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm no-underline">
-                                <i class="fas fa-chevron-left text-xs"></i>
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
                             </a>
                         <?php endif; ?>
                         <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
@@ -106,7 +106,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         <?php endfor; ?>
                         <?php if ($page < $totalPages): ?>
                             <a href="?page=<?= $page + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm no-underline">
-                                <i class="fas fa-chevron-right text-xs"></i>
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
                             </a>
                         <?php endif; ?>
                     </div>
@@ -115,7 +115,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <?php else: ?>
             <div class="text-center py-12">
                 <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-receipt text-2xl text-gray-300 dark:text-slate-500"></i>
+                    <i data-lucide="receipt" class="w-8 h-8 text-gray-300 dark:text-slate-500"></i>
                 </div>
                 <p class="text-gray-500 dark:text-slate-400 text-sm font-medium mb-1">No transactions yet</p>
                 <p class="text-gray-400 dark:text-slate-500 text-xs">Your wallet history will appear here</p>

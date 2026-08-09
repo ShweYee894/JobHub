@@ -25,6 +25,11 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/notifications.php';
 
 $userId = (int) $_SESSION['user_id'];
+
+// ── Release session lock ────────────────────────────────────────────────────
+define('SESSION_CLOSED', true);
+session_write_close();
+
 $ns = new PlatformNotificationService($conn);
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';

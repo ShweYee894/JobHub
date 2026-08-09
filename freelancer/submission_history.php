@@ -67,9 +67,9 @@ $statusColors = [
     'disputed'  => 'bg-red-50 text-red-500 border border-red-200',
 ];
 $statusIcons = [
-    'submitted' => 'fa-paper-plane',
-    'released'  => 'fa-check-circle',
-    'disputed'  => 'fa-exclamation-triangle',
+    'submitted' => 'send',
+    'released'  => 'circle-check',
+    'disputed'  => 'triangle-alert',
 ];
 
 $pageTitle = 'Submission History';
@@ -87,10 +87,10 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         <div class="flex flex-wrap gap-2">
             <?php
             $filters = [
-                'all'       => ['All', 'fa-layer-group', 'text-gray-600', 'bg-gray-100'],
-                'submitted' => ['Awaiting Review', 'fa-paper-plane', 'text-blue-600', 'bg-blue-50'],
-                'released'  => ['Approved', 'fa-check-circle', 'text-emerald-600', 'bg-emerald-50'],
-                'disputed'  => ['Disputed', 'fa-exclamation-triangle', 'text-red-500', 'bg-red-50'],
+                'all'       => ['All', 'layers', 'text-gray-600', 'bg-gray-100'],
+                'submitted' => ['Awaiting Review', 'send', 'text-blue-600', 'bg-blue-50'],
+                'released'  => ['Approved', 'circle-check', 'text-emerald-600', 'bg-emerald-50'],
+                'disputed'  => ['Disputed', 'triangle-alert', 'text-red-500', 'bg-red-50'],
             ];
             foreach ($filters as $key => $label):
                 $isActive = $statusFilter === $key;
@@ -98,7 +98,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             ?>
                 <a href="?<?= $linkParams ?>"
                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all <?= $isActive ? $label[3] . ' ' . $label[2] . ' border border-current/20' : 'text-gray-500 bg-gray-50 hover:bg-gray-100 border border-transparent' ?>">
-                    <i class="fas <?= $label[1] ?> text-[10px]"></i> <?= $label[0] ?>
+                    <i data-lucide="<?= $label[1] ?>" class="text-[10px]"></i> <?= $label[0] ?>
                 </a>
             <?php endforeach; ?>
         </div>
@@ -111,38 +111,38 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                 <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all fade-in">
                     <div class="p-6">
                         <div class="flex flex-col sm:flex-row sm:items-start gap-4">
-                            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex-shrink-0">
-                                <i class="fas fa-file-code text-white"></i>
+                            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-400 flex-shrink-0">
+                                <i data-lucide="file-code" class="text-white"></i>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
-                                    <a href="contract_detail.php?id=<?= (int) $s['contract_id'] ?>" class="text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors">
+                                    <a href="contract_detail.php?id=<?= (int) $s['contract_id'] ?>" class="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors">
                                         <?= sanitize_string($s['title']) ?>
                                     </a>
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold <?= $statusColors[$s['status']] ?? '' ?>">
-                                        <i class="fas <?= $statusIcons[$s['status']] ?? 'fa-circle' ?> text-[8px]"></i>
+                                        <i data-lucide="<?= $statusIcons[$s['status']] ?? 'circle' ?>" class="text-[8px]"></i>
                                         <?= ucfirst($s['status']) ?>
                                     </span>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 mb-2">
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-briefcase text-blue-400"></i>
+                                        <i data-lucide="briefcase" class="text-indigo-400"></i>
                                         <?= sanitize_string($s['job_title']) ?>
                                     </span>
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-user text-violet-400"></i>
+                                        <i data-lucide="user" class="text-violet-400"></i>
                                         <?= sanitize_string($s['client_name']) ?>
                                     </span>
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-dollar-sign text-emerald-500"></i>
+                                        <i data-lucide="dollar-sign" class="text-emerald-500"></i>
                                         <span class="font-semibold text-gray-700"><?= format_currency((float) $s['amount']) ?></span>
                                     </span>
                                 </div>
 
                                 <?php if (!empty($s['submission_github_url'])): ?>
                                     <div class="flex items-center gap-2 mb-2">
-                                        <i class="fab fa-github text-gray-400 text-xs"></i>
-                                        <a href="<?= sanitize_string($s['submission_github_url']) ?>" target="_blank" rel="noopener" class="text-xs text-blue-600 hover:text-blue-700 hover:underline truncate max-w-md">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                                        <a href="<?= sanitize_string($s['submission_github_url']) ?>" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:text-indigo-700 hover:underline truncate max-w-md">
                                             <?= sanitize_string($s['submission_github_url']) ?>
                                         </a>
                                     </div>
@@ -158,19 +158,19 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                 <div class="flex items-center gap-4 text-[11px] text-gray-400 mt-2">
                                     <?php if ($s['submission_date']): ?>
                                         <span class="flex items-center gap-1">
-                                            <i class="fas fa-clock"></i>
+                                            <i data-lucide="clock"></i>
                                             Submitted <?= time_ago($s['submission_date']) ?>
                                         </span>
                                     <?php endif; ?>
                                     <span class="flex items-center gap-1">
-                                        <i class="fas fa-calendar"></i>
+                                        <i data-lucide="calendar"></i>
                                         Created <?= date('M d, Y', strtotime($s['created_at'])) ?>
                                     </span>
                                 </div>
                             </div>
 
                             <a href="contract_detail.php?id=<?= (int) $s['contract_id'] ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition-all flex-shrink-0">
-                                <i class="fas fa-eye text-[9px]"></i> View
+                                <i data-lucide="eye" class="text-[9px]"></i> View
                             </a>
                         </div>
                     </div>
@@ -189,7 +189,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                 <div class="flex items-center gap-1">
                     <?php if ($pagination['has_prev']): ?>
                         <a href="?status=<?= $statusFilter ?>&page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm">
-                            <i class="fas fa-chevron-left text-xs"></i>
+                            <i data-lucide="chevron-left" class="text-xs"></i>
                         </a>
                     <?php endif; ?>
                     <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
@@ -197,7 +197,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                     <?php endfor; ?>
                     <?php if ($pagination['has_next']): ?>
                         <a href="?status=<?= $statusFilter ?>&page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm">
-                            <i class="fas fa-chevron-right text-xs"></i>
+                            <i data-lucide="chevron-right" class="text-xs"></i>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -207,8 +207,8 @@ require_once __DIR__ . '/../components/freelancer_header.php';
     <?php else: ?>
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm fade-in">
             <div class="text-center py-16 px-6">
-                <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 flex items-center justify-center mx-auto mb-6 border border-blue-100 dark:border-blue-800">
-                    <i class="fas fa-paper-plane text-4xl text-blue-300"></i>
+                <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-50 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-900/20 flex items-center justify-center mx-auto mb-6 border border-indigo-100 dark:border-indigo-800">
+                    <i data-lucide="send" class="text-4xl text-indigo-300"></i>
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
                     <?= $statusFilter !== 'all' ? 'No submissions found' : 'No submissions yet' ?>
@@ -221,7 +221,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                     <?php endif; ?>
                 </p>
                 <a href="contracts.php" class="btn-grad inline-flex items-center gap-2 text-white font-bold px-6 py-3 rounded-xl text-sm">
-                    <i class="fas fa-handshake text-xs"></i> View Contracts
+                    <i data-lucide="handshake" class="text-xs"></i> View Contracts
                 </a>
             </div>
         </div>

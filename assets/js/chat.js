@@ -1,9 +1,9 @@
-/**
+﻿/**
  * chat.js
  *
  * Client-side chat engine for the Freelancer Marketplace.
  * Handles room selection, history loading, SSE streaming, message sending,
- * emoji picker, file attachment, typing indicators, and unread badge updates.
+ * emoji picker, file attachment, and unread badge updates.
  *
  * Usage:
  *   const chat = new Chat({ userId: 42, role: 'client', csrfToken: 'abc', userName: 'John' });
@@ -17,14 +17,14 @@ class Chat {
      * @param {string} options.role        - 'client' or 'freelancer'
      * @param {string} options.csrfToken   - CSRF token for POST requests
      * @param {string} options.userName    - Current user's display name
-     * @param {string} [options.baseUrl]   - Base URL (default '/finalproject')
+     * @param {string} [options.baseUrl]   - Base URL (default '/jobhub')
      */
     constructor(options = {}) {
         this.userId    = options.userId || 0;
         this.role      = options.role || 'freelancer';
         this.csrfToken = options.csrfToken || '';
         this.userName  = options.userName || '';
-        this.baseUrl   = options.baseUrl || '/finalproject';
+        this.baseUrl   = options.baseUrl || '/jobhub';
 
         // ── State ─────────────────────────────────────────────────────────
         this.selectedRoomId = null;
@@ -41,8 +41,6 @@ class Chat {
         this._sseRetryDelay = 1000;
         this._sseMaxRetry   = 30000;
         this._dedupeSet     = new Set();
-        this._typingTimeout = null;
-        this._isTyping      = false;
         this._selectedFile  = null;
         this._markReadTimer = null;
 
@@ -75,8 +73,6 @@ class Chat {
             filePreviewName:  document.getElementById('filePreviewName'),
             filePreviewSize:  document.getElementById('filePreviewSize'),
             fileRemoveBtn:    document.getElementById('fileRemoveBtn'),
-            typingBar:        document.getElementById('typingBar'),
-            typingText:       document.getElementById('typingText'),
         };
 
         this._initEmojiPicker();
@@ -105,7 +101,6 @@ class Chat {
             });
             this.els.chatInput.addEventListener('input', () => {
                 this._autoResizeInput();
-                this._emitTyping();
             });
         }
 
@@ -377,11 +372,6 @@ class Chat {
         if (!roomId) return;
         if (this.selectedRoomId === roomId) return;
 
-        // Stop typing in previous room
-        if (this.selectedRoomId && this._isTyping) {
-            this._sendTypingState(0);
-        }
-
         this.disconnectSSE();
 
         this.selectedRoomId = roomId;
@@ -510,42 +500,6 @@ class Chat {
 
 
     /* ═══════════════════════════════════════════════════════════════════════
-       TYPING INDICATOR (OUTGOING)
-       ═══════════════════════════════════════════════════════════════════════ */
-
-    _emitTyping() {
-        if (!this.selectedRoomId) return;
-
-        // Send "typing" state
-        if (!this._isTyping) {
-            this._isTyping = true;
-            this._sendTypingState(1);
-        }
-
-        // Reset debounce — after 2s of no input, send "stopped typing"
-        if (this._typingTimeout) clearTimeout(this._typingTimeout);
-        this._typingTimeout = setTimeout(() => {
-            this._isTyping = false;
-            this._sendTypingState(0);
-        }, 2000);
-    }
-
-    _sendTypingState(isTyping) {
-        const body = new URLSearchParams();
-        body.append('csrf_token', this.csrfToken);
-        body.append('room_id', this.selectedRoomId);
-        body.append('is_typing', isTyping);
-
-        fetch(`${this.baseUrl}/shared/chat/set_typing.php`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString(),
-        })
-        .catch(err => console.error('setTyping error:', err));
-    }
-
-
-    /* ═══════════════════════════════════════════════════════════════════════
        LOAD HISTORY
        ═══════════════════════════════════════════════════════════════════════ */
 
@@ -669,17 +623,6 @@ class Chat {
             } catch (err) { console.warn('SSE message parse error:', err); }
         });
 
-        this.eventSource.addEventListener('typing', (e) => {
-            try {
-                const data = JSON.parse(e.data);
-                if (data.is_typing) {
-                    this._showTypingIndicator(data.user_name || 'Someone');
-                } else {
-                    this._hideTypingIndicator();
-                }
-            } catch (err) { console.warn('SSE typing parse error:', err); }
-        });
-
         this.eventSource.addEventListener('connected', () => {
             this._sseRetryDelay = 1000;
         });
@@ -727,13 +670,6 @@ class Chat {
 
         this.sending = true;
         if (this.els.chatSendBtn) this.els.chatSendBtn.disabled = true;
-
-        // Stop typing indicator
-        if (this._isTyping) {
-            this._isTyping = false;
-            this._sendTypingState(0);
-            if (this._typingTimeout) clearTimeout(this._typingTimeout);
-        }
 
         // Optimistic UI
         const optimisticMsg = {
@@ -827,6 +763,8 @@ class Chat {
         const bubble = this._createMessageBubble(msg);
         this.els.chatMessages.appendChild(bubble);
 
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
         if (msg.id && typeof msg.id === 'number') {
             this.lastMessageId = Math.max(this.lastMessageId, msg.id);
         }
@@ -851,6 +789,7 @@ class Chat {
         });
 
         this.els.chatMessages.appendChild(frag);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     _createMessageBubble(msg) {
@@ -875,8 +814,8 @@ class Chat {
 
         const readCheck = isMine
             ? msg.is_read
-                ? '<span class="text-blue-300 text-[10px] ml-1"><i class="fas fa-check-double"></i></span>'
-                : '<span class="text-blue-300/60 text-[10px] ml-1"><i class="fas fa-check"></i></span>'
+                ? '<span class="text-blue-300 text-[10px] ml-1"><i data-lucide="circle-check"></i></span>'
+                : '<span class="text-blue-300/60 text-[10px] ml-1"><i data-lucide="check"></i></span>'
             : '';
 
         let contentHtml = '';
@@ -886,7 +825,7 @@ class Chat {
             contentHtml = `
                 <a href="${this._esc(msg.payload.path)}" target="_blank"
                    class="flex items-center gap-2 ${isMine ? 'text-white/90' : 'text-gray-700 dark:text-gray-300'} hover:underline">
-                    <i class="fas ${fileIcon} text-lg"></i>
+                    <i data-lucide="${fileIcon}" class="text-lg"></i>
                     <div class="min-w-0">
                         <p class="text-sm truncate max-w-[200px]">${this._esc(msg.payload.name || 'Attachment')}</p>
                         ${fileSize ? `<p class="text-[10px] opacity-70">${fileSize}</p>` : ''}
@@ -901,7 +840,7 @@ class Chat {
         }
 
         const pendingSpinner = msg.pending
-            ? '<span class="ml-1"><i class="fas fa-circle-notch fa-spin text-[10px] opacity-50"></i></span>'
+            ? '<span class="ml-1"><i data-lucide="loader" class="animate-spin text-[10px] opacity-50"></i></span>'
             : '';
 
         div.innerHTML = `
@@ -977,21 +916,6 @@ class Chat {
                 el.classList.add('bg-blue-50', 'dark:bg-slate-700');
             }
         });
-    }
-
-
-    /* ═══════════════════════════════════════════════════════════════════════
-       TYPING INDICATOR (INCOMING)
-       ═══════════════════════════════════════════════════════════════════════ */
-
-    _showTypingIndicator(name) {
-        if (!this.els.typingBar || !this.els.typingText) return;
-        this.els.typingText.textContent = `${name} is typing...`;
-        this.els.typingBar.classList.remove('hidden');
-    }
-
-    _hideTypingIndicator() {
-        if (this.els.typingBar) this.els.typingBar.classList.add('hidden');
     }
 
 
@@ -1088,8 +1012,9 @@ class Chat {
     _showErrorToast(message) {
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-red-600 text-white text-sm font-medium rounded-xl shadow-lg flex items-center gap-2';
-        toast.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${this._esc(message)}`;
+        toast.innerHTML = `<i data-lucide="circle-alert"></i> ${this._esc(message)}`;
         document.body.appendChild(toast);
+        lucide.createIcons();
         setTimeout(() => toast.remove(), 4000);
     }
 
@@ -1166,11 +1091,11 @@ class Chat {
     }
 
     _fileIcon(mimeType) {
-        if (!mimeType) return 'fa-file';
-        if (mimeType.includes('pdf'))  return 'fa-file-pdf text-red-400';
-        if (mimeType.includes('word') || mimeType.includes('doc')) return 'fa-file-word text-blue-400';
-        if (mimeType.includes('zip'))  return 'fa-file-zipper text-yellow-400';
-        if (mimeType.includes('image')) return 'fa-file-image text-green-400';
-        return 'fa-file text-gray-400';
+        if (!mimeType) return 'file';
+        if (mimeType.includes('pdf'))  return 'file-text text-red-400';
+        if (mimeType.includes('word') || mimeType.includes('doc')) return 'file-text text-blue-400';
+        if (mimeType.includes('zip'))  return 'file text-yellow-400';
+        if (mimeType.includes('image')) return 'image text-green-400';
+        return 'file text-gray-400';
     }
 }

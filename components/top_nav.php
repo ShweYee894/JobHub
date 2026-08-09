@@ -15,6 +15,38 @@ $_navActive = $activePage ?? 'dashboard';
 $_navUnread = $unreadCount ?? 0;
 $_navProfile = $profileLink ?? 'profile.php';
 $_navItems = $navItems ?? [];
+$_topNavFaToLucide = [
+    'fa-th-large' => 'layout-dashboard',
+    'fa-home' => 'home',
+    'fa-users' => 'users',
+    'fa-user' => 'user',
+    'fa-user-tie' => 'user',
+    'fa-briefcase' => 'briefcase',
+    'fa-folder-open' => 'folder-open',
+    'fa-cog' => 'settings',
+    'fa-cogs' => 'settings',
+    'fa-wallet' => 'wallet',
+    'fa-file-contract' => 'file-text',
+    'fa-tasks' => 'list-checks',
+    'fa-star' => 'star',
+    'fa-gavel' => 'scale',
+    'fa-shield-alt' => 'shield',
+    'fa-bell' => 'bell',
+    'fa-brain' => 'brain',
+    'fa-chart-pie' => 'pie-chart',
+    'fa-user-circle' => 'circle-user',
+    'fa-sign-out-alt' => 'log-out',
+    'fa-layer-group' => 'layers',
+    'fa-envelope' => 'mail',
+    'fa-comment-dots' => 'message-circle',
+    'fa-file-alt' => 'file-text',
+    'fa-search' => 'search',
+    'fa-bookmark' => 'bookmark',
+    'fa-chart-line' => 'trending-up',
+    'fa-receipt' => 'receipt',
+    'fa-money-bill-wave' => 'banknote',
+    'fa-clipboard-list' => 'clipboard-list',
+];
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -24,7 +56,8 @@ $_navItems = $navItems ?? [];
     <title><?= htmlspecialchars($pageTitle ?? 'Dashboard') ?> – JobHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/jobhub/assets/css/theme.css">
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         tailwind.config = {
@@ -140,7 +173,8 @@ $_navItems = $navItems ?? [];
             <div class="hidden lg:flex items-center gap-1">
                 <?php foreach ($_navItems as $item): ?>
                     <a href="<?= $item['url'] ?>" class="nav-lnk <?= $_navActive === $item['key'] ? 'active' : '' ?>">
-                        <i class="fas <?= $item['icon'] ?> text-[13px]"></i>
+                        <?php $_topNavLucideIcon = $_topNavFaToLucide[$item['icon']] ?? 'circle'; ?>
+                        <i data-lucide="<?= $_topNavLucideIcon ?>" class="text-base"></i>
                         <?= $item['label'] ?>
                     </a>
                 <?php endforeach; ?>
@@ -149,23 +183,23 @@ $_navItems = $navItems ?? [];
         <!-- Right -->
         <div class="flex items-center gap-2">
             <button onclick="toggleMobileNav()" class="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700">
-                <i class="fas fa-bars text-lg"></i>
+                <i data-lucide="menu" class="text-xl"></i>
             </button>
             <!-- Search -->
             <div class="relative hidden md:block">
-                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                <i data-lucide="search" class="text-base absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                 <input type="text" placeholder="Search..." class="w-56 py-2 pl-9 pr-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-300 transition">
             </div>
             <!-- Notifications -->
             <a href="../shared/notifications_page.php" class="relative w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700 no-underline">
-                <i class="fas fa-bell text-base"></i>
+                <i data-lucide="bell" class="text-xl"></i>
                 <?php if ($_navUnread > 0): ?>
                     <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
                 <?php endif; ?>
             </a>
             <!-- Dark mode -->
             <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700" title="Toggle dark mode">
-                <i class="fas fa-moon text-sm" id="darkModeIcon"></i>
+                <i data-lucide="moon" class="text-base" id="darkModeIcon"></i>
             </button>
             <!-- Profile -->
             <a href="<?= htmlspecialchars($_navProfile) ?>" class="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 no-underline transition">
@@ -182,23 +216,33 @@ $_navItems = $navItems ?? [];
     <div class="flex items-center justify-between mb-4">
         <span class="text-base font-bold text-gray-900 dark:text-white">Menu</span>
         <button onclick="toggleMobileNav()" class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
-            <i class="fas fa-times text-gray-500 dark:text-slate-400"></i>
+            <i data-lucide="x" class="text-xl text-gray-500 dark:text-slate-400"></i>
         </button>
     </div>
     <div class="flex flex-col gap-1">
         <?php foreach ($_navItems as $item): ?>
             <a href="<?= $item['url'] ?>" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold <?= $_navActive === $item['key'] ? 'bg-blue-600 text-white' : 'text-gray-600 bg-gray-50 dark:bg-slate-700 dark:text-slate-300' ?>">
-                <i class="fas <?= $item['icon'] ?> w-5 text-center"></i>
+                <?php $_topNavLucideIcon2 = $_topNavFaToLucide[$item['icon']] ?? 'circle'; ?>
+                <i data-lucide="<?= $_topNavLucideIcon2 ?>" class="text-xl"></i>
                 <?= $item['label'] ?>
             </a>
         <?php endforeach; ?>
         <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 mt-2">
-            <i class="fas fa-sign-out-alt w-5 text-center"></i> Logout
+            <i data-lucide="log-out" class="text-xl"></i> Logout
         </a>
     </div>
 </div>
 
 <script>
+function fixIcons() {
+    lucide.createIcons();
+    document.querySelectorAll('svg[data-lucide]').forEach(function(svg) {
+        svg.removeAttribute('width');svg.removeAttribute('height');
+        svg.style.removeProperty('width');svg.style.removeProperty('height');
+        var p = svg.parentElement;
+        if (p && p.tagName === 'I') { var fs = window.getComputedStyle(p).fontSize; svg.style.width = fs; svg.style.height = fs; }
+    });
+}
 function toggleMobileNav() {
     document.getElementById('mobNav').classList.toggle('show');
     document.getElementById('mobOverlay').style.display =
@@ -207,7 +251,11 @@ function toggleMobileNav() {
 function toggleDarkMode() {
     document.documentElement.classList.toggle('dark');
     const icon = document.getElementById('darkModeIcon');
-    if (icon) icon.className = document.documentElement.classList.contains('dark') ? 'fas fa-sun text-sm' : 'fas fa-moon text-sm';
+    if (icon) {
+        icon.setAttribute('data-lucide', document.documentElement.classList.contains('dark') ? 'sun' : 'moon');
+        fixIcons();
+    }
 }
+fixIcons();
 </script>
-<script src="/finalproject/shared/dark-toggle.js"></script>
+<script src="/jobhub/shared/dark-toggle.js"></script>

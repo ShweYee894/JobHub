@@ -273,22 +273,6 @@ SELECT 10.00, 5.00, 500.00, '2025-01-01', 1
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM `platform_fee_rules` LIMIT 1);
 
--- FRAUD ALERTS: Track automated fraud detections
-CREATE TABLE IF NOT EXISTS `fraud_alerts` (
-    `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `user_id`        INT UNSIGNED NOT NULL,
-    `rule_name`      VARCHAR(100) NOT NULL,
-    `alert_level`    ENUM('low','medium','high','critical') NOT NULL,
-    `description`    TEXT NOT NULL,
-    `score_impact`   INT NOT NULL,
-    `status`         ENUM('open','investigating','resolved','dismissed') DEFAULT 'open',
-    `resolved_by`    INT UNSIGNED NULL,
-    `created_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-    INDEX `idx_fraud_alert_user` (`user_id`, `status`),
-    INDEX `idx_fraud_alert_level` (`alert_level`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- ============================================================================
 -- PART 5: ADD MISSING COLUMNS
 -- ============================================================================
@@ -346,7 +330,26 @@ DROP PROCEDURE IF EXISTS `safe_add_index`;
 DROP PROCEDURE IF EXISTS `safe_drop_index_by_column`;
 
 -- ============================================================================
+-- PART 22: WALLET FREEZE/UNFREEZE STATUS
+-- ============================================================================
+
+-- Add wallet_status column to users table
+SET @col_exists = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+      AND COLUMN_NAME = 'wallet_status'
+);
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE `users` ADD COLUMN `wallet_status` ENUM(\'active\',\'frozen\') NOT NULL DEFAULT \'active\' AFTER `wallet_balance`',
+    'SELECT "Column wallet_status already exists" AS result'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- ============================================================================
 -- DONE
 -- ============================================================================
 
-SELECT 'Migration complete! Fixed jobs.client_id FK, added contracts.proposal_id FK, 4 tables, 17 indexes, 20+ columns.' AS result;
+SELECT 'Migration complete! Fixed jobs.client_id FK, added contracts.proposal_id FK, 4 tables, 17 indexes, 20+ columns, wallet_status column.' AS result;

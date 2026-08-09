@@ -44,6 +44,10 @@ if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token'])
     exit;
 }
 
+// ── Release session lock ────────────────────────────────────────────────────
+define('SESSION_CLOSED', true);
+session_write_close();
+
 if (!isset($_POST['room_id']) || !is_numeric($_POST['room_id'])) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Missing or invalid room_id']);

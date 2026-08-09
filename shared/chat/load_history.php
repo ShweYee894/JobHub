@@ -35,6 +35,10 @@ if ($role !== 'client' && $role !== 'freelancer' && $role !== 'admin') {
     exit;
 }
 
+// ── Release session lock ────────────────────────────────────────────────────
+define('SESSION_CLOSED', true);
+session_write_close();
+
 // ── Validate room_id ────────────────────────────────────────────────────────
 if (!isset($_GET['room_id']) || !is_numeric($_GET['room_id'])) {
     http_response_code(400);
@@ -98,11 +102,9 @@ while ($row = $result->fetch_assoc()) {
         'id'           => (int) $row['id'],
         'room_id'      => (int) $row['room_id'],
         'sender_id'    => (int) $row['sender_id'],
-        'sender_name'  => htmlspecialchars($row['sender_name'], ENT_QUOTES, 'UTF-8'),
-        'sender_image' => $row['sender_image']
-            ? htmlspecialchars($row['sender_image'], ENT_QUOTES, 'UTF-8')
-            : null,
-        'message_text' => htmlspecialchars($row['message_text'], ENT_QUOTES, 'UTF-8'),
+        'sender_name'  => $row['sender_name'],
+        'sender_image' => chat_resolve_profile_image($row['sender_image']),
+        'message_text' => $row['message_text'],
         'is_read'      => (int) $row['is_read'],
         'created_at'   => $row['created_at'],
     ];

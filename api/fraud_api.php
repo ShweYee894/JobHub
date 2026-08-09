@@ -24,6 +24,12 @@ switch ($action) {
     // LOG a user action
     // ═══════════════════════════════════════════════════════════════════
     case 'log':
+        if (!is_logged_in()) {
+            json_response(['success' => false, 'message' => 'Authentication required.'], 401);
+        }
+        if ($_SESSION['user_role'] !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
         $userId     = sanitize_int($_GET['user_id'] ?? $_SESSION['user_id'] ?? 0);
         $actionType = trim($_GET['action_type'] ?? '');
         $payload    = $_GET['payload'] ?? '{}';
@@ -64,6 +70,9 @@ switch ($action) {
     case 'calculate_score':
         if (!is_logged_in()) {
             json_response(['success' => false, 'message' => 'Authentication required.'], 401);
+        }
+        if ($_SESSION['user_role'] !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
         }
         $userId = sanitize_int($_GET['user_id'] ?? 0);
         if ($userId <= 0) {
@@ -178,6 +187,9 @@ switch ($action) {
         if (!is_logged_in()) {
             json_response(['success' => false, 'message' => 'Authentication required.'], 401);
         }
+        if ($_SESSION['user_role'] !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
 
         $stmt = $conn->prepare(
             "SELECT u.id, u.name, u.email, u.role, u.status, u.fraud_score, u.profile_image, u.created_at,
@@ -201,6 +213,9 @@ switch ($action) {
     case 'activity_log':
         if (!is_logged_in()) {
             json_response(['success' => false, 'message' => 'Authentication required.'], 401);
+        }
+        if ($_SESSION['user_role'] !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
         }
 
         $filterUserId   = sanitize_int($_GET['user_id'] ?? 0);
@@ -277,6 +292,9 @@ switch ($action) {
     case 'recalculate_all':
         if (!is_logged_in()) {
             json_response(['success' => false, 'message' => 'Authentication required.'], 401);
+        }
+        if ($_SESSION['user_role'] !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
         }
 
         // Get all users who have any behavior logs

@@ -49,9 +49,9 @@ $stmt->close();
 
 $pagination = paginate($totalFiltered, $perPage, $page);
 
-$querySql = "SELECT j.id, j.title, j.description, j.budget, j.status, j.created_at
+$querySql = "SELECT j.id, j.title, j.description, j.budget, j.status, j.created_at, j.is_featured, j.is_archived, j.job_type, j.category, j.project_duration, j.experience_level
              FROM jobs j $where
-             ORDER BY j.created_at DESC
+             ORDER BY COALESCE(j.is_featured, 0) DESC, j.created_at DESC
              LIMIT ? OFFSET ?";
 $finalTypes = $types . 'ii';
 $finalParams = array_merge($params, [$perPage, $pagination['offset']]);
@@ -110,46 +110,50 @@ require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
 <?php display_flash('success');
 display_flash('error'); ?>
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">My Jobs</h1>
+        <p class="text-sm text-gray-500 mt-1">Manage and track all your posted jobs.</p>
+    </div>
+
+    <!-- ═══ STATS GRID ══════════════════════════════════════════════ -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <?php
-        // Updated stats array configuration with explicit Tailwind classes matching image.png colors
         $stats = [
             [
                 'label' => 'Total Jobs',
                 'key' => 'total',
-                'icon' => 'fa-briefcase',
-                'bg' => 'bg-emerald-50/60 dark:bg-emerald-950/20',
-                'border' => 'border-emerald-200 dark:border-emerald-800',
-                'text' => 'text-emerald-700 dark:text-emerald-400',
-                'footer_text' => 'text-emerald-600 dark:text-emerald-400'
+                'icon' => 'briefcase',
+                'iconBg' => 'bg-indigo-50',
+                'iconColor' => 'text-indigo-600',
+                'link' => 'my_jobs.php',
             ],
             [
                 'label' => 'Open Jobs',
                 'key' => 'open',
-                'icon' => 'fa-folder-open',
-                'bg' => 'bg-indigo-50/60 dark:bg-indigo-950/20',
-                'border' => 'border-indigo-200 dark:border-indigo-800',
-                'text' => 'text-indigo-700 dark:text-indigo-400',
-                'footer_text' => 'text-indigo-600 dark:text-indigo-400'
+                'icon' => 'folder-open',
+                'iconBg' => 'bg-emerald-50',
+                'iconColor' => 'text-emerald-600',
+                'link' => 'my_jobs.php?status=open',
             ],
             [
                 'label' => 'In Progress',
                 'key' => 'in_progress',
-                'icon' => 'fa-spinner',
-                'bg' => 'bg-amber-50/60 dark:bg-amber-950/20',
-                'border' => 'border-amber-200 dark:border-amber-800',
-                'text' => 'text-amber-700 dark:text-amber-400',
-                'footer_text' => 'text-amber-600 dark:text-amber-400'
+                'icon' => 'loader',
+                'iconBg' => 'bg-amber-50',
+                'iconColor' => 'text-amber-600',
+                'link' => 'my_jobs.php?status=in_progress',
             ],
             [
                 'label' => 'Completed',
                 'key' => 'completed',
-                'icon' => 'fa-check-circle',
-                'bg' => 'bg-sky-50/60 dark:bg-sky-950/20',
-                'border' => 'border-sky-200 dark:border-sky-800',
-                'text' => 'text-sky-700 dark:text-sky-400',
-                'footer_text' => 'text-sky-600 dark:text-sky-400'
+                'icon' => 'check-circle-2',
+                'iconBg' => 'bg-blue-50',
+                'iconColor' => 'text-blue-600',
+                'link' => 'my_jobs.php?status=completed',
             ],
         ];
 
@@ -165,43 +169,30 @@ display_flash('error'); ?>
                 $sc->close();
             }
             ?>
-            <div class="stat-card <?= $stat['bg'] ?> <?= $stat['border'] ?> rounded-2xl border shadow-sm flex flex-col justify-between overflow-hidden fade-in" style="animation-delay:<?= $i * 0.1 ?>s">
-
-                <!-- Main Content: Horizontal Alignment -->
-                <div class="p-5 flex items-center gap-4">
-                    <!-- White square icon box with subtle border -->
-                    <div class="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center flex-shrink-0 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-                        <i class="fas <?= $stat['icon'] ?> text-lg <?= $stat['text'] ?>"></i>
+            <a href="<?= $stat['link'] ?>" class="group bg-white rounded-xl border border-gray-200 p-5 no-underline transition-all hover:shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-9 h-9 rounded-lg <?= $stat['iconBg'] ?> flex items-center justify-center">
+                        <i data-lucide="<?= $stat['icon'] ?>" class="w-4 h-4 <?= $stat['iconColor'] ?>"></i>
                     </div>
-
-                    <!-- Stat Numbers and Label Stacked -->
-                    <div class="flex flex-col">
-                        <span class="text-2xl font-black text-gray-900 dark:text-white leading-tight"><?= $cnt ?></span>
-                        <span class="text-xs text-gray-500 font-medium dark:text-gray-400 mt-0.5"><?= $stat['label'] ?></span>
-                    </div>
+                    <i data-lucide="arrow-right" class="w-4 h-4 text-gray-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all"></i>
                 </div>
-
-                <!-- Footer: Bottom Action Ribbon with Border -->
-                <div class="border-t border-black/5 dark:border-white/5 px-5 py-2.5 flex items-center justify-between bg-black/[0.01] dark:bg-white/[0.01]">
-                    <span class="text-xs font-bold <?= $stat['footer_text'] ?>">See Details</span>
-                    <i class="fas fa-arrow-right text-xs cursor-pointer <?= $stat['text'] ?> opacity-80"></i>
-                </div>
-
-            </div>
-        <?php
-        endforeach;
-        ?>
+                <p class="text-2xl font-bold text-gray-900 tracking-tight m-0"><?= $cnt ?></p>
+                <p class="text-xs text-gray-500 mt-1 m-0"><?= $stat['label'] ?></p>
+            </a>
+        <?php endforeach; ?>
     </div>
 
-    <div>
+    <!-- ═══ SEARCH & FILTER ════════════════════════════════════════ -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
         <form method="GET" class="flex flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                <input type="text" name="search" value="<?= sanitize_string($search) ?>" placeholder="Search jobs by title..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input type="text" name="search" value="<?= sanitize_string($search) ?>" placeholder="Search jobs by title..."
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
             </div>
-            <div class="relative">
-                <i class="fas fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                <select name="status" class="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-10 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">
+            <div class="relative sm:w-48">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <select name="status" class="appearance-none w-full bg-gray-50 border border-gray-200 rounded-lg pl-10 pr-9 py-2.5 text-sm text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer transition-all">
                     <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>All Status</option>
                     <option value="open" <?= $statusFilter === 'open' ? 'selected' : '' ?>>Open</option>
                     <option value="in_progress" <?= $statusFilter === 'in_progress' ? 'selected' : '' ?>>In Progress</option>
@@ -209,91 +200,153 @@ display_flash('error'); ?>
                     <option value="cancelled" <?= $statusFilter === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
                     <option value="disputed" <?= $statusFilter === 'disputed' ? 'selected' : '' ?>>Disputed</option>
                 </select>
-                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
             </div>
-            <button type="submit" class="btn-grad px-6 py-2.5 text-white text-sm font-semibold rounded-xl flex items-center gap-2 justify-center"><i class="fas fa-search text-xs"></i> Search</button>
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0 flex items-center gap-2">
+                <i data-lucide="search" class="w-4 h-4"></i> Search
+            </button>
             <?php if ($search !== '' || $statusFilter !== 'all'): ?>
-                <a href="my_jobs.php" class="px-4 py-2.5 border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 rounded-xl text-sm font-medium transition-all flex items-center gap-2 justify-center dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:border-gray-500"><i class="fas fa-times text-xs"></i> Clear</a>
+                <a href="my_jobs.php" class="px-4 py-2.5 border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="x" class="w-4 h-4"></i> Clear
+                </a>
             <?php endif; ?>
         </form>
     </div>
 
+    <!-- ═══ JOB LIST ═══════════════════════════════════════════════ -->
     <?php if (!empty($jobs)): ?>
-        <div class="space-y-4">
-            <?php foreach ($jobs as $index => $job): ?>
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:<?= 0.4 + ($index * 0.05) ?>s">
-                    <div class="p-6">
-                        <div class="flex flex-col lg:flex-row lg:items-start gap-4">
+        <div class="space-y-3 mb-6">
+            <?php foreach ($jobs as $index => $job):
+                $badgeClass = match($job['status']) {
+                    'open' => 'bg-emerald-50 text-emerald-700',
+                    'in_progress' => 'bg-blue-50 text-blue-700',
+                    'completed' => 'bg-purple-50 text-purple-700',
+                    'cancelled' => 'bg-gray-100 text-gray-600',
+                    'disputed' => 'bg-red-50 text-red-700',
+                    default => 'bg-gray-100 text-gray-600',
+                };
+                ?>
+                <div class="bg-white rounded-xl border border-gray-200 transition-all hover:shadow-sm hover:border-gray-300">
+                    <div class="p-5 sm:p-6">
+                        <div class="flex flex-col lg:flex-row lg:items-start gap-5">
+
+                            <!-- Job Info -->
                             <div class="flex-1 min-w-0">
+                                <!-- Title Row -->
                                 <div class="flex flex-wrap items-center gap-2 mb-2">
-                                    <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors dark:text-white dark:hover:text-blue-400"><?= sanitize_string($job['title']) ?></a>
-                                    <span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-semibold <?= $statusColors[$job['status']] ?? 'bg-gray-100 text-gray-600 border border-gray-200' ?>"><?= ucfirst(str_replace('_', ' ', sanitize_string($job['status']))) ?></span>
+                                    <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-base font-semibold text-gray-900 hover:text-indigo-600 transition-colors"><?= decode_over_encoded($job['title']) ?></a>
+                                    <?php if (!empty($job['is_featured'])): ?>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700"><i data-lucide="star" class="w-3 h-3 fill-amber-400"></i> Featured</span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($job['is_archived'])): ?>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500"><i data-lucide="archive" class="w-3 h-3"></i> Archived</span>
+                                    <?php endif; ?>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $badgeClass ?>"><?= ucfirst(str_replace('_', ' ', sanitize_string($job['status']))) ?></span>
                                 </div>
-                                <p class="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2 dark:text-gray-400"><?= sanitize_string(mb_strimwidth($job['description'], 0, 150, '...')) ?></p>
+
+                                <!-- Description -->
+                                <p class="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2"><?= sanitize_string(mb_strimwidth($job['description'], 0, 150, '...')) ?></p>
+
+                                <!-- Skills -->
                                 <?php if (!empty($job['skills'])): ?>
                                     <div class="flex flex-wrap gap-1.5 mb-3">
-                                        <?php foreach ($job['skills'] as $skill): ?>
-                                            <span class="inline-block px-2.5 py-1 bg-blue-50 text-blue-600 text-[11px] font-medium rounded-lg border border-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"><?= sanitize_string($skill) ?></span>
+                                        <?php foreach (array_slice($job['skills'], 0, 5) as $skill): ?>
+                                            <span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium"><?= sanitize_string($skill) ?></span>
                                         <?php endforeach; ?>
+                                        <?php if (count($job['skills']) > 5): ?>
+                                            <span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-400 rounded text-xs font-medium">+<?= count($job['skills']) - 5 ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
-                                <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400">
-                                    <span class="flex items-center gap-1.5"><i class="fas fa-dollar-sign text-emerald-500"></i><span class="font-semibold text-gray-700 dark:text-gray-300"><?= format_currency($job['budget']) ?></span></span>
-                                    <span class="flex items-center gap-1.5"><i class="fas fa-calendar text-blue-400"></i><?= date('M d, Y', strtotime($job['created_at'])) ?></span>
-                                    <span class="flex items-center gap-1.5"><i class="fas fa-file-alt text-violet-400"></i><span class="font-semibold text-gray-600 dark:text-gray-400"><?= $job['proposal_count'] ?></span> proposal<?= $job['proposal_count'] !== 1 ? 's' : '' ?></span>
+
+                                <!-- Metadata Row -->
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-400">
+                                    <span class="flex items-center gap-1"><i data-lucide="dollar-sign" class="w-3.5 h-3.5 text-emerald-500"></i><span class="font-semibold text-gray-700"><?= format_currency($job['budget']) ?></span></span>
+                                    <span class="flex items-center gap-1"><i data-lucide="<?= $job['job_type'] === 'hourly' ? 'clock' : 'target' ?>" class="w-3.5 h-3.5 text-gray-400"></i><?= $job['job_type'] === 'hourly' ? 'Hourly' : 'Fixed' ?></span>
+                                    <?php if (!empty($job['experience_level'])): ?>
+                                        <span class="flex items-center gap-1"><i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-gray-400"></i><?= ucfirst(sanitize_string($job['experience_level'])) ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($job['category'])): ?>
+                                        <span class="flex items-center gap-1"><i data-lucide="layers" class="w-3.5 h-3.5 text-gray-400"></i><?= sanitize_string($job['category']) ?></span>
+                                    <?php endif; ?>
+                                    <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i><?= date('M d, Y', strtotime($job['created_at'])) ?></span>
+                                    <span class="flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5 text-gray-400"></i><?= $job['proposal_count'] ?> proposal<?= $job['proposal_count'] !== 1 ? 's' : '' ?></span>
                                 </div>
                             </div>
-                            <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:flex-col lg:items-stretch">
-                                <a href="job_detail.php?id=<?= $job['id'] ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-xl transition-all dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400"><i class="fas fa-eye text-[10px]"></i> View Details</a>
-                                <a href="edit_job.php?id=<?= $job['id'] ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-semibold rounded-xl transition-all dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400"><i class="fas fa-pen text-[10px]"></i> Edit Job</a>
+
+                            <!-- Action Buttons -->
+                            <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:flex-col lg:items-stretch shrink-0 lg:w-40">
+                                <a href="job_detail.php?id=<?= $job['id'] ?>" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors">
+                                    <i data-lucide="eye" class="w-3.5 h-3.5"></i> View Details
+                                </a>
+                                <a href="edit_job.php?id=<?= $job['id'] ?>" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 text-xs font-medium rounded-lg transition-colors">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                                </a>
                                 <?php if ($job['status'] === 'open'): ?>
-                                    <a href="job_detail.php?id=<?= $job['id'] ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-xs font-semibold rounded-xl transition-all dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 dark:text-emerald-400"><i class="fas fa-file-alt text-[10px]"></i> View Proposals</a>
+                                    <a href="job_detail.php?id=<?= $job['id'] ?>" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 text-xs font-medium rounded-lg transition-colors">
+                                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Proposals
+                                    </a>
                                 <?php endif; ?>
                                 <?php if ($job['status'] === 'open' || $job['status'] === 'cancelled'): ?>
-                                    <form method="POST" action="delete_job.php" class="inline" onsubmit="return confirm('Are you sure you want to delete this job?');">
+                                    <form method="POST" action="delete_job.php" class="w-full inline" onsubmit="return confirm('Are you sure you want to delete this job?');">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="job_id" value="<?= $job['id'] ?>">
-                                        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold rounded-xl transition-all dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400"><i class="fas fa-trash text-[10px]"></i> Delete</button>
+                                        <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-red-500 hover:text-red-700 hover:border-red-300 text-xs font-medium rounded-lg transition-colors">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                                        </button>
                                     </form>
                                 <?php endif; ?>
                             </div>
+
                         </div>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
 
+        <!-- Pagination -->
         <?php if ($pagination['total_pages'] > 1): ?>
-            <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
-                <p class="text-xs text-gray-400">Showing <span class="font-semibold text-gray-600 dark:text-gray-300"><?= $pagination['offset'] + 1 ?></span>-<span class="font-semibold text-gray-600 dark:text-gray-300"><?= min($pagination['offset'] + $perPage, $totalFiltered) ?></span> of <span class="font-semibold text-gray-600 dark:text-gray-300"><?= $totalFiltered ?></span> jobs</p>
+            <div class="flex items-center justify-between bg-white rounded-xl p-4 border border-gray-200">
+                <p class="text-xs text-gray-500">Showing <span class="font-medium text-gray-700"><?= $pagination['offset'] + 1 ?></span>–<span class="font-medium text-gray-700"><?= min($pagination['offset'] + $perPage, $totalFiltered) ?></span> of <span class="font-medium text-gray-700"><?= $totalFiltered ?></span> jobs</p>
                 <div class="flex items-center gap-1">
                     <?php if ($pagination['has_prev']): ?>
-                        <a href="?<?= buildQueryString(['page' => $page - 1]) ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-chevron-left text-xs"></i></a>
+                        <a href="?<?= buildQueryString(['page' => $page - 1]) ?>" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors text-sm">
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                        </a>
                     <?php endif; ?>
                     <?php
                     $startPage = max(1, $page - 2);
                     $endPage = min($pagination['total_pages'], $page + 2);
                     for ($i = $startPage; $i <= $endPage; $i++):
                         ?>
-                        <a href="?<?= buildQueryString(['page' => $i]) ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $page ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' ?>"><?= $i ?></a>
+                        <a href="?<?= buildQueryString(['page' => $i]) ?>" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors <?= $i === $page ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50' ?>"><?= $i ?></a>
                     <?php endfor; ?>
                     <?php if ($pagination['has_next']): ?>
-                        <a href="?<?= buildQueryString(['page' => $page + 1]) ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-chevron-right text-xs"></i></a>
+                        <a href="?<?= buildQueryString(['page' => $page + 1]) ?>" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors text-sm">
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </a>
                     <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>
 
     <?php else: ?>
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.4s">
-            <div class="text-center py-16 px-6">
-                <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mx-auto mb-6 border border-blue-100 dark:from-blue-900/30 dark:to-cyan-900/30 dark:border-blue-800"><i class="fas fa-briefcase text-4xl text-blue-300 dark:text-blue-500"></i></div>
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No jobs posted yet</h3>
-                <p class="text-sm text-gray-400 mb-8 max-w-md mx-auto">Start building your team by posting your first job.</p>
-                <a href="post_job.php" class="btn-grad inline-flex items-center gap-2.5 text-white font-bold px-8 py-3.5 rounded-xl text-sm shadow-lg shadow-blue-500/25"><i class="fas fa-plus text-xs"></i> Post Your First Job</a>
+
+        <!-- Empty State -->
+        <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div class="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="briefcase" class="w-7 h-7 text-indigo-400"></i>
             </div>
+            <h3 class="text-base font-semibold text-gray-900 mb-1">No jobs posted yet</h3>
+            <p class="text-sm text-gray-500 mb-5 max-w-sm mx-auto">Start building your team by posting your first job.</p>
+            <a href="post_job.php" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
+                <i data-lucide="plus" class="w-4 h-4"></i> Post Your First Job
+            </a>
         </div>
+
     <?php endif; ?>
+
 </main>
+
 <?php require_once __DIR__ . '/../includes/client_footer.php'; ?>
 <?php $conn->close(); ?>

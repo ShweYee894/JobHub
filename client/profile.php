@@ -53,7 +53,7 @@ $stmt->execute();
 $statsCompleted = (int) $stmt->get_result()->fetch_assoc()['cnt'];
 $stmt->close();
 
-$stmt = $conn->prepare('SELECT COUNT(*) AS cnt FROM reviews WHERE reviewee_id = ?');
+$stmt = $conn->prepare('SELECT COUNT(*) AS cnt FROM reviews WHERE reviewee_id = ? AND COALESCE(is_hidden, 0) = 0');
 $stmt->bind_param('i', $userId);
 $stmt->execute();
 $statsReviews = (int) $stmt->get_result()->fetch_assoc()['cnt'];
@@ -250,7 +250,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <?php if (!empty($errors)): ?>
         <div class="bg-red-50 text-red-800 border border-red-200 rounded-xl p-4 dark:bg-red-900/30 dark:text-red-200 dark:border-red-800">
             <div class="flex items-center gap-2 mb-2">
-                <i class="fas fa-exclamation-circle"></i>
+                <i data-lucide="circle-alert" class="w-4 h-4"></i>
                 <span class="font-semibold text-sm">Please fix the following errors:</span>
             </div>
             <ul class="list-disc list-inside text-sm space-y-1">
@@ -273,7 +273,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                          class="w-24 h-24 rounded-2xl border-4 border-white dark:border-gray-800 object-cover shadow-lg"
                          alt="Profile">
                     <label for="profileImageInput" class="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                        <i class="fas fa-camera text-white text-lg"></i>
+                        <i data-lucide="camera" class="text-white w-4 h-4"></i>
                     </label>
                 </div>
                 <div class="sm:flex-1 text-center sm:text-left sm:pb-1">
@@ -282,7 +282,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 </div>
                 <div class="flex items-center gap-2 pb-1">
                     <span class="px-3 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">
-                        <i class="fas fa-crown mr-1"></i>Client
+                        <i data-lucide="crown" class="w-3 h-3 mr-1"></i>Client
                     </span>
                     <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-semibold border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
                         <?= format_currency((float) $profileData['wallet_balance']) ?> wallet
@@ -293,7 +293,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     </div>
 
     <!-- ═══ TWO-COLUMN LAYOUT ══════════════════════════════════════════ -->
-    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 2xl:grid-cols-2 gap-6">
+    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-2 2xl:grid-cols-3 gap-6">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_profile">
 
@@ -301,7 +301,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.25s">
             <div class="p-6 border-b border-gray-100 dark:border-gray-700">
                 <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-user text-blue-500"></i> Personal Information
+                    <i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Personal Information
                 </h3>
             </div>
             <div class="p-6 space-y-5">
@@ -310,7 +310,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Full Name <span class="text-red-400">*</span></label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-user text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="user" class="w-4 h-4"></i></span>
                         <input type="text" name="name" value="<?= sanitize_string($profileData['name']) ?>" required
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                     </div>
@@ -319,7 +319,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-envelope text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="mail" class="w-4 h-4"></i></span>
                         <input type="email" value="<?= sanitize_string($profileData['email']) ?>" readonly
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
                     </div>
@@ -328,7 +328,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Phone Number</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-phone text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="phone" class="w-4 h-4"></i></span>
                         <input type="tel" name="phone" value="<?= sanitize_string($profileData['phone'] ?? '') ?>"
                                placeholder="+1 (555) 000-0000"
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
@@ -338,7 +338,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Wallet Balance</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-wallet text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="wallet" class="w-4 h-4"></i></span>
                         <input type="text" value="<?= format_currency((float) $profileData['wallet_balance']) ?>" readonly
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
                     </div>
@@ -350,7 +350,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.3s">
             <div class="p-6 border-b border-gray-100 dark:border-gray-700">
                 <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-building text-cyan-500"></i> Company Information
+                    <i data-lucide="building" class="w-4 h-4 text-cyan-500"></i> Company Information
                 </h3>
             </div>
             <div class="p-6 space-y-5">
@@ -363,13 +363,13 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                  class="w-16 h-16 rounded-xl border border-gray-200 dark:border-gray-600 object-cover"
                                  alt="Company Logo">
                             <label for="logoInput" class="absolute inset-0 rounded-xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                <i class="fas fa-camera text-white text-sm"></i>
+                                <i data-lucide="camera" class="text-white w-4 h-4"></i>
                             </label>
                         </div>
                         <div class="flex-1">
                             <input type="file" id="logoInput" name="company_logo" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" onchange="previewImage(this, 'logoPreview')">
                             <label for="logoInput" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-                                <i class="fas fa-upload text-xs"></i> Choose Logo
+                                <i data-lucide="upload" class="w-4 h-4"></i> Choose Logo
                             </label>
                             <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">JPG, PNG, WebP. Max 2MB.</p>
                         </div>
@@ -379,7 +379,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Name</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-building text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="building" class="w-4 h-4"></i></span>
                         <input type="text" name="company_name" value="<?= sanitize_string($client['company_name'] ?? '') ?>"
                                placeholder="Your Company LLC"
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
@@ -389,7 +389,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Industry</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-industry text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="factory" class="w-4 h-4"></i></span>
                         <input type="text" name="industry" value="<?= sanitize_string($client['industry'] ?? '') ?>"
                                placeholder="e.g. Technology, Healthcare, Finance"
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
@@ -399,7 +399,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Website</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-globe text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="globe" class="w-4 h-4"></i></span>
                         <input type="url" name="company_website" value="<?= sanitize_string($client['company_website'] ?? '') ?>"
                                placeholder="https://example.com"
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
@@ -409,7 +409,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Size</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-users text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="users" class="w-4 h-4"></i></span>
                         <select name="company_size"
                                 class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all appearance-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                             <option value="">Select size</option>
@@ -418,14 +418,14 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                             <option value="Medium" <?= ($client['company_size'] ?? '') === 'Medium' ? 'selected' : '' ?>>Medium (51-200)</option>
                             <option value="Large" <?= ($client['company_size'] ?? '') === 'Large' ? 'selected' : '' ?>>Large (200+)</option>
                         </select>
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none dark:text-gray-500"><i class="fas fa-chevron-down text-xs"></i></span>
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none dark:text-gray-500"><i data-lucide="chevron-down" class="w-4 h-4"></i></span>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Total Spending</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-dollar-sign text-sm"></i></span>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="dollar-sign" class="w-4 h-4"></i></span>
                         <input type="text" value="<?= format_currency((float) ($client['total_spent'] ?? 0)) ?>" readonly
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
                     </div>
@@ -433,14 +433,14 @@ require_once __DIR__ . '/../includes/client_topbar.php';
             </div>
         </div>
 
-        <div class="2xl:col-span-2 fade-in" style="animation-delay:.35s">
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between gap-4 dark:bg-gray-800 dark:border-gray-700">
+        <div class="xl:col-span-2 fade-in" style="animation-delay:.35s">
+            <div class=" p-6 flex flex-col sm:flex-row items-center justify-between gap-4 dark:bg-gray-800 dark:border-gray-700">
                 <p class="text-sm text-gray-400 dark:text-gray-500">
-                    <i class="fas fa-info-circle mr-1"></i> Changes will be reflected across the platform.
+                    <i data-lucide="circle-info" class="w-3 h-3 mr-1"></i> Changes will be reflected across the platform.
                 </p>
                 <button type="submit"
                         class="btn-grad inline-flex items-center gap-2 text-white text-sm font-semibold px-8 py-3 rounded-xl shadow-lg shadow-blue-500/25">
-                    <i class="fas fa-save"></i> Save Changes
+                    <i data-lucide="save" class="w-4 h-4"></i> Save Changes
                 </button>
             </div>
         </div>
@@ -454,7 +454,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700">
             <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                 <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-lock text-red-500"></i> Change Password
+                    <i data-lucide="lock" class="w-4 h-4 text-red-500"></i> Change Password
                 </h3>
             </div>
             <div class="p-6">
@@ -462,11 +462,11 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Current Password <span class="text-red-400">*</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-key text-sm"></i></span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="key" class="w-4 h-4"></i></span>
                             <input type="password" name="current_password" required autocomplete="current-password"
                                    class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                             <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-                                <i class="fas fa-eye text-sm"></i>
+                                <i data-lucide="eye" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
@@ -474,11 +474,11 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">New Password <span class="text-red-400">*</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-lock text-sm"></i></span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="lock" class="w-4 h-4"></i></span>
                             <input type="password" name="new_password" required autocomplete="new-password"
                                    class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                             <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-                                <i class="fas fa-eye text-sm"></i>
+                                <i data-lucide="eye" class="w-4 h-4"></i>
                             </button>
                         </div>
                         <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Min 8 chars, upper, lower, number.</p>
@@ -487,11 +487,11 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Confirm Password <span class="text-red-400">*</span></label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i class="fas fa-lock text-sm"></i></span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="lock" class="w-4 h-4"></i></span>
                             <input type="password" name="confirm_password" required autocomplete="new-password"
                                    class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
                             <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-                                <i class="fas fa-eye text-sm"></i>
+                                <i data-lucide="eye" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
@@ -500,7 +500,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div class="mt-5 flex justify-end">
                     <button type="submit"
                             class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30">
-                        <i class="fas fa-shield-alt"></i> Update Password
+                        <i data-lucide="shield" class="w-4 h-4"></i> Update Password
                     </button>
                 </div>
             </div>
@@ -523,10 +523,10 @@ function togglePassword(btn) {
     const icon = btn.querySelector('i');
     if (input.type === 'password') {
         input.type = 'text';
-        icon.classList.replace('fa-eye', 'fa-eye-slash');
+        icon.setAttribute('data-lucide', 'eye-off'); lucide.createIcons();;
     } else {
         input.type = 'password';
-        icon.classList.replace('fa-eye-slash', 'fa-eye');
+        icon.setAttribute('data-lucide', 'eye'); lucide.createIcons();;
     }
 }
 </script>

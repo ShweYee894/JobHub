@@ -13,6 +13,24 @@
  */
 
 
+// ── Profile Image Helper ─────────────────────────────────────────────────────
+/**
+ * Resolves a raw profile image filename from the DB into a usable relative path.
+ * Falls back to the default placeholder if the file doesn't exist on disk.
+ */
+function chat_resolve_profile_image(?string $filename): ?string
+{
+    if (!$filename) {
+        return null;
+    }
+    $basename = basename($filename);
+    if (file_exists(__DIR__ . '/../../assets/upload/profiles/' . $basename)) {
+        return 'assets/upload/profiles/' . $basename;
+    }
+    return 'assets/upload/profile.png';
+}
+
+
 // ── Room Lookup ──────────────────────────────────────────────────────────────
 
 /**
@@ -233,9 +251,7 @@ function chat_get_messages(mysqli $conn, int $roomId, int $limit = 50, int $offs
             'room_id'      => (int) $row['room_id'],
             'sender_id'    => (int) $row['sender_id'],
             'sender_name'  => htmlspecialchars($row['sender_name'], ENT_QUOTES, 'UTF-8'),
-            'sender_image' => $row['sender_image']
-                ? htmlspecialchars($row['sender_image'], ENT_QUOTES, 'UTF-8')
-                : null,
+            'sender_image' => chat_resolve_profile_image($row['sender_image']),
             'message_text' => htmlspecialchars($row['message_text'], ENT_QUOTES, 'UTF-8'),
             'is_read'      => (int) $row['is_read'],
             'created_at'   => $row['created_at'],
@@ -445,9 +461,7 @@ function chat_get_message_by_id(mysqli $conn, int $messageId): ?array
         'room_id'      => (int) $row['room_id'],
         'sender_id'    => (int) $row['sender_id'],
         'sender_name'  => htmlspecialchars($row['sender_name'], ENT_QUOTES, 'UTF-8'),
-        'sender_image' => $row['sender_image']
-            ? htmlspecialchars($row['sender_image'], ENT_QUOTES, 'UTF-8')
-            : null,
+        'sender_image' => chat_resolve_profile_image($row['sender_image']),
         'message_text' => htmlspecialchars($row['message_text'], ENT_QUOTES, 'UTF-8'),
         'is_read'      => (int) $row['is_read'],
         'created_at'   => $row['created_at'],

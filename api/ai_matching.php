@@ -2,60 +2,21 @@
 /**
  * AI Matching API
  * Generates embeddings, vectors, and computes match scores between jobs and freelancers.
+ * Now uses real cosine similarity via includes/ai_engine.php
  */
 
+session_start();
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../auth/auth.php';
+require_once __DIR__ . '/../includes/ai_engine.php';
 
 header('Content-Type: application/json');
 
+if (!is_logged_in()) {
+    json_response(['success' => false, 'message' => 'Authentication required.'], 401);
+}
+
 $action = $_GET['action'] ?? '';
-
-// ── Stop Words List ────────────────────────────────────────────────────────
-$STOP_WORDS = [
-    'the','is','at','which','on','a','an','and','or','but','in','with','to','for',
-    'of','not','no','can','had','has','was','were','are','be','been','being',
-    'have','having','do','does','did','doing','will','would','could','should',
-    'may','might','shall','must','that','this','these','those','it','its',
-    'from','by','as','if','then','than','so','just','also','about','into',
-    'over','after','before','between','under','above','out','off','up','down',
-    'all','each','every','both','few','more','most','other','some','such','any',
-    'only','same','own','too','very','here','there','when','where','why','how',
-    'what','who','whom','whose','through','during','until','while','again',
-    'further','once','because','nor','against','during','once','twice',
-];
-
-/**
- * Extract keywords from text.
- * Tokenizes, lowercases, removes stop words, removes short words, returns top 20 by frequency.
- */
-function extract_keywords(string $text, array $stop_words): array {
-    $text = strtolower($text);
-    $text = preg_replace('/[^a-z0-9\s]/', ' ', $text);
-    $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
-
-    $freq = [];
-    foreach ($words as $word) {
-        if (strlen($word) < 3 || in_array($word, $stop_words, true)) {
-            continue;
-        }
-        $freq[$word] = ($freq[$word] ?? 0) + 1;
-    }
-
-    arsort($freq);
-    return array_slice(array_keys($freq), 0, 20);
-}
-
-/**
- * Calculate cosine-like similarity on skill IDs.
- */
-function skill_similarity(array $skills_a, array $skills_b): float {
-    if (empty($skills_a) || empty($skills_b)) {
-        return 0.0;
-    }
-    $common = count(array_intersect($skills_a, $skills_b));
-    $unique = count(array_unique(array_merge($skills_a, $skills_b)));
-    return $unique > 0 ? $common / $unique : 0.0;
-}
 
 // ── Generate Job Embedding ────────────────────────────────────────────────
 if ($action === 'generate_job_embedding') {
@@ -71,13 +32,6 @@ if ($action === 'generate_job_embedding') {
         json_response(['error' => 'Job not found'], 404);
     }
 
-    $title_words = extract_keywords($job['title'], $STOP_WORDS);
-    $desc_words = extract_keywords($job['description'], $STOP_WORDS);
-    $all_keywords = array_unique(array_merge($title_words, $desc_words));
-    $all_keywords = array_slice($all_keywords, 0, 20);
-
-    $word_count = str_word_count(strtolower($job['title'] . ' ' . $job['description']));
-
     $stmt = $conn->prepare('SELECT skill_id FROM job_skills WHERE job_id = ?');
     $stmt->bind_param('i', $job_id);
     $stmt->execute();
@@ -88,16 +42,8 @@ if ($action === 'generate_job_embedding') {
     }
     $stmt->close();
 
-    $budget_max = 10000;
-    $budget_normalized = max(0.0, min(1.0, (float) $job['budget'] / $budget_max));
-
-    $embedding = json_encode([
-        'keywords'          => $all_keywords,
-        'skill_ids'         => $skill_ids,
-        'word_count'        => $word_count,
-        'title_words'       => $title_words,
-        'budget_normalized' => round($budget_normalized, 4),
-    ]);
+    // Generate embedding using ai_engine (includes dense vector for cosine similarity)
+    $embedding = ai_generate_job_embedding($job['title'], $job['description'], $skill_ids, (float) $job['budget']);
 
     $stmt = $conn->prepare('UPDATE jobs SET embedding_vector = ? WHERE id = ?');
     $stmt->bind_param('si', $embedding, $job_id);
@@ -115,7 +61,7 @@ if ($action === 'generate_job_embedding') {
 if ($action === 'generate_freelancer_vector') {
     $freelancer_id = sanitize_int($_GET['freelancer_id'] ?? 0);
 
-    $stmt = $conn->prepare('SELECT id, hourly_rate, years_of_experience, availability FROM freelancers WHERE id = ?');
+    $stmt = $conn->prepare('SELECT id, hourly_rate, years_of_experience, availability, bio, title FROM freelancers WHERE id = ?');
     $stmt->bind_param('i', $freelancer_id);
     $stmt->execute();
     $freelancer = $stmt->get_result()->fetch_assoc();
@@ -142,13 +88,16 @@ if ($action === 'generate_freelancer_vector') {
     }
     $stmt->close();
 
-    $vector = json_encode([
-        'skill_ids'        => $skill_ids,
-        'skill_names'      => $skill_names,
-        'hourly_rate'      => (float) $freelancer['hourly_rate'],
-        'experience_years' => (int) $freelancer['years_of_experience'],
-        'availability'     => $freelancer['availability'] ?? 'Available',
-    ]);
+    // Generate vector using ai_engine (includes dense vector for cosine similarity)
+    $embeddingText = ($freelancer['title'] ?? '') . ' ' . ($freelancer['bio'] ?? '');
+    $vector = ai_generate_freelancer_vector(
+        $skill_ids,
+        $skill_names,
+        (float) $freelancer['hourly_rate'],
+        (int) $freelancer['years_of_experience'],
+        $freelancer['availability'] ?? 'Available',
+        $embeddingText
+    );
 
     $stmt = $conn->prepare('UPDATE freelancers SET skills_vector = ? WHERE id = ?');
     $stmt->bind_param('si', $vector, $freelancer_id);
@@ -166,7 +115,7 @@ if ($action === 'generate_freelancer_vector') {
 if ($action === 'match_freelancers') {
     $job_id = sanitize_int($_GET['job_id'] ?? 0);
 
-    $stmt = $conn->prepare('SELECT id, title, budget, embedding_vector FROM jobs WHERE id = ?');
+    $stmt = $conn->prepare('SELECT id, title, description, budget, embedding_vector FROM jobs WHERE id = ?');
     $stmt->bind_param('i', $job_id);
     $stmt->execute();
     $job = $stmt->get_result()->fetch_assoc();
@@ -176,16 +125,10 @@ if ($action === 'match_freelancers') {
         json_response(['error' => 'Job not found'], 404);
     }
 
-    // Generate embedding if missing
-    if (empty($job['embedding_vector'])) {
-        // Inline generate
-        $title_words = extract_keywords($job['title'], $STOP_WORDS);
-        $desc_words = extract_keywords($job['description'] ?? $job['title'], $STOP_WORDS);
-        $all_keywords = array_unique(array_merge($title_words, $desc_words));
-        $all_keywords = array_slice($all_keywords, 0, 20);
-
-        $word_count = str_word_count(strtolower($job['title']));
-
+    // Load or generate job embedding
+    $job_embedding = json_decode($job['embedding_vector'] ?? '{}', true) ?: [];
+    if (empty($job_embedding)) {
+        // Generate embedding on the fly using ai_engine
         $s2 = $conn->prepare('SELECT skill_id FROM job_skills WHERE job_id = ?');
         $s2->bind_param('i', $job_id);
         $s2->execute();
@@ -195,23 +138,11 @@ if ($action === 'match_freelancers') {
             $job_skill_ids[] = (int) $row['skill_id'];
         }
         $s2->close();
-
-        $job_embedding = [
-            'keywords'          => $all_keywords,
-            'skill_ids'         => $job_skill_ids,
-            'word_count'        => $word_count,
-            'title_words'       => $title_words,
-            'budget_normalized' => round(min(1.0, (float) $job['budget'] / 10000), 4),
-        ];
-    } else {
-        $job_embedding = json_decode($job['embedding_vector'], true);
+        $job_embedding_json = ai_generate_job_embedding($job['title'], $job['description'] ?? $job['title'], $job_skill_ids, (float) $job['budget']);
+        $job_embedding = json_decode($job_embedding_json, true);
     }
 
-    $job_skill_ids = $job_embedding['skill_ids'] ?? [];
     $job_budget = (float) $job['budget'];
-    $estimated_hours = max(1, intval($job_embedding['word_count'] ?? 10));
-    // Normalize: use budget / 40 as max affordable hourly rate
-    $max_rate = max(1, $job_budget / max(1, $estimated_hours));
 
     // Get all freelancers with their vectors
     $stmt = $conn->prepare('
@@ -229,8 +160,8 @@ if ($action === 'match_freelancers') {
     while ($fl = $freelancers->fetch_assoc()) {
         $vector = json_decode($fl['skills_vector'] ?? '{}', true) ?: [];
 
+        // Generate vector on the fly if missing using ai_engine
         if (empty($vector)) {
-            // Generate vector on the fly
             $s3 = $conn->prepare('
                 SELECT fs.skill_id, s.skill_name
                 FROM freelancer_skills fs
@@ -240,43 +171,27 @@ if ($action === 'match_freelancers') {
             $s3->bind_param('i', $fl['id']);
             $s3->execute();
             $r3 = $s3->get_result();
-            $vector['skill_ids'] = [];
-            $vector['skill_names'] = [];
+            $fl_skill_ids = [];
+            $fl_skill_names = [];
             while ($row = $r3->fetch_assoc()) {
-                $vector['skill_ids'][] = (int) $row['skill_id'];
-                $vector['skill_names'][] = $row['skill_name'];
+                $fl_skill_ids[] = (int) $row['skill_id'];
+                $fl_skill_names[] = $row['skill_name'];
             }
             $s3->close();
-            $vector['hourly_rate'] = (float) $fl['hourly_rate'];
-            $vector['experience_years'] = (int) $fl['years_of_experience'];
-            $vector['availability'] = $fl['availability'] ?? 'Available';
+
+            $flVectorJson = ai_generate_freelancer_vector(
+                $fl_skill_ids,
+                $fl_skill_names,
+                (float) $fl['hourly_rate'],
+                (int) $fl['years_of_experience'],
+                $fl['availability'] ?? 'Available',
+                ($fl['title'] ?? '') . ' ' . implode(' ', $fl_skill_names)
+            );
+            $vector = json_decode($flVectorJson, true);
         }
 
-        $fl_skill_ids = $vector['skill_ids'] ?? [];
-
-        // Skill match: common / job_skills_count (max 50 points)
-        $skill_score = 0;
-        if (!empty($job_skill_ids)) {
-            $common = count(array_intersect($fl_skill_ids, $job_skill_ids));
-            $skill_score = ($common / count($job_skill_ids)) * 50;
-        }
-
-        // Rate match: if freelancer rate <= max_rate, +20
-        $rate_score = 0;
-        $fl_rate = $vector['hourly_rate'] ?? $fl['hourly_rate'];
-        if ($fl_rate <= $max_rate) {
-            $rate_score = 20;
-        } elseif ($fl_rate <= $max_rate * 1.5) {
-            $rate_score = 10; // partial credit
-        }
-
-        // Experience match: years * 2, max 15
-        $exp_score = min(15, ($vector['experience_years'] ?? $fl['years_of_experience'] ?? 0) * 2);
-
-        // Availability bonus: if Available, +15
-        $avail_score = ($vector['availability'] ?? $fl['availability']) === 'Available' ? 15 : 0;
-
-        $total_score = round($skill_score + $rate_score + $exp_score + $avail_score, 2);
+        // Score using ai_engine (cosine similarity when dense vectors exist, Jaccard fallback)
+        $scoreResult = ai_score_freelancer_for_job($job_embedding, $vector, $job_budget);
 
         $matches[] = [
             'freelancer_id'      => $fl['id'],
@@ -284,17 +199,12 @@ if ($action === 'match_freelancers') {
             'name'               => $fl['name'],
             'profile_image'      => $fl['profile_image'],
             'title'              => $fl['title'],
-            'hourly_rate'        => $fl_rate,
+            'hourly_rate'        => $vector['hourly_rate'] ?? $fl['hourly_rate'],
             'years_of_experience'=> $vector['experience_years'] ?? $fl['years_of_experience'],
             'availability'       => $vector['availability'] ?? $fl['availability'],
             'skill_names'        => $vector['skill_names'] ?? [],
-            'total_score'        => $total_score,
-            'breakdown' => [
-                'skill_match'     => round($skill_score, 2),
-                'rate_fit'        => round($rate_score, 2),
-                'experience'      => round($exp_score, 2),
-                'availability'    => round($avail_score, 2),
-            ],
+            'total_score'        => $scoreResult['total_score'],
+            'breakdown'          => $scoreResult['breakdown'],
         ];
     }
 
@@ -313,7 +223,7 @@ if ($action === 'match_freelancers') {
 if ($action === 'match_jobs') {
     $freelancer_id = sanitize_int($_GET['freelancer_id'] ?? 0);
 
-    $stmt = $conn->prepare('SELECT id, hourly_rate, years_of_experience, availability, skills_vector FROM freelancers WHERE id = ?');
+    $stmt = $conn->prepare('SELECT id, hourly_rate, years_of_experience, availability, skills_vector, title, bio FROM freelancers WHERE id = ?');
     $stmt->bind_param('i', $freelancer_id);
     $stmt->execute();
     $freelancer = $stmt->get_result()->fetch_assoc();
@@ -325,6 +235,7 @@ if ($action === 'match_jobs') {
 
     $fl_vector = json_decode($freelancer['skills_vector'] ?? '{}', true) ?: [];
 
+    // Generate vector on the fly if missing using ai_engine
     if (empty($fl_vector)) {
         $s4 = $conn->prepare('
             SELECT fs.skill_id, s.skill_name
@@ -335,18 +246,25 @@ if ($action === 'match_jobs') {
         $s4->bind_param('i', $freelancer_id);
         $s4->execute();
         $r4 = $s4->get_result();
-        $fl_vector['skill_ids'] = [];
-        $fl_vector['skill_names'] = [];
+        $fl_skill_ids = [];
+        $fl_skill_names = [];
         while ($row = $r4->fetch_assoc()) {
-            $fl_vector['skill_ids'][] = (int) $row['skill_id'];
-            $fl_vector['skill_names'][] = $row['skill_name'];
+            $fl_skill_ids[] = (int) $row['skill_id'];
+            $fl_skill_names[] = $row['skill_name'];
         }
         $s4->close();
-        $fl_vector['hourly_rate'] = (float) $freelancer['hourly_rate'];
-        $fl_vector['experience_years'] = (int) $freelancer['years_of_experience'];
+
+        $flVectorJson = ai_generate_freelancer_vector(
+            $fl_skill_ids,
+            $fl_skill_names,
+            (float) $freelancer['hourly_rate'],
+            (int) $freelancer['years_of_experience'],
+            $freelancer['availability'] ?? 'Available',
+            ($freelancer['title'] ?? '') . ' ' . ($freelancer['bio'] ?? '')
+        );
+        $fl_vector = json_decode($flVectorJson, true);
     }
 
-    $fl_skill_ids = $fl_vector['skill_ids'] ?? [];
     $fl_rate = $fl_vector['hourly_rate'] ?? (float) $freelancer['hourly_rate'];
 
     // Get open jobs
@@ -356,54 +274,27 @@ if ($action === 'match_jobs') {
     $stmt->close();
 
     $matches = [];
-    $now = time();
 
     while ($job = $jobs->fetch_assoc()) {
         $embedding = json_decode($job['embedding_vector'] ?? '{}', true) ?: [];
 
+        // Generate embedding on the fly if missing using ai_engine
         if (empty($embedding)) {
-            // Generate embedding on the fly
-            $title_words = extract_keywords($job['title'], $STOP_WORDS);
-            $desc_words = extract_keywords($job['description'] ?? $job['title'], $STOP_WORDS);
-            $all_kw = array_unique(array_merge($title_words, $desc_words));
-
             $s5 = $conn->prepare('SELECT skill_id FROM job_skills WHERE job_id = ?');
             $s5->bind_param('i', $job['id']);
             $s5->execute();
             $r5 = $s5->get_result();
-            $embedding['skill_ids'] = [];
+            $job_skill_ids = [];
             while ($row = $r5->fetch_assoc()) {
-                $embedding['skill_ids'][] = (int) $row['skill_id'];
+                $job_skill_ids[] = (int) $row['skill_id'];
             }
             $s5->close();
-            $embedding['word_count'] = str_word_count($job['title'] . ' ' . ($job['description'] ?? ''));
+            $embedding_json = ai_generate_job_embedding($job['title'], $job['description'] ?? $job['title'], $job_skill_ids, (float) $job['budget']);
+            $embedding = json_decode($embedding_json, true);
         }
 
-        $job_skill_ids = $embedding['skill_ids'] ?? [];
-        $job_budget = (float) $job['budget'];
-        $estimated_hours = max(1, intval($embedding['word_count'] ?? 10));
-        $min_required_rate = $fl_rate * $estimated_hours;
-
-        // Skill match: common / job_skills_count (max 60 points)
-        $skill_score = 0;
-        if (!empty($job_skill_ids)) {
-            $common = count(array_intersect($fl_skill_ids, $job_skill_ids));
-            $skill_score = ($common / count($job_skill_ids)) * 60;
-        }
-
-        // Budget fit: job budget >= hourly_rate * estimated_hours (max 20 points)
-        $budget_score = 0;
-        if ($job_budget >= $min_required_rate) {
-            $budget_score = 20;
-        } elseif ($job_budget >= $min_required_rate * 0.7) {
-            $budget_score = 10;
-        }
-
-        // Recency: newer jobs get +10, decays over 30 days
-        $age_days = max(0, ($now - strtotime($job['created_at'])) / 86400);
-        $recency_score = max(0, 10 * (1 - $age_days / 30));
-
-        $total_score = round($skill_score + $budget_score + $recency_score, 2);
+        // Score using ai_engine (cosine similarity when dense vectors exist, Jaccard fallback)
+        $scoreResult = ai_score_job_for_freelancer($fl_vector, $embedding, $fl_rate, $job['created_at']);
 
         // Get client name
         $cs = $conn->prepare('SELECT name FROM users WHERE id = ?');
@@ -426,16 +317,12 @@ if ($action === 'match_jobs') {
         $matches[] = [
             'job_id'          => $job['id'],
             'title'           => $job['title'],
-            'budget'          => $job_budget,
+            'budget'          => (float) $job['budget'],
             'client_name'     => $client_name,
             'skill_names'     => $job_skill_names,
             'created_at'      => $job['created_at'],
-            'total_score'     => $total_score,
-            'breakdown' => [
-                'skill_match' => round($skill_score, 2),
-                'budget_fit'  => round($budget_score, 2),
-                'recency'     => round($recency_score, 2),
-            ],
+            'total_score'     => $scoreResult['total_score'],
+            'breakdown'       => $scoreResult['breakdown'],
         ];
     }
 

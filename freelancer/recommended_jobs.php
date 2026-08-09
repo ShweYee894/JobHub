@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../auth/auth.php';
+require_once __DIR__ . '/../includes/ai_engine.php';
 require_role('freelancer');
 
 $userId = $_SESSION['user_id'];
@@ -23,15 +24,15 @@ $freelancerId = $freelancer['id'] ?? 0;
 
 if (!$freelancerId) {
     set_flash('error', 'Freelancer profile not found.');
-    header('Location: /finalproject/freelancer/dashboard.php');
+    header('Location: /jobhub/freelancer/dashboard.php');
     exit();
 }
 
-// Fetch recommended jobs via AI matching API logic (inline)
+// Fetch recommended jobs using ai_engine (cosine similarity when dense vectors exist)
 $matches = [];
 
 // Get freelancer skills vector
-$stmt = $conn->prepare('SELECT hourly_rate, years_of_experience, availability, skills_vector FROM freelancers WHERE id = ?');
+$stmt = $conn->prepare('SELECT hourly_rate, years_of_experience, availability, skills_vector, title, bio FROM freelancers WHERE id = ?');
 $stmt->bind_param('i', $freelancerId);
 $stmt->execute();
 $flData = $stmt->get_result()->fetch_assoc();
@@ -39,6 +40,7 @@ $stmt->close();
 
 $fl_vector = json_decode($flData['skills_vector'] ?? '{}', true) ?: [];
 
+// Generate vector on the fly if missing using ai_engine
 if (empty($fl_vector)) {
     $s4 = $conn->prepare('
         SELECT fs.skill_id, s.skill_name
@@ -49,145 +51,28 @@ if (empty($fl_vector)) {
     $s4->bind_param('i', $freelancerId);
     $s4->execute();
     $r4 = $s4->get_result();
-    $fl_vector['skill_ids'] = [];
-    $fl_vector['skill_names'] = [];
+    $fl_skill_ids = [];
+    $fl_skill_names = [];
     while ($row = $r4->fetch_assoc()) {
-        $fl_vector['skill_ids'][] = (int) $row['skill_id'];
-        $fl_vector['skill_names'][] = $row['skill_name'];
+        $fl_skill_ids[] = (int) $row['skill_id'];
+        $fl_skill_names[] = $row['skill_name'];
     }
     $s4->close();
-    $fl_vector['hourly_rate'] = (float) $flData['hourly_rate'];
-    $fl_vector['experience_years'] = (int) $flData['years_of_experience'];
+
+    $flVectorJson = ai_generate_freelancer_vector(
+        $fl_skill_ids,
+        $fl_skill_names,
+        (float) $flData['hourly_rate'],
+        (int) $flData['years_of_experience'],
+        $flData['availability'] ?? 'Available',
+        ($flData['title'] ?? '') . ' ' . ($flData['bio'] ?? '')
+    );
+    $fl_vector = json_decode($flVectorJson, true);
 }
 
-$fl_skill_ids = $fl_vector['skill_ids'] ?? [];
 $fl_rate = $fl_vector['hourly_rate'] ?? 0;
 
-$STOP_WORDS = [
-    'the',
-    'is',
-    'at',
-    'which',
-    'on',
-    'a',
-    'an',
-    'and',
-    'or',
-    'but',
-    'in',
-    'with',
-    'to',
-    'for',
-    'of',
-    'not',
-    'no',
-    'can',
-    'had',
-    'has',
-    'was',
-    'were',
-    'are',
-    'be',
-    'been',
-    'being',
-    'have',
-    'having',
-    'do',
-    'does',
-    'did',
-    'doing',
-    'will',
-    'would',
-    'could',
-    'should',
-    'may',
-    'might',
-    'shall',
-    'must',
-    'that',
-    'this',
-    'these',
-    'those',
-    'it',
-    'its',
-    'from',
-    'by',
-    'as',
-    'if',
-    'then',
-    'than',
-    'so',
-    'just',
-    'also',
-    'about',
-    'into',
-    'over',
-    'after',
-    'before',
-    'between',
-    'under',
-    'above',
-    'out',
-    'off',
-    'up',
-    'down',
-    'all',
-    'each',
-    'every',
-    'both',
-    'few',
-    'more',
-    'most',
-    'other',
-    'some',
-    'such',
-    'any',
-    'only',
-    'same',
-    'own',
-    'too',
-    'very',
-    'here',
-    'there',
-    'when',
-    'where',
-    'why',
-    'how',
-    'what',
-    'who',
-    'whom',
-    'whose',
-    'through',
-    'during',
-    'until',
-    'while',
-    'again',
-    'further',
-    'once',
-    'because',
-    'nor',
-    'against',
-    'during',
-    'once',
-    'twice',
-];
-
-function extract_keywords_rf(string $text, array $stop_words): array
-{
-    $text = strtolower($text);
-    $text = preg_replace('/[^a-z0-9\s]/', ' ', $text);
-    $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
-    $freq = [];
-    foreach ($words as $word) {
-        if (strlen($word) < 3 || in_array($word, $stop_words, true))
-            continue;
-        $freq[$word] = ($freq[$word] ?? 0) + 1;
-    }
-    arsort($freq);
-    return array_slice(array_keys($freq), 0, 20);
-}
-
-$now = time();
+// Get all open jobs
 $jobs_stmt = $conn->prepare("SELECT id, client_id, title, description, budget, embedding_vector, created_at FROM jobs WHERE status = 'open' ORDER BY created_at DESC");
 $jobs_stmt->execute();
 $jobs_result = $jobs_stmt->get_result();
@@ -196,49 +81,25 @@ $jobs_stmt->close();
 while ($job = $jobs_result->fetch_assoc()) {
     $embedding = json_decode($job['embedding_vector'] ?? '{}', true) ?: [];
 
+    // Generate embedding on the fly if missing using ai_engine
     if (empty($embedding)) {
-        $title_words = extract_keywords_rf($job['title'], $STOP_WORDS);
-        $desc_words = extract_keywords_rf($job['description'] ?? $job['title'], $STOP_WORDS);
         $s5 = $conn->prepare('SELECT skill_id FROM job_skills WHERE job_id = ?');
         $s5->bind_param('i', $job['id']);
         $s5->execute();
         $r5 = $s5->get_result();
-        $embedding['skill_ids'] = [];
+        $job_skill_ids = [];
         while ($row = $r5->fetch_assoc()) {
-            $embedding['skill_ids'][] = (int) $row['skill_id'];
+            $job_skill_ids[] = (int) $row['skill_id'];
         }
         $s5->close();
-        $embedding['word_count'] = str_word_count($job['title'] . ' ' . ($job['description'] ?? ''));
+        $embedding_json = ai_generate_job_embedding($job['title'], $job['description'] ?? $job['title'], $job_skill_ids, (float) $job['budget']);
+        $embedding = json_decode($embedding_json, true);
     }
 
-    $job_skill_ids = $embedding['skill_ids'] ?? [];
-    $job_budget = (float) $job['budget'];
-    $estimated_hours = max(1, intval($embedding['word_count'] ?? 10));
-    $min_required_rate = $fl_rate * $estimated_hours;
+    // Score using ai_engine
+    $scoreResult = ai_score_job_for_freelancer($fl_vector, $embedding, $fl_rate, $job['created_at']);
 
-    // Skill match
-    $skill_score = 0;
-    if (!empty($job_skill_ids)) {
-        $common = count(array_intersect($fl_skill_ids, $job_skill_ids));
-        $skill_score = ($common / count($job_skill_ids)) * 60;
-    }
-
-    // Budget fit
-    $budget_score = 0;
-    if ($job_budget >= $min_required_rate) {
-        $budget_score = 20;
-    } elseif ($job_budget >= $min_required_rate * 0.7) {
-        $budget_score = 10;
-    }
-
-    // Recency
-    $age_days = max(0, ($now - strtotime($job['created_at'])) / 86400);
-    $recency_score = max(0, 10 * (1 - $age_days / 30));
-
-    $total_score = round($skill_score + $budget_score + $recency_score, 2);
-
-    if ($total_score <= 0)
-        continue;
+    if ($scoreResult['total_score'] <= 0) continue;
 
     // Get skill names
     $sn = $conn->prepare('SELECT s.skill_name FROM job_skills js JOIN skills s ON js.skill_id = s.id WHERE js.job_id = ?');
@@ -262,12 +123,12 @@ while ($job = $jobs_result->fetch_assoc()) {
         'job_id' => $job['id'],
         'title' => $job['title'],
         'description' => $job['description'],
-        'budget' => $job_budget,
+        'budget' => (float) $job['budget'],
         'client_name' => $client_name,
         'skill_names' => $skill_names,
         'created_at' => $job['created_at'],
-        'total_score' => $total_score,
-        'skill_pct' => round($skill_score / 60 * 100),
+        'total_score' => $scoreResult['total_score'],
+        'skill_pct' => round($scoreResult['breakdown']['skill_match'] / 60 * 100),
     ];
 }
 
@@ -285,12 +146,12 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             <?php if (empty($recommended)): ?>
             <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
                 <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-brain text-2xl text-gray-400"></i>
+                    <i data-lucide="brain" class="text-2xl text-gray-400"></i>
                 </div>
                 <p class="text-gray-500 text-sm mb-2">No recommended jobs yet</p>
                 <p class="text-gray-400 text-xs mb-4">Update your skills and preferences to get better recommendations</p>
                 <a href="browse_jobs.php" class="btn-grad inline-flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">
-                    <i class="fas fa-search text-xs"></i> Browse All Jobs
+                    <i data-lucide="search" class="text-xs"></i> Browse All Jobs
                 </a>
             </div>
             <?php else: ?>
@@ -301,18 +162,18 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                 $scoreColor = ($match['total_score'] >= 50)
                     ? 'bg-emerald-500'
                     : (($match['total_score'] >= 30)
-                        ? 'bg-blue-500'
+                        ? 'bg-indigo-500'
                         : (($match['total_score'] >= 15) ? 'bg-amber-500' : 'bg-gray-400'));
                 $scoreText = ($match['total_score'] >= 50)
                     ? 'text-emerald-600'
                     : (($match['total_score'] >= 30)
-                        ? 'text-blue-600'
+                        ? 'text-indigo-600'
                         : (($match['total_score'] >= 15) ? 'text-amber-600' : 'text-gray-600'));
                 ?>
-                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex-1 min-w-0">
-                            <a href="job_detail.php?id=<?= $match['job_id'] ?>" class="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-1">
+                            <a href="job_detail.php?id=<?= $match['job_id'] ?>" class="text-base font-bold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-1">
                                 <?= sanitize_string($match['title']) ?>
                             </a>
                             <p class="text-xs text-gray-400 mt-1">by <?= sanitize_string($match['client_name']) ?> &middot; <?= time_ago($match['created_at']) ?></p>
@@ -333,7 +194,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                     <div class="flex items-center justify-between">
                         <div class="flex flex-wrap gap-1">
                             <?php foreach (array_slice($match['skill_names'], 0, 4) as $skill): ?>
-                                <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold"><?= sanitize_string($skill) ?></span>
+                                <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[10px] font-semibold"><?= sanitize_string($skill) ?></span>
                             <?php endforeach; ?>
                             <?php if (count($match['skill_names']) > 4): ?>
                                 <span class="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-semibold">+<?= count($match['skill_names']) - 4 ?></span>

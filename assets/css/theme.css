@@ -1,0 +1,166 @@
+/*
+ * JobHub Theme – Upwork-inspired typography & color tokens
+ *
+ * Import this file in <head> BEFORE the Tailwind CDN script:
+ *   <link rel="stylesheet" href="/jobhub/assets/css/theme.css">
+ *
+ * Then use the Tailwind config extension (see index.php) to wire
+ * fontFamily.sans to these fonts.
+ */
+
+/* ═══ 1. FONT IMPORTS ════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ═══ 2. CSS CUSTOM PROPERTIES ═══════════════════════════════════════════ */
+:root {
+  /* ── Typography ─────────────────────────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, -apple-system,
+               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system,
+                  'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* ── Upwork-style dark green-black ──────────────────────────────────── */
+  --color-heading: #001e00;
+  --color-body: #374151;            /* equivalent to text-slate-700 */
+  --color-muted: #6b7280;           /* text-gray-500 */
+  --color-subtle: #9ca3af;          /* text-gray-400 */
+
+  /* ── Brand palette (kept from existing design) ──────────────────────── */
+  --color-primary: #4338CA;
+  --color-primary-dark: #3730A3;
+  --color-primary-light: #6366F1;
+  --color-surface: #FDFDFD;
+}
+
+/* ═══ 3. GLOBAL FONT RESET ═══════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  font-family: var(--font-sans);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-body);
+  line-height: 1.6;
+}
+
+/* ═══ 4. HEADING DEFAULTS (Upwork-style) ═════════════════════════════════ */
+h1, h2, h3, h4, h5, h6,
+.heading {
+  font-family: var(--font-heading);
+  color: var(--color-heading);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+/* ═══ 5. UTILITY CLASSES ═════════════════════════════════════════════════ */
+
+/* ── Headings ─────────────────────────────────────────────────────────── */
+.heading-xl {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-heading);
+  line-height: 1.1;
+}
+.heading-lg {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--color-heading);
+  line-height: 1.2;
+}
+.heading-md {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-heading);
+  line-height: 1.3;
+}
+.heading-sm {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-heading);
+  line-height: 1.4;
+}
+
+/* ── Body text ────────────────────────────────────────────────────────── */
+.body-text {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  color: var(--color-body);
+  line-height: 1.6;
+}
+.body-lg {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  color: var(--color-body);
+  line-height: 1.6;
+  font-size: 1.125rem;
+}
+.body-sm {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  color: var(--color-muted);
+  line-height: 1.5;
+  font-size: 0.875rem;
+}
+
+/* ── Labels / Overlines ───────────────────────────────────────────────── */
+.label-tag {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-subtle);
+}
+
+/* ═══ 6. EXISTING UTILITY CLASSES (preserved) ════════════════════════════ */
+.grad-text {
+  background: linear-gradient(135deg, #4338CA 0%, #6366F1 60%, #818CF8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heading-serif {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* ═══ 7. LUCIDE ICON SIZING FIX ══════════════════════════════════════════ */
+/*
+ * Lucide v0.344.0 sets width/height as both HTML attributes AND inline styles
+ * on generated <svg> elements. CSS utility classes (w-*, h-*, text-*) cannot
+ * override inline styles without !important.
+ *
+ * This rule forces Lucide SVGs to use 1em × 1em (matching parent font-size),
+ * so Tailwind's text-xs/text-sm/etc. classes properly control icon size.
+ */
+svg[data-lucide] {
+  width: 1em !important;
+  height: 1em !important;
+  font-size: inherit !important;
+  vertical-align: -0.125em;
+  flex-shrink: 0;
+}
+i[data-lucide] {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+
+/* ═══ 8. SELECTION COLOR ═════════════════════════════════════════════════ */
+::selection {
+  background: #4338CA;
+  color: #fff;
+}

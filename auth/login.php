@@ -33,7 +33,7 @@ unset($_SESSION['form_data']);
   <meta name="description" content="Sign in to your JobHub account to manage jobs, contracts, and payments." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -82,6 +82,8 @@ unset($_SESSION['form_data']);
     }
 
     body {
+      margin: 0;
+      padding: 0;
       background: #f8fafc;
       color: #1e293b;
     }
@@ -101,26 +103,6 @@ unset($_SESSION['form_data']);
     .btn-grad:hover {
       opacity: .88;
       transform: translateY(-1px);
-    }
-
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: .12;
-      animation: float 6s ease-in-out infinite;
-    }
-
-    @keyframes float {
-
-      0%,
-      100% {
-        transform: translateY(0)
-      }
-
-      50% {
-        transform: translateY(-12px)
-      }
     }
 
     .fld {
@@ -157,42 +139,19 @@ unset($_SESSION['form_data']);
   </style>
 </head>
 
-<body class="min-h-screen relative overflow-x-hidden">
+<body class="min-h-screen">
 
-  <!-- Background decorations -->
-  <div class="orb w-[500px] h-[500px] bg-blue-400 -top-40 -right-40" style="animation-delay:0s"></div>
-  <div class="orb w-[400px] h-[400px] bg-cyan-300 -bottom-32 -left-32" style="animation-delay:3s"></div>
-
-  <!-- Grid pattern -->
-  <div class="absolute inset-0 pointer-events-none opacity-[0.03]" style="background-image:radial-gradient(circle,#2563eb 1px,transparent 1px);background-size:24px 24px;"></div>
-
-  <!-- NAVBAR -->
-  <nav class="relative z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-      <a href="../index.php" class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25">
-          <i class="fas fa-bolt text-white text-sm"></i>
-        </div>
-        <span class="text-xl font-extrabold tracking-tight">
-          <span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span>
-        </span>
-      </a>
-      <div class="flex items-center gap-3">
-        <a href="login.php" class="text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-primary px-4 py-2 rounded-lg transition-all">Log In</a>
-        <a href="register.php" class="btn-grad text-sm font-semibold text-white px-5 py-2 rounded-lg shadow-lg shadow-blue-500/25">Sign Up</a>
-      </div>
-    </div>
-  </nav>
+  <?php include __DIR__ . '/../includes/auth_navbar.php'; ?>
 
   <!-- MAIN CONTENT -->
-  <main class="relative z-10 flex items-center justify-center px-4 py-12 min-h-[calc(100vh-57px)]">
+  <main class="relative z-10 flex items-center justify-center px-4 py-16 min-h-[calc(100vh-57px)]">
 
     <div class="w-full max-w-[550px] fade-up">
 
       <!-- Header -->
       <div class="text-center mb-8">
-        <div class="w-14 h-14 rounded-2xl btn-grad flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
-          <i class="fas fa-sign-in-alt text-white text-lg"></i>
+        <div class="w-[40px] h-[40px] rounded-xl bg-gradient-to-tr from-blue-500/10 via-indigo-500/10 to-blue-50/50 border border-blue-200/60 shadow-lg shadow-blue-500/10 flex items-center justify-center mx-auto mb-4 hover:scale-105 transition-transform duration-300 cursor-default">
+          <i data-lucide="log-in" class="w-5 h-5 text-blue-600"></i>
         </div>
         <h1 class="text-3xl font-black text-gray-900 mb-2">Welcome Back</h1>
         <p class="text-gray-500 text-sm">Sign in to your JobHub account</p>
@@ -202,7 +161,7 @@ unset($_SESSION['form_data']);
       <?php if (!empty($error)): ?>
         <div class="mb-5 rounded-xl p-3 bg-red-50 border border-red-200 shake">
           <div class="flex items-center gap-2.5">
-            <i class="fas fa-exclamation-triangle text-red-500 text-sm"></i>
+            <i data-lucide="triangle-alert" class="w-4 h-4 text-red-500"></i>
             <p class="text-red-600 text-xs"><?= sanitize_string($error) ?></p>
           </div>
         </div>
@@ -218,7 +177,7 @@ unset($_SESSION['form_data']);
           <div class="mb-4">
             <label for="email" class="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
             <div class="relative">
-              <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="mail" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="email" id="email" name="email"
                 value="<?= $old_email ?>"
                 placeholder="you@example.com"
@@ -235,7 +194,7 @@ unset($_SESSION['form_data']);
               <label for="password" class="block text-xs font-semibold text-gray-700">Password</label>
             </div>
             <div class="relative">
-              <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="lock" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="password" id="password" name="password"
                 placeholder="Enter your password"
                 autocomplete="current-password"
@@ -243,7 +202,7 @@ unset($_SESSION['form_data']);
                 required />
               <button type="button" onclick="togglePwd('password','eye1')"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                <i id="eye1" class="fas fa-eye text-xs"></i>
+                <i id="eye1" data-lucide="eye" class="w-3 h-3"></i>
               </button>
             </div>
             <p id="password-err" class="text-red-500 text-[11px] mt-1 hidden"></p>
@@ -265,7 +224,7 @@ unset($_SESSION['form_data']);
           <!-- Submit -->
           <button type="submit" id="submit-btn"
             class="btn-grad w-full text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-50">
-            <i class="fas fa-sign-in-alt" id="submit-icon"></i>
+            <i data-lucide="log-in" id="submit-icon" class="w-4 h-4"></i>
             <span id="submit-text">Sign In</span>
           </button>
         </form>
@@ -289,10 +248,12 @@ unset($_SESSION['form_data']);
       const e = document.getElementById(eyeId);
       if (f.type === 'password') {
         f.type = 'text';
-        e.classList.replace('fa-eye', 'fa-eye-slash');
+        e.setAttribute('data-lucide', 'eye-off');
+        lucide.createIcons();
       } else {
         f.type = 'password';
-        e.classList.replace('fa-eye-slash', 'fa-eye');
+        e.setAttribute('data-lucide', 'eye');
+        lucide.createIcons();
       }
     }
 
@@ -334,10 +295,13 @@ unset($_SESSION['form_data']);
       const icon = document.getElementById('submit-icon');
       const txt = document.getElementById('submit-text');
       btn.disabled = true;
-      icon.className = 'fas fa-spinner fa-spin';
+      icon.setAttribute('data-lucide', 'loader');
+      icon.classList.add('animate-spin');
+      lucide.createIcons();
       txt.textContent = 'Signing in\u2026';
     });
   </script>
+  <script>lucide.createIcons();</script>
 </body>
 
 </html>

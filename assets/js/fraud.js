@@ -1,9 +1,9 @@
-/**
+﻿/**
  * fraud.js
- * Fraud Detection Dashboard — AJAX score refresh, user activity modal, auto-refresh, and UI helpers.
+ * Fraud Detection Dashboard — AJAX score refresh, risk detail drawer, auto-refresh, and UI helpers.
  */
 
-const BASE_URL = '/finalproject';
+const BASE_URL = '/jobhub';
 let autoRefreshInterval = null;
 
 // ── Initialize on DOM Ready ───────────────────────────────────────────
@@ -18,7 +18,7 @@ async function refreshScores() {
     if (!btn || !icon) return;
 
     btn.disabled = true;
-    icon.classList.add('fa-spin');
+    icon.classList.add('animate-spin');
 
     try {
         // Step 1: Recalculate all scores
@@ -64,7 +64,7 @@ async function refreshScores() {
         showToast('Network error during refresh.', 'error');
     } finally {
         btn.disabled = false;
-        icon.classList.remove('fa-spin');
+        icon.classList.remove('animate-spin');
     }
 }
 
@@ -74,14 +74,15 @@ function updateSuspiciousTable(users) {
     if (!tbody) return;
 
     if (users.length === 0) {
-        tbody.innerHTML = `
+            tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="px-6 py-12 text-center text-gray-400">
-                    <i class="fas fa-shield-alt text-4xl mb-3"></i>
+                    <i data-lucide="shield" class="text-4xl mb-3"></i>
                     <p class="font-medium">No suspicious users found</p>
                     <p class="text-sm">All users appear to be operating normally.</p>
                 </td>
             </tr>`;
+        lucide.createIcons();
         return;
     }
 
@@ -104,7 +105,7 @@ function updateSuspiciousTable(users) {
                  <input type="hidden" name="action" value="unflag_user">
                  <input type="hidden" name="user_id" value="${user.id}">
                  <button type="submit" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition" title="Unflag User">
-                   <i class="fas fa-check-circle text-sm"></i>
+                   <i data-lucide="circle-check" class="text-sm"></i>
                  </button>
                </form>`
             : '';
@@ -114,7 +115,7 @@ function updateSuspiciousTable(users) {
                  <input type="hidden" name="action" value="suspend_user">
                  <input type="hidden" name="user_id" value="${user.id}">
                  <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Suspend User">
-                   <i class="fas fa-ban text-sm"></i>
+                   <i data-lucide="ban" class="text-sm"></i>
                  </button>
                </form>`
             : '';
@@ -124,7 +125,7 @@ function updateSuspiciousTable(users) {
                  <input type="hidden" name="action" value="flag_user">
                  <input type="hidden" name="user_id" value="${user.id}">
                  <button type="submit" class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition" title="Flag User">
-                   <i class="fas fa-flag text-sm"></i>
+                   <i data-lucide="flag" class="text-sm"></i>
                  </button>
                </form>`
             : '';
@@ -157,105 +158,310 @@ function updateSuspiciousTable(users) {
               <td class="px-6 py-4">
                 <div class="flex items-center gap-2">
                   <button onclick="viewUserActivity(${user.id})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View Activity">
-                    <i class="fas fa-eye text-sm"></i>
+                    <i data-lucide="eye" class="text-sm"></i>
                   </button>
                   ${flagBtn}${unflagBtn}${suspendBtn}
                 </div>
               </td>
             </tr>`;
     }).join('');
+    lucide.createIcons();
+} ─────────────────────
+async function viewUserActivity(userId) {
+    const backdrop = document.getElementById('riskDrawerBackdrop');
+    const drawer   = document.getElementById('riskDrawer');
+    const skeleton = document.getElementById('drawerSkeleton');
+    const content  = document.getElementById('drawerContent');
+    if (!backdrop || !drawer) return;
+
+    // Store userId for action buttons
+    document.getElementById('drawerUserId').value = userId;
+
+    // Reset to loading state
+    skeleton.classList.remove('hidden');
+    content.classList.add('hidden');
+    backdrop.classList.add('open');
+    drawer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    // Fetch score + reasons, and activity logs in parallel
+    try {
+        const [scoreRes, logRes] = await Promise.all([
+            fetch(`${BASE_URL}/api/fraud_api.php?action=calculate_score&user_id=${userId}`, { credentials: 'same-origin' }),
+            fetch(`${BASE_URL}/api/fraud_api.php?action=activity_log&user_id=${userId}`, { credentials: 'same-origin' })
+        ]);
+        const scoreData = await scoreRes.json();
+        const logData   = await logRes.json();
+
+        // Wait a beat so the skeleton shimmer is visible (UX polish)
+        await new Promise(r => setTimeout(r, 280));
+
+        populateDrawer(scoreData, logData, userId);
+
+        skeleton.classList.add('hidden');
+        content.classList.remove('hidden');
+        lucide.createIcons();
+    } catch (err) {
+        console.error('Drawer fetch error:', err);
+        skeleton.innerHTML = `
+            <div class="text-center py-10">
+                <div class="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="triangle-alert" class="text-red-500"></i>
+                </div>
+                <p class="text-sm font-semibold text-gray-700 dark:text-slate-300">Failed to load risk data</p>
+                <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Please try again or check your connection.</p>
+            </div>`;
+    lucide.createIcons();
+    }
 }
 
-// ── View User Activity in Modal ───────────────────────────────────────
-async function viewUserActivity(userId) {
-    const modal = document.getElementById('activityModal');
-    const content = document.getElementById('activityModalContent');
-    if (!modal || !content) return;
+// ── Populate Drawer with Fetched Data ─────────────────────────────────
+function populateDrawer(scoreData, logData, userId) {
+    const logs = logData.logs || [];
+    const score = scoreData.score ?? 0;
+    const reasons = scoreData.reasons || [];
 
-    modal.classList.remove('hidden');
-    content.innerHTML = `
-        <div class="text-center py-8 text-gray-400">
-            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-            <p>Loading activity...</p>
-        </div>`;
+    // --- Header: Avatar & Identity ---
+    const firstLog = logs[0] || {};
+    const userName  = firstLog.user_name || 'Unknown User';
+    const userEmail = firstLog.user_email || '—';
+    const profileImg = firstLog.profile_image
+        ? `${BASE_URL}/assets/upload/profiles/${firstLog.profile_image}`
+        : `${BASE_URL}/assets/upload/profile.png`;
 
+    document.getElementById('drawerAvatar').src = profileImg;
+    document.getElementById('drawerUserName').textContent = userName;
+    document.getElementById('drawerUserEmail').textContent = userEmail;
+
+    // Role badge from the suspicious users table row (if available)
+    const userRow = document.querySelector(`tr[data-user-id="${userId}"]`);
+    let roleText = 'freelancer';
+    if (userRow) {
+        const roleCell = userRow.querySelector('td:nth-child(2) span');
+        if (roleCell) roleText = roleCell.textContent.trim().toLowerCase();
+    }
+    const roleBadge = document.getElementById('drawerRoleBadge');
+    roleBadge.textContent = capitalize(roleText);
+    const roleColors = {
+        admin:      'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400',
+        client:     'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
+        freelancer: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
+    };
+    roleBadge.className = `inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${roleColors[roleText] || roleColors.freelancer}`;
+
+    // Status dot
+    const statusDot = document.getElementById('drawerStatusDot');
+    const userStatus = userRow ? (userRow.querySelector('td:nth-child(4) span')?.textContent.trim().toLowerCase() || 'active') : 'active';
+    const dotColors = { active: 'bg-emerald-400', flagged: 'bg-red-500', suspended: 'bg-gray-400' };
+    statusDot.className = `absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-800 ${dotColors[userStatus] || dotColors.active}`;
+
+    // --- Header: Score Pill ---
+    const pill = document.getElementById('drawerScorePill');
+    const pillVal = document.getElementById('drawerScoreValue');
+    const pillLabel = document.getElementById('drawerScoreLabel');
+    const bar = document.getElementById('drawerScoreBar');
+
+    pillVal.textContent = `${score} / 100`;
+
+    if (score >= 70) {
+        pill.style.background = '#FEE2E2'; pill.style.color = '#991B1B';
+        pillLabel.textContent = 'High Risk';
+        bar.style.background = '#EF4444';
+    } else if (score >= 40) {
+        pill.style.background = '#FEF3C7'; pill.style.color = '#92400E';
+        pillLabel.textContent = 'Medium Risk';
+        bar.style.background = '#F59E0B';
+    } else {
+        pill.style.background = '#ECFDF5'; pill.style.color = '#065F46';
+        pillLabel.textContent = 'Low Risk';
+        bar.style.background = '#10B981';
+    }
+    bar.style.width = `${score}%`;
+
+    // --- Risk Factor Breakdown ---
+    const riskContainer = document.getElementById('drawerRiskFactors');
+    if (reasons.length > 0) {
+        riskContainer.innerHTML = reasons.map(r => {
+            const isHigh = /\+\d{2,}/.test(r) || r.toLowerCase().includes('auto-flagged');
+            const icon = isHigh ? 'triangle-alert text-amber-500' : 'info text-blue-500';
+            const bg = isHigh ? 'bg-amber-50/50 dark:bg-amber-900/10' : 'bg-blue-50/50 dark:bg-blue-900/10';
+            return `
+                <div class="risk-factor-item flex items-start gap-2.5 px-3 py-2.5 ${bg}">
+                    <i data-lucide="${icon.split(' ')[0]}" class="text-[11px] mt-0.5 flex-shrink-0"></i>
+                    <span class="text-xs text-gray-700 dark:text-slate-300 leading-relaxed">${escapeHtml(r)}</span>
+                </div>`;
+        }).join('');
+    } else {
+    riskContainer.innerHTML = `
+            <div class="flex items-center gap-2.5 px-3 py-4 bg-emerald-50/50 dark:bg-emerald-900/10">
+                <i data-lucide="circle-check" class="text-emerald-500 text-[11px]"></i>
+                <span class="text-xs text-gray-600 dark:text-slate-400">No risk factors detected. User appears clean.</span>
+            </div>`;
+    lucide.createIcons();
+    }
+
+    // --- Device & Network Intelligence ---
+    const latestLog = logs[0] || {};
+    const ip = latestLog.ip_address || '—';
+    document.getElementById('drawerIP').textContent = ip;
+
+    // Parse user agent from payload
+    let deviceStr = '—';
+    let locationStr = '—';
+    let associatedStr = '1 account';
     try {
-        const response = await fetch(`${BASE_URL}/api/fraud_api.php?action=activity_log&user_id=${userId}`, {
-            credentials: 'same-origin'
-        });
-        const data = await response.json();
-
-        if (data.success && data.logs && data.logs.length > 0) {
-            const rows = data.logs.map(log => {
-                const actionColor = getActionColor(log.action_type);
-                const payload = log.payload ? tryParseJson(log.payload) : null;
-                const detailsHtml = payload
-                    ? `<button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-blue-600 text-xs hover:underline"><i class="fas fa-code"></i> View</button>
-                       <pre class="hidden mt-1 bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs text-gray-600 max-w-xs overflow-auto">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>`
-                    : '<span class="text-gray-400 text-xs">-</span>';
-
-                return `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
-                      <td class="py-3 text-xs text-gray-500 whitespace-nowrap">${formatDate(log.created_at)}</td>
-                      <td class="py-3"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${actionColor}">${escapeHtml(log.action_type)}</span></td>
-                      <td class="py-3 font-mono text-xs text-gray-600">${escapeHtml(log.ip_address)}</td>
-                      <td class="py-3">${detailsHtml}</td>
-                    </tr>`;
-            }).join('');
-
-            content.innerHTML = `
-                <div class="mb-4 flex items-center justify-between">
-                    <h4 class="font-semibold text-gray-900">${escapeHtml(data.logs[0]?.user_name || '')}</h4>
-                    <span class="text-sm text-gray-500">${data.pagination.total_items} entries</span>
-                </div>
-                <div class="overflow-x-auto">
-                  <table class="w-full text-sm">
-                    <thead class="border-b border-gray-200">
-                      <tr class="text-left text-gray-500 text-xs uppercase">
-                        <th class="pb-2 pr-4">Time</th>
-                        <th class="pb-2 pr-4">Action</th>
-                        <th class="pb-2 pr-4">IP</th>
-                        <th class="pb-2">Details</th>
-                      </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                  </table>
-                </div>`;
-        } else {
-            content.innerHTML = `
-                <div class="text-center py-8 text-gray-400">
-                    <i class="fas fa-inbox text-3xl mb-2"></i>
-                    <p class="font-medium">No activity logs found for this user.</p>
-                </div>`;
+        const payload = latestLog.payload ? (typeof latestLog.payload === 'string' ? JSON.parse(latestLog.payload) : latestLog.payload) : {};
+        if (payload.user_agent) {
+            deviceStr = parseUserAgent(payload.user_agent);
         }
-    } catch (err) {
-        console.error('Activity fetch error:', err);
-        content.innerHTML = `
-            <div class="text-center py-8 text-red-400">
-                <i class="fas fa-exclamation-circle text-3xl mb-2"></i>
-                <p class="font-medium">Failed to load activity.</p>
+        if (payload.location) {
+            locationStr = payload.location;
+        } else if (payload.city || payload.country) {
+            locationStr = [payload.city, payload.country].filter(Boolean).join(', ');
+        }
+        if (payload.associated_accounts) {
+            associatedStr = `${payload.associated_accounts} accounts sharing this IP`;
+        }
+    } catch(e) { /* fallback to defaults */ }
+
+    document.getElementById('drawerDevice').textContent = deviceStr;
+    document.getElementById('drawerDevice').title = deviceStr;
+    document.getElementById('drawerLocation').textContent = locationStr;
+    document.getElementById('drawerAssociated').textContent = associatedStr;
+
+    // Count unique IPs for associated accounts hint
+    const uniqueIps = new Set(logs.map(l => l.ip_address).filter(Boolean));
+    if (uniqueIps.size > 1) {
+        document.getElementById('drawerAssociated').textContent = `${uniqueIps.size} unique IPs in recent logs`;
+    }
+
+    // --- Recent Activity Timeline (last 5) ---
+    const timeline = document.getElementById('drawerTimeline');
+    const recentLogs = logs.slice(0, 5);
+    if (recentLogs.length > 0) {
+        timeline.innerHTML = recentLogs.map(log => {
+            const actionBadge = getActionColor(log.action_type);
+            return `
+                <div class="flex items-center gap-3 px-3 py-2.5">
+                    <div class="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-slate-600"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono ${actionBadge}">${escapeHtml(log.action_type)}</span>
+                            <span class="text-[10px] text-gray-400 dark:text-slate-500 font-mono">${escapeHtml(log.ip_address || '—')}</span>
+                        </div>
+                        <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">${formatDate(log.created_at)}</p>
+                    </div>
+                </div>`;
+        }).join('');
+    } else {
+        timeline.innerHTML = `
+            <div class="px-3 py-4 text-center text-xs text-gray-400 dark:text-slate-500">
+                No recent activity logs.
             </div>`;
     }
 }
 
-// ── Close Activity Modal ──────────────────────────────────────────────
-function closeActivityModal() {
-    const modal = document.getElementById('activityModal');
-    if (modal) modal.classList.add('hidden');
+// ── Close Risk Drawer ─────────────────────────────────────────────────
+function closeRiskDrawer() {
+    const backdrop = document.getElementById('riskDrawerBackdrop');
+    const drawer   = document.getElementById('riskDrawer');
+    if (backdrop) backdrop.classList.remove('open');
+    if (drawer) drawer.classList.remove('open');
+    document.body.style.overflow = '';
 }
 
-// Close modal on outside click
-document.addEventListener('click', (e) => {
-    const modal = document.getElementById('activityModal');
-    if (modal && e.target === modal) {
-        closeActivityModal();
-    }
+// Close on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeRiskDrawer();
 });
 
-// Close modal on Escape
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeActivityModal();
-});
+// ── Drawer Security Actions (POST to fraud_action.php) ────────────────
+async function drawerAction(action) {
+    const userId = document.getElementById('drawerUserId').value;
+    const csrf   = document.getElementById('drawerCsrfToken')?.value || '';
+    if (!userId) return;
+
+    const confirmMessages = {
+        suspend_user:        'SUSPEND this user? They will be unable to use the platform.',
+        unflag_user:         'DISMISS this flag and mark the user as safe? Their fraud score will reset to 0.',
+    };
+
+    // Actions not yet supported by backend
+    const comingSoon = ['freeze_wallet', 'require_reverification'];
+    if (comingSoon.includes(action)) {
+        showToast(action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + ' — coming soon!', 'info');
+        return;
+    }
+    if (!confirm(confirmMessages[action] || 'Are you sure?')) return;
+
+    const btn = event.currentTarget;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="animate-spin text-[11px]"></i> Processing...';
+    lucide.createIcons();
+
+    try {
+        const formData = new FormData();
+        formData.append('csrf_token', csrf);
+        formData.append('action', action);
+        formData.append('user_id', userId);
+
+        const response = await fetch(`${BASE_URL}/admin/fraud_action.php`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+        });
+
+        // fraud_action.php redirects, so a 200/302 means success
+        if (response.ok || response.redirected) {
+            showToast(`${action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} completed.`, 'success');
+            closeRiskDrawer();
+            // Refresh scores after action
+            setTimeout(() => refreshScores(), 600);
+        } else {
+            showToast('Action failed. Please try again.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    } catch (err) {
+        console.error('Drawer action error:', err);
+        showToast('Network error. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
+// ── Copy IP to Clipboard from Drawer ──────────────────────────────────
+function copyDrawerIP() {
+    const ip = document.getElementById('drawerIP')?.textContent;
+    if (!ip || ip === '—') return;
+    navigator.clipboard.writeText(ip).then(() => {
+        const btn = document.getElementById('drawerIPCopy');
+        if (!btn) return;
+        btn.innerHTML = '<i data-lucide="check" class="text-[10px] text-emerald-500"></i>';
+        lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = '<i data-lucide="copy" class="text-[10px] text-gray-400 dark:text-slate-500"></i>'; lucide.createIcons(); }, 1200);
+    });
+}
+
+// ── Parse User Agent String to Friendly Format ────────────────────────
+function parseUserAgent(ua) {
+    if (!ua) return '—';
+    // Chrome
+    let m = ua.match(/Chrome\/([\d.]+)/);
+    if (m && !ua.match(/Edg\//)) return `Chrome ${m[1].split('.')[0]}`;
+    // Firefox
+    m = ua.match(/Firefox\/([\d.]+)/);
+    if (m) return `Firefox ${m[1].split('.')[0]}`;
+    // Safari
+    m = ua.match(/Version\/([\d.]+).*Safari/);
+    if (m) return `Safari ${m[1].split('.')[0]}`;
+    // Edge
+    m = ua.match(/Edg\/([\d.]+)/);
+    if (m) return `Edge ${m[1].split('.')[0]}`;
+    // Fallback: first 60 chars
+    return ua.length > 60 ? ua.substring(0, 60) + '...' : ua;
+}
 
 // ── Auto-Refresh Every 30 Seconds ─────────────────────────────────────
 function startAutoRefresh() {
@@ -292,14 +498,15 @@ function showToast(message, type = 'info') {
         info: 'bg-blue-600'
     };
     const icons = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
+        success: 'circle-check',
+        error: 'circle-alert',
+        warning: 'triangle-alert',
+        info: 'info'
     };
     toast.className = `fixed top-4 right-4 z-50 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg flex items-center gap-2 ${colors[type] || colors.info} fade-in`;
-    toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${escapeHtml(message)}`;
+    toast.innerHTML = `<i data-lucide="${icons[type] || icons.info}"></i> ${escapeHtml(message)}`;
     document.body.appendChild(toast);
+    lucide.createIcons();
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.3s';

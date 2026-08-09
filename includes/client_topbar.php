@@ -40,10 +40,10 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
     <title><?= htmlspecialchars($_ctbTitle) ?> – JobHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/upload/logos/logo.png">
-    <link rel="stylesheet" href="/finalproject/shared/dark-mode.css">
+    <link rel="stylesheet" href="/jobhub/shared/dark-mode.css">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -81,8 +81,8 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #F4F7FC;
-            color: #1e293b;
+            /* background: #F4F7FC;
+            color: #1e293b; */
             margin: 0;
         }
 
@@ -533,7 +533,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
 <body class="min-h-screen">
 
     <!-- ═══════════════════════ TOP NAVBAR ═══════════════════════════ -->
-    <nav id="clientNav" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 py-3 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <nav id="clientNav" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 py-2  backdrop-blur-md  border-gray-100">
         <div class="w-full mx-auto px-4 sm:px-6 flex items-center justify-between">
             <!-- Left: Logo + Nav Links -->
             <div class="flex items-center gap-6">
@@ -561,13 +561,13 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                     <!-- My Jobs Dropdown -->
                     <div class="relative" id="myJobsDropdown">
                         <button onmouseover="toggleDropdown('myJobsDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_ctbActive, ['my_jobs', 'post_job', 'proposals', 'job_detail', 'proposal_detail', 'invite_jobs']) ? 'nav-active' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white' ?> transition-all">
-                            My Jobs <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
+                            My Jobs <i data-lucide="chevron-down" class="w-4 h-4 ml-0.5"></i>
                         </button>
                         <div class="dropdown-menu">
-                            <a href="my_jobs.php" class="dropdown-item <?= $_ctbActive === 'my_jobs' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-briefcase"></i> My Jobs</a>
-                            <a href="post_job.php" class="dropdown-item <?= $_ctbActive === 'post_job' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-plus-circle"></i> Post a Job</a>
-                            <a href="proposals.php" class="dropdown-item <?= $_ctbActive === 'proposals' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-file-alt"></i> Proposals</a>
-                            <a href="invite_jobs.php" class="dropdown-item <?= $_ctbActive === 'invite_jobs' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-paper-plane"></i> Invite to Job</a>
+                            <a href="my_jobs.php" class="dropdown-item <?= $_ctbActive === 'my_jobs' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="briefcase" class="w-4 h-4"></i> My Jobs</a>
+                            <a href="post_job.php" class="dropdown-item <?= $_ctbActive === 'post_job' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="plus" class="w-4 h-4"></i> Post a Job</a>
+                            <a href="proposals.php" class="dropdown-item <?= $_ctbActive === 'proposals' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="file-text" class="w-4 h-4"></i> Proposals</a>
+                            <a href="invite_jobs.php" class="dropdown-item <?= $_ctbActive === 'invite_jobs' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="send" class="w-4 h-4"></i> Invite to Job</a>
                         </div>
                     </div>
 
@@ -579,23 +579,23 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                     <!-- Work Management Dropdown -->
                     <div class="relative" id="workDropdown">
                         <button onmouseover="toggleDropdown('workDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_ctbActive, ['contracts', 'contract_detail', 'messages', 'reviews']) ? 'nav-active' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white' ?> transition-all">
-                            Work Management <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
+                            Work Management <i data-lucide="chevron-down" class="w-4 h-4 ml-0.5"></i>
                         </button>
                         <div class="dropdown-menu">
-                            <a href="contracts.php" class="dropdown-item <?= $_ctbActive === 'contracts' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-file-contract"></i> Contracts</a>
-                            <a href="messages.php" class="dropdown-item <?= $_ctbActive === 'messages' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-comment-dots"></i> Messages <?php if ($_ctbUnread > 0): ?><span class="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"><?= $_ctbUnread > 9 ? '9+' : $_ctbUnread ?></span><?php endif; ?></a>
-                            <a href="reviews.php" class="dropdown-item <?= $_ctbActive === 'reviews' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-star"></i> Reviews</a>
+                            <a href="contracts.php" class="dropdown-item <?= $_ctbActive === 'contracts' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="file-text" class="w-4 h-4"></i> Contracts</a>
+                            <a href="messages.php" class="dropdown-item <?= $_ctbActive === 'messages' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="message-circle" class="w-4 h-4"></i> Messages <?php if ($_ctbUnread > 0): ?><span class="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"><?= $_ctbUnread > 9 ? '9+' : $_ctbUnread ?></span><?php endif; ?></a>
+                            <a href="reviews.php" class="dropdown-item <?= $_ctbActive === 'reviews' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="star" class="w-4 h-4"></i> Reviews</a>
                         </div>
                     </div>
 
                     <!-- Finances Dropdown -->
                     <div class="relative" id="financesDropdown">
                         <button onmouseover="toggleDropdown('financesDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_ctbActive, ['payment_history', 'wallet', 'wallet_history']) ? 'nav-active' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white' ?> transition-all">
-                            Finances <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
+                            Finances <i data-lucide="chevron-down" class="w-4 h-4 ml-0.5"></i>
                         </button>
                         <div class="dropdown-menu">
-                            <a href="payment_history.php" class="dropdown-item <?= $_ctbActive === 'payment_history' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-credit-card"></i> Payments</a>
-                            <a href="wallet.php" class="dropdown-item <?= $_ctbActive === 'wallet' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i class="fas fa-wallet"></i> Wallet</a>
+                            <a href="payment_history.php" class="dropdown-item <?= $_ctbActive === 'payment_history' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="credit-card" class="w-4 h-4"></i> Payments</a>
+                            <a href="wallet.php" class="dropdown-item <?= $_ctbActive === 'wallet' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="wallet" class="w-4 h-4"></i> Wallet</a>
                         </div>
                     </div>
                 </div>
@@ -605,7 +605,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
             <div class="flex items-center gap-2">
                 <!-- Search -->
                 <div class="relative hidden md:block">
-                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     <input type="text" id="globalSearch" placeholder="Search jobs, freelancers..." oninput="handleSearch(this.value)"
                         class="w-52 lg:w-64 py-2 pl-9 pr-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-300 transition-all">
                     <div id="searchResults" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg z-50 max-h-64 overflow-y-auto"></div>
@@ -614,14 +614,14 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                 <?php if ($_ctbWalletBalance !== null): ?>
                     <!-- Wallet Balance -->
                     <a href="wallet.php" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-100 hover:from-blue-100 hover:to-teal-100 dark:from-blue-900/20 dark:to-teal-900/20 dark:border-blue-800/30 dark:hover:from-blue-900/30 dark:hover:to-teal-900/30 transition-all no-underline" title="View Wallet">
-                        <i class="fas fa-wallet text-blue-600 dark:text-blue-400 text-sm"></i>
+                        <i data-lucide="wallet" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
                         <span class="text-sm font-bold text-blue-700 dark:text-blue-300" id="navWalletBalance">$<?= number_format($_ctbWalletBalance, 2) ?></span>
                     </a>
                 <?php endif; ?>
 
                 <!-- Notifications -->
                 <a href="../shared/notifications_page.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all">
-                    <i class="fas fa-bell text-[13px] hidden sm:inline"></i>
+                    <i data-lucide="bell" class="w-4 h-4 hidden sm:inline"></i>
                     <?php if ($_ctbUnread > 0): ?>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     <?php endif; ?>
@@ -629,19 +629,23 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
 
                 <!-- Dark Mode Toggle -->
                 <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-all" title="Toggle dark mode">
-                    <i class="fas fa-moon text-sm" id="darkModeIcon"></i>
+                    <i data-lucide="moon" class="w-5 h-5" id="darkModeIcon"></i>
                 </button>
 
                 <!-- Mobile Hamburger -->
                 <button onclick="toggleMobileMenu()" class="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800">
-                    <i class="fas fa-bars text-lg"></i>
+                    <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
 
                 <!-- Profile Avatar -->
                 <div class="relative hidden lg:block" id="profileDropdown">
                     <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-all">
                         <img src="<?= htmlspecialchars($_ctbAvatar) ?>" class="w-9 h-9 rounded-xl object-cover border-2 border-gray-100 dark:border-slate-600" alt="Avatar">
-                        <span class="text-sm font-semibold text-gray-900 dark:text-white hidden sm:block max-w-[100px] truncate"><?= htmlspecialchars($_ctbName) ?></span>
+                        <!-- <span class="text-sm font-semibold text-gray-900 dark:text-white hidden sm:block max-w-[100px] truncate"><?= htmlspecialchars($_ctbName) ?></span> -->
+                         <div>
+                            <p class="text-sm font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($_ctbName) ?></p>
+                            <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Client</p>
+                        </div>
                     </button>
                     <div class="profile-popup">
                         <div class="p-4 border-b border-gray-100 dark:border-slate-700">
@@ -649,11 +653,11 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                             <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Client</p>
                         </div>
                         <div class="py-1">
-                            <a href="profile.php" class="dropdown-item"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="profile.php" class="dropdown-item"><i data-lucide="user" class="w-4 h-4"></i> My Profile</a>
                         </div>
 
                         <div class="border-t border-gray-100 dark:border-slate-700 py-1">
-                            <a href="../auth/logout.php" class="dropdown-item text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                            <a href="../auth/logout.php" class="dropdown-item text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</a>
                         </div>
                     </div>
                 </div>
@@ -670,36 +674,36 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                 <span class="text-lg font-extrabold"><span class="text-gray-900 dark:text-white">Job</span><span class="grad-text">Hub</span></span>
             </a>
             <button onclick="toggleMobileMenu()" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400">
-                <i class="fas fa-times text-sm"></i>
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
         <div class="p-4 space-y-1">
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 px-3 mb-2">Main</p>
-            <a href="dashboard.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'dashboard' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-th-large w-5 text-center text-[13px]"></i> Dashboard</a>
+            <a href="dashboard.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'dashboard' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="layout-grid" class="w-5 h-5"></i> Dashboard</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 px-3 mb-2 mt-4">My Jobs</p>
-            <a href="my_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'my_jobs' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-briefcase w-5 text-center text-[13px]"></i> My Jobs</a>
-            <a href="post_job.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'post_job' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-plus-circle w-5 text-center text-[13px]"></i> Post a Job</a>
-            <a href="proposals.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'proposals' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-file-alt w-5 text-center text-[13px]"></i> Proposals</a>
-            <a href="invite_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'invite_jobs' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-paper-plane w-5 text-center text-[13px]"></i> Invite to Job</a>
+            <a href="my_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'my_jobs' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="briefcase" class="w-5 h-5"></i> My Jobs</a>
+            <a href="post_job.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'post_job' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="plus" class="w-5 h-5"></i> Post a Job</a>
+            <a href="proposals.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'proposals' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="file-text" class="w-5 h-5"></i> Proposals</a>
+            <a href="invite_jobs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'invite_jobs' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="send" class="w-5 h-5"></i> Invite to Job</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 px-3 mb-2 mt-4">Find Talent</p>
-            <a href="recommended_freelancers.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'recommended_freelancers' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-search w-5 text-center text-[13px]"></i> Find Freelancers</a>
+            <a href="recommended_freelancers.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'recommended_freelancers' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="search" class="w-5 h-5"></i> Find Freelancers</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 px-3 mb-2 mt-4">Work</p>
-            <a href="contracts.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'contracts' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-file-contract w-5 text-center text-[13px]"></i> Contracts</a>
-            <a href="messages.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'messages' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-comment-dots w-5 text-center text-[13px]"></i> Messages <?php if ($_ctbUnread > 0): ?><span class="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"><?= $_ctbUnread ?></span><?php endif; ?></a>
-            <a href="reviews.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'reviews' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-star w-5 text-center text-[13px]"></i> Reviews</a>
+            <a href="contracts.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'contracts' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="file-text" class="w-5 h-5"></i> Contracts</a>
+            <a href="messages.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'messages' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="message-circle" class="w-5 h-5"></i> Messages <?php if ($_ctbUnread > 0): ?><span class="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"><?= $_ctbUnread ?></span><?php endif; ?></a>
+            <a href="reviews.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'reviews' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="star" class="w-5 h-5"></i> Reviews</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 px-3 mb-2 mt-4">Finances</p>
-            <a href="payment_history.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'payment_history' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-credit-card w-5 text-center text-[13px]"></i> Payments</a>
-            <a href="wallet.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'wallet' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-wallet w-5 text-center text-[13px]"></i> Wallet</a>
+            <a href="payment_history.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'payment_history' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="credit-card" class="w-5 h-5"></i> Payments</a>
+            <a href="wallet.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'wallet' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="wallet" class="w-5 h-5"></i> Wallet</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 px-3 mb-2 mt-4">Account</p>
-            <a href="profile.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'profile' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i class="fas fa-user w-5 text-center text-[13px]"></i> My Profile</a>
+            <a href="profile.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'profile' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="user" class="w-5 h-5"></i> My Profile</a>
 
             <div class="border-t border-gray-100 dark:border-slate-700 mt-4 pt-4">
-                <a href="../auth/logout.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><i class="fas fa-sign-out-alt w-5 text-center"></i> Logout</a>
+                <a href="../auth/logout.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><i data-lucide="log-out" class="w-5 h-5"></i> Logout</a>
             </div>
         </div>
     </div>
@@ -708,6 +712,16 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
     <div class="h-[72px]"></div>
 
     <script>
+        function fixIcons() {
+            lucide.createIcons();
+            document.querySelectorAll('svg[data-lucide]').forEach(function(svg) {
+                svg.removeAttribute('width');svg.removeAttribute('height');
+                svg.style.removeProperty('width');svg.style.removeProperty('height');
+                var p = svg.parentElement;
+                if (p && p.tagName === 'I') { var fs = window.getComputedStyle(p).fontSize; svg.style.width = fs; svg.style.height = fs; }
+            });
+        }
+
         // ── Dropdown toggles ──
         function toggleDropdown(id) {
             const dd = document.getElementById(id);
@@ -755,7 +769,11 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
             document.documentElement.classList.toggle('dark');
             localStorage.setItem('fh-dark-mode', document.documentElement.classList.contains('dark') ? '1' : '0');
             const icon = document.getElementById('darkModeIcon');
-            if (icon) icon.className = document.documentElement.classList.contains('dark') ? 'fas fa-sun text-sm' : 'fas fa-moon text-sm';
+            if (icon) {
+                const isDark = document.documentElement.classList.contains('dark');
+                icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+                fixIcons();
+            }
         }
 
         // ── Apply saved dark mode ──
@@ -764,7 +782,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
             if (dark === '1' || (!dark && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
                 var icon = document.getElementById('darkModeIcon');
-                if (icon) icon.className = 'fas fa-sun text-sm';
+                if (icon) { icon.setAttribute('data-lucide', 'sun'); fixIcons(); }
             }
         })();
 
@@ -783,8 +801,8 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                 return;
             }
             let html = '<div class="p-3 space-y-1">';
-            html += '<a href="my_jobs.php?search=' + encodeURIComponent(query) + '" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors"><i class="fas fa-briefcase text-gray-400 w-4 text-center"></i> Search jobs for "' + query + '"</a>';
-            html += '<a href="recommended_freelancers.php?search=' + encodeURIComponent(query) + '" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors"><i class="fas fa-user text-gray-400 w-4 text-center"></i> Search freelancers for "' + query + '"</a>';
+            html += '<a href="my_jobs.php?search=' + encodeURIComponent(query) + '" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path><rect width="20" height="14" x="2" y="6" rx="2"></rect></svg> Search jobs for "' + query + '"</a>';
+            html += '<a href="recommended_freelancers.php?search=' + encodeURIComponent(query) + '" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Search freelancers for "' + query + '"</a>';
             html += '</div>';
             resultsDiv.innerHTML = html;
             resultsDiv.classList.remove('hidden');
@@ -800,3 +818,4 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
             });
         });
     </script>
+    <script>fixIcons();</script>

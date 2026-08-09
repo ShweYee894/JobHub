@@ -72,7 +72,7 @@ function require_login(): void
 {
     if (!isset($_SESSION['user_id'])) {
         $_SESSION['errors'] = ['Please log in to access that page.'];
-        header('Location: /finalproject/auth/login.php');
+        header('Location: /jobhub/auth/login.php');
         exit;
     }
 }
@@ -100,10 +100,10 @@ function require_role(string|array $allowed): void
 function get_dashboard_url(string $role): string
 {
     return match ($role) {
-        'admin'      => '/finalproject/admin/dashboard.php',
-        'client'     => '/finalproject/client/dashboard.php',
-        'freelancer' => '/finalproject/freelancer/home.php',
-        default      => '/finalproject/auth/login.php',
+        'admin'      => '/jobhub/admin/dashboard.php',
+        'client'     => '/jobhub/client/dashboard.php',
+        'freelancer' => '/jobhub/freelancer/home.php',
+        default      => '/jobhub/auth/login.php',
     };
 }
 

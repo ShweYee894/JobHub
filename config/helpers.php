@@ -33,6 +33,17 @@ function sanitize_string(string $input): string
     return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
 }
 
+function decode_over_encoded(string $str): string
+{
+    $decoded = html_entity_decode($str, ENT_QUOTES, 'UTF-8');
+    $max = 5;
+    while ($decoded !== $str && $max-- > 0) {
+        $str = $decoded;
+        $decoded = html_entity_decode($str, ENT_QUOTES, 'UTF-8');
+    }
+    return $decoded;
+}
+
 function sanitize_email(string $email): string
 {
     return filter_var(trim($email), FILTER_SANITIZE_EMAIL);
@@ -95,15 +106,15 @@ function display_flash(string $type): void
             'info' => 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800',
         ];
         $icons = [
-            'success' => 'fa-check-circle',
-            'error' => 'fa-exclamation-circle',
-            'warning' => 'fa-exclamation-triangle',
-            'info' => 'fa-info-circle',
+            'success' => 'circle-check',
+            'error' => 'circle-alert',
+            'warning' => 'triangle-alert',
+            'info' => 'info',
         ];
         $color = $colors[$type] ?? $colors['info'];
         $icon = $icons[$type] ?? $icons['info'];
         echo '<div class="flex items-center gap-3 p-4 rounded-xl border ' . $color . ' mb-4">';
-        echo '<i class="fas ' . $icon . '"></i>';
+        echo '<i data-lucide="' . $icon . '"></i>';
         echo '<span class="text-sm font-medium">' . sanitize_string($message) . '</span>';
         echo '</div>';
     }
@@ -144,10 +155,10 @@ function get_profile_image(?string $filename): string
     if ($filename) {
         $basename = basename($filename);
         if (file_exists(__DIR__ . '/../assets/upload/profiles/' . $basename)) {
-            return '/finalproject/assets/upload/profiles/' . $basename;
+            return '/jobhub/assets/upload/profiles/' . $basename;
         }
     }
-    return '/finalproject/assets/upload/profile.png';
+    return '/jobhub/assets/upload/profile.png';
 }
 
 // ── Truncate Text ──────────────────────────────────────────────────────
@@ -207,18 +218,76 @@ function render_pagination(array $pagination, string $base_url): void
 {
     if ($pagination['total_pages'] <= 1)
         return;
-    echo '<nav class="flex items-center justify-center gap-2 mt-8">';
+
+    $current = $pagination['current_page'];
+    $total   = $pagination['total_pages'];
+    $sep     = strpos($base_url, '?') !== false ? '&' : '?';
+
+    echo '<nav class="flex items-center justify-center gap-6 mt-8 mb-4">';
+
+    // ── Page numbers ──────────────────────────────────────────────
+    echo '<div class="flex items-center gap-2">';
+
+    // Prev arrow
     if ($pagination['has_prev']) {
-        echo '<a href="' . $base_url . '&page=' . ($pagination['current_page'] - 1) . '" class="px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Prev</a>';
+        echo '<a href="' . $base_url . $sep . 'page=' . ($current - 1) . '" class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></a>';
+    } else {
+        echo '<span class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 dark:text-slate-600 cursor-not-allowed"><i data-lucide="chevron-left" class="w-4 h-4"></i></span>';
     }
-    for ($i = 1; $i <= $pagination['total_pages']; $i++) {
-        $active = $i === $pagination['current_page'] ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700';
-        echo '<a href="' . $base_url . '&page=' . $i . '" class="px-3 py-2 rounded-lg border text-sm font-medium ' . $active . '">' . $i . '</a>';
+
+    // Page number buttons with ellipsis
+    $pages = [];
+    if ($total <= 7) {
+        for ($i = 1; $i <= $total; $i++) $pages[] = $i;
+    } else {
+        $pages[] = 1;
+        if ($current > 3) $pages[] = '...';
+        $start = max(2, $current - 1);
+        $end   = min($total - 1, $current + 1);
+        for ($i = $start; $i <= $end; $i++) $pages[] = $i;
+        if ($current < $total - 2) $pages[] = '...';
+        $pages[] = $total;
     }
+
+    foreach ($pages as $p) {
+        if ($p === '...') {
+            echo '<span class="w-9 h-9 flex items-center justify-center text-gray-400 dark:text-slate-500 text-sm">...</span>';
+        } else {
+            $active = $p === $current
+                ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white shadow-md'
+                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700';
+            echo '<a href="' . $base_url . $sep . 'page=' . $p . '" class="w-9 h-9 rounded-lg border text-sm font-semibold flex items-center justify-center transition-all ' . $active . '">' . $p . '</a>';
+        }
+    }
+
+    // Next arrow
     if ($pagination['has_next']) {
-        echo '<a href="' . $base_url . '&page=' . ($pagination['current_page'] + 1) . '" class="px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Next</a>';
+        echo '<a href="' . $base_url . $sep . 'page=' . ($current + 1) . '" class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></a>';
+    } else {
+        echo '<span class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 dark:text-slate-600 cursor-not-allowed"><i data-lucide="chevron-right" class="w-4 h-4"></i></span>';
     }
-    echo '</nav>';
+
+    echo '</div>'; // end page numbers
+
+    // ── Go to page input ──────────────────────────────────────────
+    echo '<div class="flex items-center gap-2">';
+    echo '<span class="text-xs text-gray-400 dark:text-slate-500 font-medium whitespace-nowrap">Go to page</span>';
+    echo '<form method="GET" action="" class="flex items-center" onsubmit="return validateGoToPage(this)">';
+    // Preserve all current query params except page
+    foreach ($_GET as $key => $val) {
+        if ($key !== 'page') {
+            echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($val) . '">';
+        }
+    }
+    echo '<input type="number" name="page" min="1" max="' . $total . '" value="' . $current . '" class="w-16 h-9 px-2 rounded-lg border border-gray-200 dark:border-slate-600 text-sm text-center font-semibold text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all">';
+    echo '<button type="submit" class="w-9 h-9 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 flex items-center justify-center hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors shadow-md"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
+    echo '</form>';
+    echo '</div>'; // end go to page
+
+    echo '</nav>'; // end nav
+
+    // ── Inline JS for go-to-page validation ───────────────────────
+    echo '<script>function validateGoToPage(f){var v=parseInt(f.page.value);if(isNaN(v)||v<1){f.page.value=1;}if(v>' . $total . '){f.page.value=' . $total . ';}return true;}</script>';
 }
 
 /**
@@ -239,4 +308,37 @@ function get_unread_message_count(int $userId, string $role): int
     $count = (int) $stmt->get_result()->fetch_assoc()['cnt'];
     $stmt->close();
     return $count;
+}
+
+/**
+ * Auto-close expired jobs based on platform settings.
+ * Closes jobs where deadline has passed AND no activity for configured days.
+ */
+function run_auto_close_jobs(): int
+{
+    global $conn;
+
+    $settingsFile = __DIR__ . '/platform_settings.json';
+    $settings = [];
+    if (file_exists($settingsFile)) {
+        $settings = json_decode(file_get_contents($settingsFile), true) ?? [];
+    }
+    $autoCloseDays = (int) ($settings['auto_close_jobs_days'] ?? 30);
+
+    $cutoffDate = date('Y-m-d', strtotime("-{$autoCloseDays} days"));
+
+    $stmt = $conn->prepare('
+        UPDATE jobs 
+        SET status = "closed", updated_at = NOW() 
+        WHERE status = "open" 
+        AND deadline IS NOT NULL 
+        AND deadline < CURDATE()
+        AND updated_at < ?
+    ');
+    $stmt->bind_param('s', $cutoffDate);
+    $stmt->execute();
+    $closedCount = $stmt->affected_rows;
+    $stmt->close();
+
+    return $closedCount;
 }

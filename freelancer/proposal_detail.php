@@ -8,7 +8,7 @@ $proposalId = sanitize_int($_GET['id'] ?? 0);
 
 if ($proposalId <= 0) {
     set_flash('error', 'Invalid proposal reference.');
-    redirect('/finalproject/freelancer/proposals.php');
+    redirect('/jobhub/freelancer/proposals.php');
 }
 
 $stmt = $conn->prepare('SELECT name, profile_image FROM users WHERE id = ?');
@@ -32,37 +32,38 @@ $stmt->close();
 
 if (!$proposal || $proposal['freelancer_id'] != $userId) {
     set_flash('error', 'Proposal not found or access denied.');
-    redirect('/finalproject/freelancer/proposals.php');
+    redirect('/jobhub/freelancer/proposals.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'withdraw') {
     if (!verify_csrf_token()) {
         set_flash('error', 'Invalid security token.');
-        redirect('/finalproject/freelancer/proposal_detail.php?id=' . $proposalId);
+        redirect('/jobhub/freelancer/proposal_detail.php?id=' . $proposalId);
     }
 
     if ($proposal['status'] === 'pending') {
-        $upd = $conn->prepare("UPDATE proposals SET status = 'rejected' WHERE id = ? AND freelancer_id = ? AND status = 'pending'");
+        $upd = $conn->prepare("UPDATE proposals SET status = 'withdrawn' WHERE id = ? AND freelancer_id = ? AND status = 'pending'");
         $upd->bind_param('ii', $proposalId, $userId);
         $upd->execute();
 
         if ($upd->affected_rows > 0) {
             $upd->close();
             set_flash('success', 'Your proposal has been withdrawn.');
-            redirect('/finalproject/freelancer/proposals.php');
+            redirect('/jobhub/freelancer/proposals.php');
         } else {
             set_flash('error', 'Unable to withdraw proposal.');
         }
     } else {
         set_flash('error', 'Only pending proposals can be withdrawn.');
     }
-    redirect('/finalproject/freelancer/proposal_detail.php?id=' . $proposalId);
+    redirect('/jobhub/freelancer/proposal_detail.php?id=' . $proposalId);
 }
 
 $proposalColors = [
     'pending' => 'bg-amber-50 text-amber-600 border border-amber-200',
     'accepted' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
     'rejected' => 'bg-red-50 text-red-500 border border-red-200',
+    'withdrawn' => 'bg-gray-100 text-gray-500 border border-gray-200',
 ];
 
 $statusColors = [
@@ -90,7 +91,7 @@ display_flash('error'); ?>
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.1s">
                 <div class="flex items-center justify-between mb-5">
                     <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                        <i class="fas fa-paper-plane text-blue-500 text-sm"></i> Your Proposal
+                        <i data-lucide="send" class="text-indigo-500 text-sm"></i> Your Proposal
                     </h3>
                     <span class="inline-block px-3 py-1 rounded-lg text-[11px] font-bold <?= $proposalColors[$proposal['status']] ?? '' ?>">
                         <?= ucfirst(sanitize_string($proposal['status'])) ?>
@@ -116,11 +117,11 @@ display_flash('error'); ?>
 
                     <div class="flex items-center gap-4 text-xs text-gray-400">
                         <span class="flex items-center gap-1.5">
-                            <i class="fas fa-calendar text-blue-400"></i>
+                            <i data-lucide="calendar" class="text-indigo-400"></i>
                             Submitted <?= date('M d, Y \a\t g:i A', strtotime($proposal['created_at'])) ?>
                         </span>
                         <span class="flex items-center gap-1.5">
-                            <i class="fas fa-clock text-gray-400"></i>
+                            <i data-lucide="clock" class="text-gray-400"></i>
                             <?= time_ago($proposal['created_at']) ?>
                         </span>
                     </div>
@@ -128,14 +129,20 @@ display_flash('error'); ?>
 
                 <?php if ($proposal['status'] === 'pending'): ?>
                     <div class="mt-6 pt-5 border-t border-gray-100">
-                        <p class="text-xs text-gray-500 mb-3">Need to change your proposal? You can withdraw it and submit a new one.</p>
-                        <form method="POST" onsubmit="return confirm('Are you sure you want to withdraw this proposal? This action cannot be undone.');">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="action" value="withdraw">
-                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold rounded-xl transition-all border border-red-200">
-                                <i class="fas fa-undo text-[10px]"></i> Withdraw Proposal
-                            </button>
-                        </form>
+                        <p class="text-xs text-gray-500 mb-3">Need to change your proposal? Edit it or withdraw and submit a new one.</p>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <a href="edit_proposal.php?id=<?= (int) $proposal['id'] ?>"
+                               class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-semibold rounded-xl transition-all border border-indigo-200">
+                                <i data-lucide="pencil" class="text-[10px]"></i> Edit Proposal
+                            </a>
+                            <form method="POST" onsubmit="return confirm('Are you sure you want to withdraw this proposal? This action cannot be undone.');">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="withdraw">
+                                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold rounded-xl transition-all border border-red-200">
+                                    <i data-lucide="undo" class="text-[10px]"></i> Withdraw Proposal
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 <?php endif; ?>
             </div>
@@ -156,7 +163,7 @@ display_flash('error'); ?>
             </div>
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.15s">
                 <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="fas fa-receipt text-violet-500 text-xs"></i> Bid Summary
+                    <i data-lucide="receipt" class="text-violet-500 text-xs"></i> Bid Summary
                 </h3>
                 <div class="space-y-3">
                     <div class="flex items-center justify-between py-2 border-b border-gray-50">
@@ -189,7 +196,7 @@ display_flash('error'); ?>
 
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.2s">
                 <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="fas fa-info-circle text-blue-500 text-xs"></i> Status Guide
+                    <i data-lucide="info" class="text-indigo-500 text-xs"></i> Status Guide
                 </h3>
                 <ul class="space-y-3">
                     <li class="flex items-start gap-2.5 text-xs text-gray-600">
@@ -204,11 +211,15 @@ display_flash('error'); ?>
                         <span class="w-2 h-2 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></span>
                         <span><strong>Rejected</strong> – Not selected</span>
                     </li>
+                    <li class="flex items-start gap-2.5 text-xs text-gray-600">
+                        <span class="w-2 h-2 rounded-full bg-gray-400 mt-1.5 flex-shrink-0"></span>
+                        <span><strong>Withdrawn</strong> – You withdrew your proposal</span>
+                    </li>
                 </ul>
             </div>
 
-            <a href="proposals.php" class="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 rounded-xl text-sm font-semibold transition-all">
-                <i class="fas fa-arrow-left text-xs"></i> Back to Proposals
+            <a href="proposals.php" class="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-sm font-semibold transition-all">
+                <i data-lucide="arrow-left" class="text-xs"></i> Back to Proposals
             </a>
         </div>
     </div>

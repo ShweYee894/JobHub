@@ -90,7 +90,6 @@ chat_update_activity($conn, $userId);
 
 // ── State tracking ───────────────────────────────────────────────────────────
 $heartbeatCount   = 0;
-$lastTypingState  = false;
 $startTime        = time();
 $maxLifetime      = 1800; // 30 minutes max connection
 $heartbeatEvery   = 5;    // heartbeat every 5 cycles (10 seconds)
@@ -143,9 +142,7 @@ while (true) {
             'id'           => (int) $row['id'],
             'sender_id'    => (int) $row['sender_id'],
             'sender_name'  => htmlspecialchars($row['sender_name'], ENT_QUOTES, 'UTF-8'),
-            'sender_image' => $row['sender_image']
-                ? htmlspecialchars($row['sender_image'], ENT_QUOTES, 'UTF-8')
-                : null,
+            'sender_image' => chat_resolve_profile_image($row['sender_image']),
             'message_text' => htmlspecialchars($row['message_text'], ENT_QUOTES, 'UTF-8'),
             'is_read'      => (int) $row['is_read'],
             'created_at'   => $row['created_at'],
@@ -165,48 +162,6 @@ while (true) {
             }
         }
         flush();
-    }
-
-    // ── Typing indicator ────────────────────────────────────────────────
-    // Only query every 4 seconds (2 cycles) to reduce DB load
-    $typingQueryCycle = ($heartbeatCount % 2 === 0);
-    if ($typingQueryCycle || $lastTypingState) {
-        $typingStmt = $conn->prepare(
-            'SELECT ti.user_id, u.name AS user_name
-             FROM typing_indicators ti
-             JOIN users u ON ti.user_id = u.id
-             WHERE ti.room_id = ? AND ti.user_id != ? AND ti.is_typing = 1
-               AND TIMESTAMPDIFF(SECOND, ti.updated_at, NOW()) < 10'
-        );
-
-        if ($typingStmt) {
-            $typingStmt->bind_param('ii', $roomId, $userId);
-            $typingStmt->execute();
-            $typingResult = $typingStmt->get_result();
-            $typingRow = $typingResult->fetch_assoc();
-            $typingStmt->close();
-
-            $isTyping = ($typingRow !== null);
-
-            // Only emit typing event when state changes
-            if ($isTyping !== $lastTypingState) {
-                if ($isTyping) {
-                    echo "event: typing\n";
-                    echo "data: " . json_encode([
-                        'user_id'   => (int) $typingRow['user_id'],
-                        'user_name' => htmlspecialchars($typingRow['user_name'], ENT_QUOTES, 'UTF-8'),
-                        'is_typing' => true,
-                    ]) . "\n\n";
-                } else {
-                    echo "event: typing\n";
-                    echo "data: " . json_encode([
-                        'is_typing' => false,
-                    ]) . "\n\n";
-                }
-                flush();
-                $lastTypingState = $isTyping;
-            }
-        }
     }
 
     // ── Heartbeat ───────────────────────────────────────────────────────

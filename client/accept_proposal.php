@@ -27,13 +27,13 @@ require_once __DIR__ . '/../config/db.php';
 
 // ── Only accept POST requests ──────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect('/finalproject/client/proposals.php');
+    redirect('/jobhub/client/proposals.php');
 }
 
 // ── CSRF verification ──────────────────────────────────────────────────
 if (!verify_csrf_token()) {
     set_flash('error', 'Invalid security token. Please try again.');
-    redirect('/finalproject/client/proposals.php');
+    redirect('/jobhub/client/proposals.php');
 }
 
 // ── Validate proposal_id ──────────────────────────────────────────────
@@ -42,7 +42,7 @@ $userId = $_SESSION['user_id'];
 
 if ($proposalId <= 0) {
     set_flash('error', 'Invalid proposal reference.');
-    redirect('/finalproject/client/proposals.php');
+    redirect('/jobhub/client/proposals.php');
 }
 
 // ── Fetch proposal + verify it belongs to client's job ─────────────────
@@ -59,12 +59,12 @@ $stmt->close();
 
 if (!$proposal) {
     set_flash('error', 'Proposal not found or access denied.');
-    redirect('/finalproject/client/proposals.php');
+    redirect('/jobhub/client/proposals.php');
 }
 
 if ($proposal['status'] !== 'pending') {
     set_flash('error', 'Only pending proposals can be accepted.');
-    redirect('/finalproject/client/proposal_detail.php?id=' . $proposalId);
+    redirect('/jobhub/client/proposal_detail.php?id=' . $proposalId);
 }
 
 $jobId = $proposal['job_id'];
@@ -151,10 +151,18 @@ try {
     $chatRoomService = new ChatRoomService($conn);
     $chatRoomService->createRoomForContract($contractId);
 
-    // 7. Notify the freelancer
+    // 7. Notify the freelancer and client
     require_once __DIR__ . '/../shared/notification_helper.php';
     $clientName = $_SESSION['user_name'] ?? 'A client';
     notifyProposalAccepted($freelancerId, $clientName, $contractId);
+
+    // Notify the client about the contract creation
+    $stmtFreelancer = $conn->prepare('SELECT name FROM users WHERE id = ?');
+    $stmtFreelancer->bind_param('i', $freelancerId);
+    $stmtFreelancer->execute();
+    $freelancerName = $stmtFreelancer->get_result()->fetch_assoc()['name'] ?? 'Freelancer';
+    $stmtFreelancer->close();
+    notifyClientContractCreated($userId, $freelancerName, $contractId);
 
     // 8. Commit the transaction
     $conn->commit();
@@ -162,11 +170,11 @@ try {
     error_log('[ACCEPT_PROPOSAL] Transaction committed successfully. contract_id=' . $contractId);
 
     set_flash('success', 'Proposal accepted! A contract has been created and the freelancer has been notified.');
-    redirect('/finalproject/client/contracts.php');
+    redirect('/jobhub/client/contracts.php');
 
 } catch (Exception $e) {
     $conn->rollback();
     error_log('[ACCEPT_PROPOSAL] Transaction failed: ' . $e->getMessage());
     set_flash('error', 'An error occurred while accepting the proposal. Please try again.');
-    redirect('/finalproject/client/proposal_detail.php?id=' . $proposalId);
+    redirect('/jobhub/client/proposal_detail.php?id=' . $proposalId);
 }

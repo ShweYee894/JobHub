@@ -11,12 +11,12 @@ $viewUserId = sanitize_int($_GET['id'] ?? 0);
 if ($viewUserId <= 0 && $viewerId) {
     $viewUserId = $viewerId;
 } elseif ($viewUserId <= 0) {
-    redirect('/finalproject/auth/login.php');
+    redirect('/jobhub/auth/login.php');
 }
 
 $stmt = $conn->prepare('
     SELECT u.id AS user_id, u.name, u.email, u.profile_image, u.phone, u.created_at AS member_since,
-           f.id AS freelancer_id, f.title, f.bio, f.hourly_rate, f.portfolio_url,
+           f.id AS freelancer_id, f.title, f.bio, f.hourly_rate, f.portfolio_url, f.social_links,
            f.resume_file, f.years_of_experience, f.availability, f.skills_vector, f.updated_at
     FROM users u
     JOIN freelancers f ON u.id = f.user_id
@@ -28,11 +28,24 @@ $profile = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if (!$profile) {
-    redirect('/finalproject/');
+    redirect('/jobhub/');
 }
 
 $freelancerId = $profile['freelancer_id'];
 $isOwner = ($viewerId == $viewUserId);
+
+// Parse social_links JSON (fallback to legacy portfolio_url)
+$socialLinks = ['website' => '', 'github' => '', 'linkedin' => ''];
+if (!empty($profile['social_links'])) {
+    $decoded = json_decode($profile['social_links'], true);
+    if (is_array($decoded)) {
+        $socialLinks['website'] = $decoded['website'] ?? '';
+        $socialLinks['github'] = $decoded['github'] ?? '';
+        $socialLinks['linkedin'] = $decoded['linkedin'] ?? '';
+    }
+} elseif (!empty($profile['portfolio_url'])) {
+    $socialLinks['website'] = $profile['portfolio_url'];
+}
 
 $stmtSkills = $conn->prepare('
     SELECT s.id, s.skill_name, s.category
@@ -73,7 +86,7 @@ $stmtEarnings->close();
 $stmtRating = $conn->prepare('
     SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS review_count
     FROM reviews
-    WHERE reviewee_id = ?
+    WHERE reviewee_id = ? AND COALESCE(is_hidden, 0) = 0
 ');
 $stmtRating->bind_param('i', $viewUserId);
 $stmtRating->execute();
@@ -87,7 +100,7 @@ $stmtReviews = $conn->prepare('
            u.name AS reviewer_name, u.profile_image AS reviewer_image
     FROM reviews r
     JOIN users u ON r.reviewer_id = u.id
-    WHERE r.reviewee_id = ?
+    WHERE r.reviewee_id = ? AND COALESCE(r.is_hidden, 0) = 0
     ORDER BY r.created_at DESC
     LIMIT 5
 ');
@@ -110,7 +123,7 @@ if (!empty($skills)) {
                COALESCE(AVG(r.rating), 0) AS avg_rating
         FROM users u
         JOIN freelancers f ON u.id = f.user_id
-        LEFT JOIN reviews r ON r.reviewee_id = u.id
+        LEFT JOIN reviews r ON r.reviewee_id = u.id AND COALESCE(r.is_hidden, 0) = 0
         WHERE u.id != ? AND u.role = 'freelancer'
         AND f.id IN (SELECT fs.freelancer_id FROM freelancer_skills fs WHERE fs.skill_id IN ($placeholders))
         GROUP BY u.id
@@ -133,7 +146,7 @@ $profileFields = [
     !empty($profile['bio']),
     !empty($profile['hourly_rate']),
     !empty($profile['years_of_experience']),
-    !empty($profile['portfolio_url']),
+    !empty($socialLinks['website']) || !empty($socialLinks['github']) || !empty($socialLinks['linkedin']),
     count($skills) > 0,
 ];
 $completedFields = count(array_filter($profileFields));
@@ -143,88 +156,25 @@ $completionPct = $totalFields > 0 ? round(($completedFields / $totalFields) * 10
 $pageTitle = 'Freelancer Profile';
 $pageSubtitle = 'Public professional profile';
 $activePage = 'profile';
-$unreadCount = get_unread_message_count($viewerId, $viewerRole ?? 'freelancer');
+$unreadCount = $viewerId ? get_unread_message_count($viewerId, $viewerRole ?? 'freelancer') : 0;
 
 // Set $user for header: use logged-in user's own data, not the profile being viewed
-if ($viewerRole === 'client' && $viewerId) {
+if ($viewerId) {
     $_viewerStmt = $conn->prepare('SELECT name, profile_image FROM users WHERE id = ?');
     $_viewerStmt->bind_param('i', $viewerId);
     $_viewerStmt->execute();
     $_viewerRow = $_viewerStmt->get_result()->fetch_assoc();
     $_viewerStmt->close();
-    $user = ['name' => $_viewerRow['name'] ?? 'Client', 'profile_image' => $_viewerRow['profile_image'] ?? null];
-} elseif ($viewerRole === 'freelancer' && $viewerId) {
-    $_viewerStmt = $conn->prepare('SELECT name, profile_image FROM users WHERE id = ?');
-    $_viewerStmt->bind_param('i', $viewerId);
-    $_viewerStmt->execute();
-    $_viewerRow = $_viewerStmt->get_result()->fetch_assoc();
-    $_viewerStmt->close();
-    $user = ['name' => $_viewerRow['name'] ?? 'Freelancer', 'profile_image' => $_viewerRow['profile_image'] ?? null];
+    $user = ['name' => $_viewerRow['name'] ?? 'User', 'profile_image' => $_viewerRow['profile_image'] ?? null];
 } else {
     $user = ['name' => 'Guest', 'profile_image' => null];
 }
 
-// Show appropriate header based on viewer's role
-if ($viewerRole === 'freelancer') {
-    require_once __DIR__ . '/../components/freelancer_header.php';
-} elseif ($viewerRole === 'client') {
+// Use client topbar for client viewers, freelancer header for guests/freelancers
+if ($viewerRole === 'client') {
     require_once __DIR__ . '/../includes/client_topbar.php';
 } else {
-    // Simple public header for clients and guests
-    $_base = '/finalproject';
-?>
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title><?= sanitize_string($pageTitle) ?> – JobHub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="icon" type="image/png" sizes="32x32" href="/finalproject/assets/upload/logos/logo.png">
-    <link rel="stylesheet" href="/finalproject/shared/dark-mode.css">
-    <script src="/finalproject/shared/dark-toggle.js"></script>
-    <script>
-    tailwind.config={theme:{extend:{fontFamily:{inter:['Inter','sans-serif']},colors:{primary:{DEFAULT:'#2563eb',dark:'#1d4ed8',light:'#3b82f6'},accent:{DEFAULT:'#0ea5e9',dark:'#0284c7'},surface:{DEFAULT:'#f8fafc',card:'#ffffff',border:'#e2e8f0'}}}}}
-    </script>
-    <style>
-    *{font-family:'Inter',sans-serif}
-    body{background:#f8fafc;color:#1e293b}
-    .grad-text{background:linear-gradient(135deg,#2563eb 0%,#0ea5e9 60%,#6366f1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .btn-grad{background:linear-gradient(135deg,#2563eb,#0ea5e9);transition:opacity .25s,transform .2s}
-    .btn-grad:hover{opacity:.88;transform:translateY(-2px)}
-    </style>
-</head>
-<body>
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-xl border-b border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <a href="/finalproject/index.php" class="flex items-center gap-2">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                        <i class="fas fa-bolt text-white text-sm"></i>
-                    </div>
-                    <span class="text-xl font-extrabold text-gray-900">Job<span class="grad-text">Hub</span></span>
-                </a>
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                        <i class="fas fa-moon text-sm dark:hidden"></i>
-                        <i class="fas fa-sun text-sm hidden dark:inline"></i>
-                    </button>
-                    <?php if (is_logged_in()): ?>
-                        <a href="<?= get_dashboard_url(current_role()) ?>" class="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors">
-                            <i class="fas fa-th-large mr-1"></i> Dashboard
-                        </a>
-                    <?php else: ?>
-                        <a href="/finalproject/auth/login.php" class="text-sm font-semibold text-gray-700 hover:text-gray-900">Log In</a>
-                        <a href="/finalproject/auth/register.php" class="btn-grad text-white text-sm font-semibold px-5 py-2 rounded-xl shadow-lg shadow-blue-500/20">Sign Up</a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </nav>
-    <div class="h-16"></div>
-<?php
+    require_once __DIR__ . '/../components/freelancer_header.php';
 }
 ?>
 
@@ -420,11 +370,11 @@ if ($viewerRole === 'freelancer') {
     <?php if ($viewerRole === 'freelancer'): ?>
         <a href="home.php" class="back-link">
     <?php elseif ($viewerRole === 'client'): ?>
-        <a href="/finalproject/client/dashboard.php" class="back-link">
+        <a href="/jobhub/client/dashboard.php" class="back-link">
     <?php else: ?>
-        <a href="/finalproject/index.php" class="back-link">
+        <a href="/jobhub/index.php" class="back-link">
     <?php endif; ?>
-        <i class="fas fa-chevron-left text-xs"></i> Back to Home
+        <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Home
     </a>
 
     <?php display_flash('success'); ?>
@@ -450,28 +400,28 @@ if ($viewerRole === 'freelancer') {
                     <p class="text-sm text-gray-500 mb-1"><?= sanitize_string($profile['title']) ?></p>
                 <?php endif; ?>
                 <div class="flex items-center gap-2 justify-center lg:justify-start mb-5">
-                    <div class="w-5 h-5 rounded bg-blue-500 flex items-center justify-center">
-                        <i class="fas fa-briefcase text-white text-[9px]"></i>
+                    <div class="w-5 h-5 rounded bg-indigo-500 flex items-center justify-center">
+                        <i data-lucide="briefcase" class="w-3 h-3 text-white"></i>
                     </div>
-                    <span class="text-sm font-medium text-blue-600">JobHub Freelancer</span>
+                    <span class="text-sm font-medium text-indigo-600">JobHub Freelancer</span>
                 </div>
                 <div class="flex items-center gap-3 justify-center lg:justify-start">
                     <?php if ($isOwner): ?>
                         <a href="profile_edit.php" class="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm">
-                            <i class="fas fa-edit text-xs"></i> Edit Profile
+                            <i data-lucide="pencil" class="w-3 h-3"></i> Edit Profile
                         </a>
                         <?php if (!empty($profile['resume_file'])): ?>
-                            <a href="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>" target="_blank" class="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-gray-200 hover:border-blue-300 text-gray-600 hover:text-blue-600 text-sm font-semibold rounded-lg transition-all">
-                                <i class="fas fa-file-pdf text-xs"></i> Resume
+                            <a href="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>" target="_blank" class="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-gray-200 hover:border-indigo-300 text-gray-600 hover:text-indigo-600 text-sm font-semibold rounded-lg transition-all">
+                                <i data-lucide="file-text" class="w-3 h-3"></i> Resume
                             </a>
                         <?php endif; ?>
                     <?php elseif (is_logged_in() && $viewerRole === 'client'): ?>
                         <a href="../client/messages.php?freelancer=<?= $viewUserId ?>" class="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm">
-                            <i class="fas fa-paper-plane text-xs"></i> Contact
+                            <i data-lucide="send" class="w-3 h-3"></i> Contact
                         </a>
                         <?php if (!empty($profile['resume_file'])): ?>
-                            <a href="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>" target="_blank" class="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-gray-200 hover:border-blue-300 text-gray-600 hover:text-blue-600 text-sm font-semibold rounded-lg transition-all">
-                                <i class="fas fa-file-pdf text-xs"></i> Resume
+                            <a href="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>" target="_blank" class="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-gray-200 hover:border-indigo-300 text-gray-600 hover:text-indigo-600 text-sm font-semibold rounded-lg transition-all">
+                                <i data-lucide="file-text" class="w-3 h-3"></i> Resume
                             </a>
                         <?php endif; ?>
                     <?php endif; ?>
@@ -501,7 +451,7 @@ if ($viewerRole === 'freelancer') {
                     <div class="flex items-center gap-3">
                         <span class="text-gray-400 w-28">Rating:</span>
                         <span class="font-semibold text-gray-700">
-                            <i class="fas fa-star text-amber-400 text-xs"></i>
+                            <i data-lucide="star" class="w-3 h-3 text-amber-400"></i>
                             <?= $avgRating > 0 ? number_format($avgRating, 1) : '—' ?>
                             <span class="text-gray-400 font-normal">(<?= $reviewCount ?>)</span>
                         </span>
@@ -510,13 +460,13 @@ if ($viewerRole === 'freelancer') {
                 <!-- Social Icons -->
                 <!-- <div class="flex items-center gap-2 mt-5 justify-center lg:justify-start">
                     <?php if (!empty($profile['portfolio_url'])): ?>
-                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="social-icon" title="Portfolio"><i class="fas fa-globe"></i></a>
+                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="social-icon" title="Portfolio"><i data-lucide="globe" class="w-4 h-4"></i></a>
                     <?php endif; ?>
-                    <a href="#" class="social-icon github" title="GitHub"><i class="fab fa-github"></i></a>
-                    <a href="#" class="social-icon facebook" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-icon linkedin" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="social-icon github" title="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a>
+                    <a href="#" class="social-icon facebook" title="Facebook"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+                    <a href="#" class="social-icon linkedin" title="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg></a>
                     <?php if (!empty($profile['portfolio_url'])): ?>
-                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="social-icon" title="Website"><i class="fas fa-link"></i></a>
+                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="social-icon" title="Website"><i data-lucide="link" class="w-4 h-4"></i></a>
                     <?php endif; ?>
                 </div> -->
             </div>
@@ -535,30 +485,7 @@ if ($viewerRole === 'freelancer') {
     <div id="ptab-panel-profile" class="profile-panel">
         <div class="flex flex-col lg:flex-row gap-8">
 
-            <!-- Left Sidebar -->
-            <div class="w-full lg:w-64 flex-shrink-0 space-y-6">
-                <!-- Websites -->
-                <div class="profile-sidebar-card">
-                    <h3 class="profile-section-title">Websites</h3>
-                    <?php if (!empty($profile['portfolio_url'])): ?>
-                        <a href="<?= sanitize_string($profile['portfolio_url']) ?>" target="_blank" rel="noopener" class="website-link">
-                            <i class="fas fa-globe"></i> Portfolio
-                        </a>
-                    <?php endif; ?>
-                    <a href="#" class="website-link">
-                        <i class="fab fa-github"></i> Github
-                    </a>
-                    <a href="#" class="website-link">
-                        <i class="fab fa-facebook-f"></i> Facebook
-                    </a>
-                    <a href="#" class="website-link">
-                        <i class="fab fa-linkedin-in"></i> LinkedIn
-                    </a>
-                    <a href="#" class="website-link">
-                        <i class="fas fa-link"></i> Website
-                    </a>
-                </div>
-            </div>
+           
 
             <!-- Main Content -->
             <div class="flex-1 min-w-0 space-y-8">
@@ -593,8 +520,8 @@ if ($viewerRole === 'freelancer') {
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="profile-section-title mb-0">Reviews</h3>
                             <?php if ($reviewCount > 5): ?>
-                                <a href="reviews.php" class="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
-                                    View All +<?= $reviewCount - 5 ?> more <i class="fas fa-arrow-right ml-1"></i>
+                                <a href="reviews.php" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
+                                    View All +<?= $reviewCount - 5 ?> more <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
                                 </a>
                             <?php endif; ?>
                         </div>
@@ -613,7 +540,7 @@ if ($viewerRole === 'freelancer') {
                                                 </div>
                                                 <div class="flex items-center gap-0.5 mb-2">
                                                     <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                        <i class="fas fa-star text-xs <?= $i <= $review['rating'] ? 'text-amber-400' : 'text-gray-200' ?>"></i>
+                                                        <i data-lucide="star" class="w-3 h-3 <?= $i <= $review['rating'] ? 'text-amber-400' : 'text-gray-200' ?>"></i>
                                                     <?php endfor; ?>
                                                     <span class="text-xs font-semibold text-gray-600 ml-1"><?= $review['rating'] ?>/5</span>
                                                 </div>
@@ -635,19 +562,41 @@ if ($viewerRole === 'freelancer') {
             </div>
 
             <!-- Right Sidebar -->
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-6 w-60 fade-in">
-                <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 mb-3">
-                    <i class="fas fa-envelope-open-text text-base"></i>
+            <div class="w-60 space-y-5 flex-shrink-0 fade-in">
+                <!-- Websites Card -->
+                <div class="profile-sidebar-card">
+                    <h4 class="profile-section-title">Websites</h4>
+                    <?php if (!empty($socialLinks['website'])): ?>
+                        <a href="<?= sanitize_string($socialLinks['website']) ?>" target="_blank" rel="noopener" class="website-link">
+                            <i data-lucide="globe" class="w-5 h-5"></i> Website
+                        </a>
+                    <?php endif; ?>
+                    <?php if (!empty($socialLinks['github'])): ?>
+                        <a href="<?= sanitize_string($socialLinks['github']) ?>" target="_blank" rel="noopener" class="website-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg> GitHub
+                        </a>
+                    <?php endif; ?>
+                    <?php if (!empty($socialLinks['linkedin'])): ?>
+                        <a href="<?= sanitize_string($socialLinks['linkedin']) ?>" target="_blank" rel="noopener" class="website-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg> LinkedIn
+                        </a>
+                    <?php endif; ?>
                 </div>
-                <h3 class="text-sm font-bold text-gray-900 mb-1">Direct Recruitment</h3>
+
+                <!-- Direct Recruitment Card -->
+                <div class="profile-sidebar-card">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 mb-3">
+                        <i data-lucide="mail-open" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-gray-900 mb-1">Direct Recruitment</h3>
                 <p class="text-xs text-gray-500 mb-4 leading-relaxed">
                     Have an active job opening that matches this freelancer's skillset? Submit a proposal directly to their dashboard.
                 </p>
 
                 <?php if (!($isOwner ?? false)): ?>
-                    <a href="/finalproject/client/invite_jobs.php?freelancer_id=<?= $profile['freelancer_id'] ?? 0 ?>"
+                    <a href="/jobhub/client/invite_jobs.php?freelancer_id=<?= $profile['freelancer_id'] ?? 0 ?>"
                         class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all shadow-sm">
-                        <i class="fas fa-paper-plane text-[10px]"></i> Send Job Offer
+                        <i data-lucide="send" class="w-3 h-3"></i> Send Job Offer
                     </a>
                 <?php else: ?>
                     <div class="w-full text-center py-2 bg-gray-50 text-gray-400 text-[11px] font-medium rounded-xl border border-dashed border-gray-200">
@@ -657,6 +606,7 @@ if ($viewerRole === 'freelancer') {
             </div>
         </div>
     </div>
+    </div>
 
     <!-- ═══════════════ RESUME TAB CONTENT ═══════════════ -->
     <div id="ptab-panel-resume" class="profile-panel hidden">
@@ -664,15 +614,15 @@ if ($viewerRole === 'freelancer') {
             <?php if (!empty($profile['resume_file'])): ?>
                 <div class="flex items-center gap-4 p-5 bg-gray-50 rounded-xl border border-gray-200">
                     <div class="w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-file-pdf text-red-500 text-xl"></i>
+                        <i data-lucide="file-text" class="w-8 h-8 text-red-500"></i>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-gray-900 truncate"><?= sanitize_string(basename($profile['resume_file'])) ?></p>
                         <p class="text-xs text-gray-400 mt-0.5">PDF Resume</p>
                     </div>
                     <a href="../assets/upload/resumes/<?= sanitize_string(basename($profile['resume_file'])) ?>"
-                        target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all flex-shrink-0">
-                        <i class="fas fa-download text-xs"></i> Download
+                        target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-all flex-shrink-0">
+                        <i data-lucide="download" class="w-4 h-4"></i> Download
                     </a>
                 </div>
                 <!-- PDF Preview -->
@@ -683,13 +633,13 @@ if ($viewerRole === 'freelancer') {
             <?php else: ?>
                 <div class="text-center py-16">
                     <div class="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-file-pdf text-3xl text-gray-300"></i>
+                        <i data-lucide="file-text" class="w-12 h-12 text-gray-300"></i>
                     </div>
                     <h4 class="text-lg font-bold text-gray-900 mb-2">No Resume Uploaded</h4>
                     <p class="text-sm text-gray-400 mb-5">Upload your resume to showcase your qualifications to clients.</p>
                     <?php if ($isOwner): ?>
                         <a href="profile_edit.php" class="inline-flex items-center gap-2 px-6 py-2.5 btn-grad text-white font-semibold rounded-lg text-sm">
-                            <i class="fas fa-upload text-xs"></i> Upload Resume
+                            <i data-lucide="upload" class="w-4 h-4"></i> Upload Resume
                         </a>
                     <?php endif; ?>
                 </div>
@@ -699,17 +649,17 @@ if ($viewerRole === 'freelancer') {
 
     <!-- ═══════════════ PROFILE COMPLETION BANNER ═══════════════ -->
     <?php if ($isOwner && $completionPct < 100): ?>
-        <div class="mt-8 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100 fade-in">
+        <div class="mt-8 bg-gradient-to-r from-indigo-50 to-indigo-50 rounded-2xl p-6 border border-indigo-100 fade-in">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-magic text-blue-500 text-lg"></i>
+                <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="sparkles" class="w-6 h-6 text-indigo-500"></i>
                 </div>
                 <div class="flex-1">
                     <h4 class="text-sm font-bold text-gray-900 mb-1">Complete Your Profile (<?= $completionPct ?>%)</h4>
                     <p class="text-xs text-gray-500">A complete profile gets 3x more job invitations from clients.</p>
                 </div>
-                <a href="profile_edit.php" class="inline-flex items-center gap-2 px-5 py-2.5 btn-grad text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/25 flex-shrink-0">
-                    <i class="fas fa-arrow-right text-xs"></i> Complete
+                <a href="profile_edit.php" class="inline-flex items-center gap-2 px-5 py-2.5 btn-grad text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/25 flex-shrink-0">
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i> Complete
                 </a>
             </div>
         </div>
@@ -724,6 +674,7 @@ if ($viewerRole === 'freelancer') {
         document.getElementById('ptab-' + tab).classList.add('active');
     }
 </script>
+<script>lucide.createIcons();</script>
 
 <?php $conn->close(); ?>
 <?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

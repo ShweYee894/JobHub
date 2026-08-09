@@ -72,44 +72,44 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <?php display_flash('success') ?>
     <?php display_flash('error') ?>
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">  
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center"><i class="fas fa-arrow-up text-red-500"></i></div>
-                <span class="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Spent</span>
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 border-b border-gray-200 dark:border-white/5">
+        <div class=" p-4 fade-in">
+            <div class="flex gap-2 items-center justify-start mb-3 border-r border-gray-200 dark:border-white/5">
+                <div class="w-8 h-8 rounded-md bg-red-50 flex items-center justify-center"><i data-lucide="arrow-up" class="w-4 h-4 text-red-500"></i></div>
+                <span class="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Total Spent</span>
             </div>
-            <p class="text-2xl font-black text-gray-900"><?= format_currency($totalSpent) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Total Spent</p>
+            <p class="text-xl font-black text-gray-900 border-r border-gray-200 dark:border-white/5"><?= format_currency($totalSpent) ?></p>
+            <!-- <p class="text-xs text-gray-400 mt-1">Total Spent</p> -->
         </div>
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.05s">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center"><i class="fas fa-calendar-check text-blue-500"></i></div>
+        <div class=" p-4 fade-in" style="animation-delay:.05s">
+            <div class="flex items-center justify-start gap-2 mb-3 border-r border-gray-200 dark:border-white/5">
+                <div class="w-8 h-8 rounded-md bg-blue-50 flex items-center justify-center"><i data-lucide="calendar-check" class="w-4 h-4 text-blue-500"></i></div>
                 <span class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider">This Month</span>
             </div>
-            <p class="text-2xl font-black text-gray-900"><?= format_currency($monthSpent) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Monthly Spending</p>
+            <p class="text-xl font-black text-gray-900 border-r border-gray-200 dark:border-white/5"><?= format_currency($monthSpent) ?></p>
+            <!-- <p class="text-xs text-gray-400 mt-1">Monthly Spending</p> -->
         </div>
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.1s">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center"><i class="fas fa-wallet text-violet-500"></i></div>
-                <span class="text-[10px] font-semibold text-violet-500 uppercase tracking-wider">Balance</span>
+        <div class="  p-4 fade-in" style="animation-delay:.1s">
+            <div class="flex gap-2 items-center justify-start mb-3 border-r border-gray-200 dark:border-white/5">
+                <div class="w-8 h-8 rounded-md bg-violet-50 flex items-center justify-center"><i data-lucide="wallet" class="w-4 h-4 text-violet-500"></i></div>
+                <span class="text-[10px] font-semibold text-violet-500 uppercase tracking-wider">Wallet Balance</span>
             </div>
-            <p class="text-2xl font-black text-gray-900"><?= format_currency($walletBalance) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Wallet Balance</p>
+            <p class="text-2xl font-black text-gray-900 border-r border-gray-200 dark:border-white/5"><?= format_currency($walletBalance) ?></p>
+            <!-- <p class="text-xs text-gray-400 mt-1">Wallet Balance</p> -->
         </div>
-        <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.15s">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center"><i class="fas fa-receipt text-gray-400"></i></div>
-                <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Fees</span>
+        <div class="  p-4 fade-in" style="animation-delay:.15s">
+            <div class="flex gap-2 items-center justify-start mb-3 ">
+                <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center"><i data-lucide="receipt" class="w-4 h-4 text-gray-400"></i></div>
+                <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Platform Fees Paid</span>
             </div>
             <p class="text-2xl font-black text-gray-900"><?= format_currency($totalFees) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Platform Fees Paid</p>
+            <!-- <p class="text-xs text-gray-400 mt-1">Platform Fees Paid</p> -->
         </div>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in" style="animation-delay:.2s">
-        <div class="p-6">
+    <div class=" fade-in" style="animation-delay:.2s">
+        <div class="p-2">
             <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><i class="fas fa-receipt text-blue-500"></i></div>
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><i data-lucide="receipt" class="w-4 h-4 text-blue-500"></i></div>
                 <div>
                     <h2 class="text-base font-bold text-gray-900">Transactions</h2>
                     <p class="text-xs text-gray-400"><?= $totalPayments ?> transaction<?= $totalPayments !== 1 ? 's' : '' ?></p>
@@ -130,7 +130,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         </thead>
                         <tbody>
                             <?php while ($pay = $paymentsResult->fetch_assoc()): ?>
-                                <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                <tr class="border-b border-gray-50 even:bg-purple-50 odd:bg-indigo-50 hover:bg-gray-100 transition-colors">
                                     <td class="py-3 px-3"><span class="font-medium text-gray-900"><?= sanitize_string($pay['milestone_title']) ?></span></td>
                                     <td class="py-3 px-3 text-gray-500"><?= sanitize_string($pay['payee_name']) ?></td>
                                     <td class="py-3 px-3 font-bold text-gray-700"><?= format_currency((float) $pay['total_amount']) ?></td>
@@ -147,20 +147,20 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         <p class="text-xs text-gray-400">Page <span class="font-semibold text-gray-600"><?= $pagination['current_page'] ?></span> of <span class="font-semibold text-gray-600"><?= $pagination['total_pages'] ?></span></p>
                         <div class="flex items-center gap-1">
                             <?php if ($pagination['has_prev']): ?>
-                                <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i class="fas fa-chevron-left text-xs"></i></a>
+                                <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i data-lucide="chevron-left" class="w-4 h-4"></i></a>
                             <?php endif; ?>
                             <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
                                 <a href="?page=<?= $i ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' ?>"><?= $i ?></a>
                             <?php endfor; ?>
                             <?php if ($pagination['has_next']): ?>
-                                <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i class="fas fa-chevron-right text-xs"></i></a>
+                                <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i data-lucide="chevron-right" class="w-4 h-4"></i></a>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php endif; ?>
             <?php else: ?>
                 <div class="text-center py-12">
-                    <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><i class="fas fa-receipt text-2xl text-gray-300"></i></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><i data-lucide="receipt" class="w-8 h-8 text-gray-300"></i></div>
                     <p class="text-gray-500 text-sm font-medium">No transactions yet</p>
                     <p class="text-gray-400 text-xs mt-1">Fund milestones to see your payment history here</p>
                 </div>

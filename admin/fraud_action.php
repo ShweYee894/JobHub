@@ -12,12 +12,12 @@ require_role('admin');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     set_flash('error', 'Invalid request method.');
-    redirect('/finalproject/admin/fraud_detection.php');
+    redirect('/jobhub/admin/fraud_detection.php');
 }
 
 if (!verify_csrf_token()) {
     set_flash('error', 'Invalid CSRF token. Please try again.');
-    redirect('/finalproject/admin/fraud_detection.php');
+    redirect('/jobhub/admin/fraud_detection.php');
 }
 
 $action = $_POST['action'] ?? '';
@@ -25,7 +25,7 @@ $userId = sanitize_int($_POST['user_id'] ?? 0);
 
 if ($userId <= 0) {
     set_flash('error', 'Invalid user ID.');
-    redirect('/finalproject/admin/fraud_detection.php');
+    redirect('/jobhub/admin/fraud_detection.php');
 }
 
 // Verify user exists
@@ -37,7 +37,7 @@ $stmt->close();
 
 if (!$user) {
     set_flash('error', 'User not found.');
-    redirect('/finalproject/admin/fraud_detection.php');
+    redirect('/jobhub/admin/fraud_detection.php');
 }
 
 $adminId = (int) $_SESSION['user_id'];
@@ -121,4 +121,4 @@ switch ($action) {
         break;
 }
 
-redirect('/finalproject/admin/fraud_detection.php');
+redirect('/jobhub/admin/fraud_detection.php');

@@ -3,20 +3,28 @@
  * Milestones API (v2)
  * Handles CRUD, submission with data, revision flow, approval with payment, contract completion.
  *
- * GET  ?action=list&contract_id=X   - list milestones for a contract
- * GET  ?action=detail&id=X         - get single milestone
- * POST ?action=create              - create milestone (client only)
- * POST ?action=update              - update milestone (client, pending only)
- * POST ?action=submit              - submit work with GitHub URL, file, note (freelancer, funded_in_escrow only)
- * POST ?action=approve             - approve work + release payment + complete contract (client, submitted only)
- * POST ?action=request_revision    - request changes (client, submitted only)
- * POST ?action=dispute             - dispute milestone
- * POST ?action=resolve_dispute     - admin resolve dispute (release or refund)
+ * GET  ?action=list&contract_id=X       - list milestones for a contract
+ * GET  ?action=detail&id=X             - get single milestone
+ * GET  ?action=admin_list               - admin: list all milestones (filtered)
+ * POST ?action=create                   - create milestone (client only)
+ * POST ?action=update                   - update milestone (client, pending only)
+ * POST ?action=delete                   - delete milestone (client, pending only; admin any non-active)
+ * POST ?action=submit                   - submit work with GitHub URL, file, note (freelancer, funded_in_escrow only)
+ * POST ?action=approve                  - approve work + release payment + complete contract (client, submitted only)
+ * POST ?action=request_revision         - request changes (client, submitted only)
+ * POST ?action=dispute                  - dispute milestone
+ * POST ?action=resolve_dispute          - admin resolve dispute (release or refund)
+ * POST ?action=admin_edit               - admin edit milestone (any non-completed status)
+ * POST ?action=admin_force_complete     - admin force complete a milestone
+ * POST ?action=admin_delete             - admin delete milestone (pending/funded_in_escrow only)
  */
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../auth/auth.php';
+require_once __DIR__ . '/../includes/wallet_functions.php';
+require_once __DIR__ . '/../includes/milestone_helpers.php';
+require_once __DIR__ . '/../shared/notification_helper.php';
 
 header('Content-Type: application/json');
 
@@ -54,15 +62,6 @@ function get_milestone(int $milestoneId): ?array {
     return $result;
 }
 
-function get_platform_fee_percent(): float {
-    global $conn;
-    $r = $conn->query("SELECT fee_percent FROM platform_fee_rules WHERE is_active = 1 ORDER BY effective_from DESC LIMIT 1");
-    if ($r && $row = $r->fetch_assoc()) {
-        return (float) $row['fee_percent'];
-    }
-    return 10.0;
-}
-
 function check_contract_completion(int $contractId): void {
     global $conn;
     $stmt = $conn->prepare('SELECT COUNT(*) AS total, SUM(CASE WHEN status = \'released\' THEN 1 ELSE 0 END) AS released FROM milestones WHERE contract_id = ?');
@@ -79,6 +78,16 @@ function check_contract_completion(int $contractId): void {
         $stmt->bind_param('i', $contractId);
         $stmt->execute();
         $stmt->close();
+
+        // Increment freelancers.completed_jobs
+        $flStmt = $conn->prepare('SELECT freelancer_id FROM contracts WHERE id = ?');
+        $flStmt->bind_param('i', $contractId);
+        $flStmt->execute();
+        $flRow = $flStmt->get_result()->fetch_assoc();
+        $flStmt->close();
+        if ($flRow) {
+            increment_freelancer_completed_jobs($conn, (int) $flRow['freelancer_id']);
+        }
 
         $stmt = $conn->prepare('UPDATE jobs SET status = \'completed\', updated_at = NOW() WHERE id = (SELECT job_id FROM contracts WHERE id = ?)');
         $stmt->bind_param('i', $contractId);
@@ -239,7 +248,7 @@ switch ($action) {
                 $stmt->bind_param('isdss', $contractId, $title, $amount, $description, $dueDate);
             } else {
                 $stmt = $conn->prepare('INSERT INTO milestones (contract_id, title, amount, description, status, created_at, updated_at) VALUES (?, ?, ?, ?, \'pending\', NOW(), NOW())');
-                $stmt->bind_param('isd', $contractId, $title, $amount, $description);
+                $stmt->bind_param('isds', $contractId, $title, $amount, $description);
             }
             $stmt->execute();
             $newId = $conn->insert_id;
@@ -247,13 +256,21 @@ switch ($action) {
 
             $conn->commit();
 
+            // Notify freelancer
+            notifyMilestoneCreated(
+                (int) $contract['freelancer_id'],
+                $title,
+                $amount,
+                $contractId
+            );
+
             $milestone = get_milestone($newId);
             json_response([
                 'success'   => true,
                 'message'   => 'Milestone created successfully.',
                 'milestone' => $milestone,
             ], 201);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $conn->rollback();
             json_response(['success' => false, 'message' => 'Failed to create milestone.'], 500);
         }
@@ -276,6 +293,8 @@ switch ($action) {
         $milestoneId = sanitize_int($_POST['milestone_id'] ?? 0);
         $title       = trim($_POST['title'] ?? '');
         $amount      = sanitize_float($_POST['amount'] ?? 0);
+        $description = trim($_POST['description'] ?? '');
+        $dueDate     = trim($_POST['due_date'] ?? '');
 
         if ($milestoneId <= 0) {
             json_response(['success' => false, 'message' => 'Invalid milestone ID.'], 400);
@@ -299,6 +318,10 @@ switch ($action) {
             json_response(['success' => false, 'message' => 'Amount must be greater than 0.'], 400);
         }
 
+        if (!empty($dueDate) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
+            json_response(['success' => false, 'message' => 'Invalid due date format.'], 400);
+        }
+
         $stmt = $conn->prepare('SELECT COALESCE(SUM(amount), 0) AS total FROM milestones WHERE contract_id = ? AND id != ?');
         $stmt->bind_param('ii', $milestone['contract_id'], $milestoneId);
         $stmt->execute();
@@ -314,8 +337,14 @@ switch ($action) {
 
         $conn->begin_transaction();
         try {
-            $stmt = $conn->prepare('UPDATE milestones SET title = ?, amount = ?, updated_at = NOW() WHERE id = ?');
-            $stmt->bind_param('sdi', $title, $amount, $milestoneId);
+            $dueDateParam = !empty($dueDate) ? $dueDate : null;
+            if ($dueDateParam) {
+                $stmt = $conn->prepare('UPDATE milestones SET title = ?, amount = ?, description = ?, due_date = ?, updated_at = NOW() WHERE id = ?');
+                $stmt->bind_param('sdssi', $title, $amount, $description, $dueDateParam, $milestoneId);
+            } else {
+                $stmt = $conn->prepare('UPDATE milestones SET title = ?, amount = ?, description = ?, due_date = NULL, updated_at = NOW() WHERE id = ?');
+                $stmt->bind_param('sdsi', $title, $amount, $description, $milestoneId);
+            }
             $stmt->execute();
             $stmt->close();
 
@@ -381,12 +410,43 @@ switch ($action) {
 
         $conn->begin_transaction();
         try {
+            // Detect resubmission: if there was a previous submission_github_url, this is a resubmission
+            $isResubmission = !empty($milestone['submission_github_url']);
+
             $stmt = $conn->prepare('UPDATE milestones SET status = \'submitted\', submission_github_url = ?, submission_file = ?, submission_note = ?, submission_date = NOW(), updated_at = NOW() WHERE id = ?');
             $stmt->bind_param('sssi', $githubUrl, $submissionFile, $note, $milestoneId);
             $stmt->execute();
             $stmt->close();
 
             $conn->commit();
+
+            // Notify client
+            if ($isResubmission) {
+                $freelancerStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+                $freelancerStmt->bind_param('i', $userId);
+                $freelancerStmt->execute();
+                $freelancerName = $freelancerStmt->get_result()->fetch_assoc()['name'];
+                $freelancerStmt->close();
+
+                notifySubmissionResubmitted(
+                    (int) $milestone['client_id'],
+                    $freelancerName,
+                    $milestone['title'],
+                    $milestone['contract_id']
+                );
+            } else {
+                $freelancerStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+                $freelancerStmt->bind_param('i', $userId);
+                $freelancerStmt->execute();
+                $freelancerName = $freelancerStmt->get_result()->fetch_assoc()['name'];
+                $freelancerStmt->close();
+
+                notifyMilestoneSubmitted(
+                    (int) $milestone['client_id'],
+                    $freelancerName,
+                    $milestone['title']
+                );
+            }
 
             $updated = get_milestone($milestoneId);
             json_response([
@@ -441,6 +501,14 @@ switch ($action) {
             $stmt->close();
 
             $conn->commit();
+
+            // Notify freelancer
+            notifyRevisionRequested(
+                (int) $milestone['freelancer_id'],
+                $milestone['title'],
+                $revisionNote,
+                $milestone['contract_id']
+            );
 
             $updated = get_milestone($milestoneId);
             json_response([
@@ -514,6 +582,8 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
 
+            increment_freelancer_earnings($conn, $freelancerId, $freelancerNet);
+
             $newFreelancerBalance = $freelancerBalance + $freelancerNet;
             $stmt = $conn->prepare('INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at) VALUES (?, \'escrow_release\', ?, ?, ?, \'milestone\', ?, NOW())');
             $desc = 'Payment received for milestone #' . $milestoneId;
@@ -521,9 +591,20 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
 
+            // Update client total_spent
+            $stmt = $conn->prepare('UPDATE clients SET total_spent = total_spent + ? WHERE client_id = ?');
+            $stmt->bind_param('di', $amount, $milestone['client_id']);
+            $stmt->execute();
+            $stmt->close();
+
             check_contract_completion((int) $milestone['contract_id']);
 
             $conn->commit();
+
+            // Notify freelancer about milestone approval and payment release
+            $milestoneTitle = $milestone['title'] ?? 'Milestone';
+            notifyMilestoneApproved($freelancerId, $milestoneTitle, $amount, (int) $milestone['contract_id']);
+            notifyPaymentReleased($freelancerId, $freelancerNet, (int) $milestone['contract_id']);
 
             $updated = get_milestone($milestoneId);
             json_response([
@@ -566,12 +647,65 @@ switch ($action) {
             json_response(['success' => false, 'message' => 'This milestone cannot be disputed in its current state.'], 400);
         }
 
+        $contractId = (int) $milestone['cid'];
+        $isClient = ($userId === (int) $milestone['client_id']);
+        $againstId = $isClient ? (int) $milestone['freelancer_id'] : (int) $milestone['client_id'];
+
+        // Check for existing open dispute on this contract
+        $stmt = $conn->prepare('SELECT id FROM dispute_tickets WHERE contract_id = ? AND status IN ("open", "investigating", "escalated")');
+        $stmt->bind_param('i', $contractId);
+        $stmt->execute();
+        $existing = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if ($existing) {
+            json_response(['success' => false, 'message' => 'There is already an open dispute for this contract.'], 409);
+        }
+
         $conn->begin_transaction();
         try {
+            // Set milestone status to disputed
             $stmt = $conn->prepare('UPDATE milestones SET status = \'disputed\', updated_at = NOW() WHERE id = ?');
             $stmt->bind_param('i', $milestoneId);
             $stmt->execute();
             $stmt->close();
+
+            // Create dispute ticket
+            $milestoneTitle = $milestone['title'] ?? 'Milestone #' . $milestoneId;
+            $reason = 'other';
+            $description = "Dispute filed for milestone: {$milestoneTitle}";
+            $milestoneParam = $milestoneId;
+
+            $stmt = $conn->prepare(
+                'INSERT INTO dispute_tickets (contract_id, milestone_id, raised_by, against, reason, description, status, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, "open", NOW())'
+            );
+            $stmt->bind_param('iiisss', $contractId, $milestoneParam, $userId, $againstId, $reason, $description);
+            $stmt->execute();
+            $stmt->close();
+
+            // Update contract dispute status
+            $stmt = $conn->prepare('UPDATE contracts SET dispute_status = \'open\', status = \'disputed\', updated_at = NOW() WHERE id = ?');
+            $stmt->bind_param('i', $contractId);
+            $stmt->execute();
+            $stmt->close();
+
+            // Notify the other party
+            require_once __DIR__ . '/../shared/notification_helper.php';
+            $disputerName = 'A user';
+            $stmtUser = $conn->prepare('SELECT name FROM users WHERE id = ?');
+            $stmtUser->bind_param('i', $userId);
+            $stmtUser->execute();
+            $disputerName = $stmtUser->get_result()->fetch_assoc()['name'] ?? $disputerName;
+            $stmtUser->close();
+
+            $stmtJob = $conn->prepare('SELECT j.title FROM contracts c JOIN jobs j ON c.job_id = j.id WHERE c.id = ?');
+            $stmtJob->bind_param('i', $contractId);
+            $stmtJob->execute();
+            $jobTitle = $stmtJob->get_result()->fetch_assoc()['title'] ?? 'Contract';
+            $stmtJob->close();
+
+            notifyDisputeOpened($againstId, $disputerName, $jobTitle, $contractId);
 
             $conn->commit();
 
@@ -685,7 +819,42 @@ switch ($action) {
 
                 check_contract_completion($milestone['cid']);
 
+                // Close the dispute ticket
+                $stmt = $conn->prepare('UPDATE dispute_tickets SET status = "resolved", resolution = ?, resolved_by = ?, updated_at = NOW() WHERE contract_id = ? AND milestone_id = ? AND status IN ("open", "investigating", "escalated")');
+                $resolutionNote = 'Payment released to freelancer (Admin resolution)';
+                $stmt->bind_param('siii', $resolutionNote, $userId, $milestone['cid'], $milestoneId);
+                $stmt->execute();
+                $stmt->close();
+
+                // Reset contract dispute status
+                $stmt = $conn->prepare('UPDATE contracts SET dispute_status = "resolved", updated_at = NOW() WHERE id = ?');
+                $stmt->bind_param('i', $milestone['cid']);
+                $stmt->execute();
+                $stmt->close();
+
                 $conn->commit();
+
+                // Notify both parties (outside transaction)
+                require_once __DIR__ . '/../shared/notification_helper.php';
+                $adminStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+                $adminStmt->bind_param('i', $userId);
+                $adminStmt->execute();
+                $adminName = $adminStmt->get_result()->fetch_assoc()['name'] ?? 'Admin';
+                $adminStmt->close();
+
+                $jobStmt = $conn->prepare('SELECT j.title FROM contracts c JOIN jobs j ON c.job_id = j.id WHERE c.id = ?');
+                $jobStmt->bind_param('i', $milestone['cid']);
+                $jobStmt->execute();
+                $jobTitle = $jobStmt->get_result()->fetch_assoc()['title'] ?? 'Contract';
+                $jobStmt->close();
+
+                $parties = [(int) $milestone['client_id'], (int) $milestone['freelancer_id']];
+                foreach ($parties as $partyId) {
+                    if ($partyId !== $userId) {
+                        notifyDisputeResolved($partyId, $adminName, $jobTitle, (int) $milestone['cid'], 'release');
+                    }
+                }
+
                 json_response(['success' => true, 'message' => 'Dispute resolved. Payment released to freelancer.']);
             } else {
                 // Refund client
@@ -738,12 +907,407 @@ switch ($action) {
                 $logStmt->execute();
                 $logStmt->close();
 
+                // Close the dispute ticket
+                $stmt = $conn->prepare('UPDATE dispute_tickets SET status = "resolved", resolution = ?, resolved_by = ?, updated_at = NOW() WHERE contract_id = ? AND milestone_id = ? AND status IN ("open", "investigating", "escalated")');
+                $resolutionNote = 'Refund to client (Admin resolution)';
+                $stmt->bind_param('siii', $resolutionNote, $userId, $milestone['cid'], $milestoneId);
+                $stmt->execute();
+                $stmt->close();
+
+                // Reset contract dispute status
+                $stmt = $conn->prepare('UPDATE contracts SET dispute_status = "resolved", updated_at = NOW() WHERE id = ?');
+                $stmt->bind_param('i', $milestone['cid']);
+                $stmt->execute();
+                $stmt->close();
+
                 $conn->commit();
+
+                // Notify both parties (outside transaction)
+                require_once __DIR__ . '/../shared/notification_helper.php';
+                $adminStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+                $adminStmt->bind_param('i', $userId);
+                $adminStmt->execute();
+                $adminName = $adminStmt->get_result()->fetch_assoc()['name'] ?? 'Admin';
+                $adminStmt->close();
+
+                $jobStmt = $conn->prepare('SELECT j.title FROM contracts c JOIN jobs j ON c.job_id = j.id WHERE c.id = ?');
+                $jobStmt->bind_param('i', $milestone['cid']);
+                $jobStmt->execute();
+                $jobTitle = $jobStmt->get_result()->fetch_assoc()['title'] ?? 'Contract';
+                $jobStmt->close();
+
+                $parties = [(int) $milestone['client_id'], (int) $milestone['freelancer_id']];
+                foreach ($parties as $partyId) {
+                    if ($partyId !== $userId) {
+                        notifyDisputeResolved($partyId, $adminName, $jobTitle, (int) $milestone['cid'], 'refund');
+                    }
+                }
+
                 json_response(['success' => true, 'message' => 'Dispute resolved. Refund of ' . format_currency($amount) . ' returned to client wallet.']);
             }
         } catch (Exception $e) {
             $conn->rollback();
             json_response(['success' => false, 'message' => 'Failed to resolve dispute.'], 500);
+        }
+        break;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DELETE milestone (client: pending only; admin: any non-active)
+    // ═══════════════════════════════════════════════════════════════════
+    case 'delete':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['success' => false, 'message' => 'POST request required.'], 405);
+        }
+        if (!verify_csrf_token()) {
+            json_response(['success' => false, 'message' => 'Invalid CSRF token.'], 403);
+        }
+
+        $milestoneId = sanitize_int($_POST['milestone_id'] ?? 0);
+        if ($milestoneId <= 0) {
+            json_response(['success' => false, 'message' => 'Invalid milestone ID.'], 400);
+        }
+
+        $milestone = get_milestone($milestoneId);
+        if (!$milestone) {
+            json_response(['success' => false, 'message' => 'Milestone not found.'], 404);
+        }
+
+        // Permission check
+        if ($userRole === 'client') {
+            if ((int) $milestone['client_id'] !== $userId) {
+                json_response(['success' => false, 'message' => 'Access denied.'], 403);
+            }
+            if ($milestone['status'] !== 'pending') {
+                json_response(['success' => false, 'message' => 'Only pending milestones can be deleted.'], 400);
+            }
+        } elseif ($userRole !== 'admin') {
+            json_response(['success' => false, 'message' => 'Permission denied.'], 403);
+        } else {
+            // Admin: cannot delete milestones with active escrow or completed work
+            if (in_array($milestone['status'], ['funded_in_escrow', 'submitted', 'released'])) {
+                json_response(['success' => false, 'message' => 'Cannot delete milestones with active escrow or completed work.'], 400);
+            }
+        }
+
+        // Prevent deletion if payment exists (escrowed or completed)
+        $pStmt = $conn->prepare('SELECT id FROM payments WHERE milestone_id = ? AND status IN (\'held\', \'completed\')');
+        $pStmt->bind_param('i', $milestoneId);
+        $pStmt->execute();
+        if ($pStmt->get_result()->num_rows > 0) {
+            $pStmt->close();
+            json_response(['success' => false, 'message' => 'Cannot delete milestone with existing escrow or payment.'], 400);
+        }
+        $pStmt->close();
+
+        $contractId = $milestone['contract_id'];
+        $milestoneTitle = $milestone['title'];
+        $freelancerId = (int) $milestone['freelancer_id'];
+
+        $conn->begin_transaction();
+        try {
+            $stmt = $conn->prepare('DELETE FROM milestones WHERE id = ?');
+            $stmt->bind_param('i', $milestoneId);
+            $stmt->execute();
+            $stmt->close();
+
+            $conn->commit();
+
+            // Notify freelancer (client deleted)
+            if ($userRole === 'client') {
+                notifyMilestoneDeleted($freelancerId, $milestoneTitle, $contractId);
+            }
+
+            json_response(['success' => true, 'message' => 'Milestone deleted successfully.']);
+        } catch (Exception $e) {
+            $conn->rollback();
+            json_response(['success' => false, 'message' => 'Failed to delete milestone.'], 500);
+        }
+        break;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ADMIN: list all milestones (filtered)
+    // ═══════════════════════════════════════════════════════════════════
+    case 'admin_list':
+        if ($userRole !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
+
+        $status   = trim($_GET['status'] ?? '');
+        $search   = trim($_GET['search'] ?? '');
+        $page     = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage  = 20;
+        $offset   = ($page - 1) * $perPage;
+
+        $where  = '1=1';
+        $params = [];
+        $types  = '';
+
+        if (!empty($status)) {
+            $where .= ' AND m.status = ?';
+            $params[] = $status;
+            $types  .= 's';
+        }
+        if (!empty($search)) {
+            $where .= ' AND (m.title LIKE ? OR u.name LIKE ? OR u2.name LIKE ?)';
+            $term = '%' . $search . '%';
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+            $types .= 'sss';
+        }
+
+        // Count
+        $countSql = "SELECT COUNT(*) AS total FROM milestones m JOIN contracts c ON m.contract_id = c.id JOIN users u ON c.client_id = u.id JOIN users u2 ON c.freelancer_id = u2.id WHERE {$where}";
+        $countStmt = $conn->prepare($countSql);
+        if (!empty($types)) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        $countStmt->execute();
+        $total = (int) $countStmt->get_result()->fetch_assoc()['total'];
+        $countStmt->close();
+
+        // Fetch
+        $sql = "SELECT m.*, c.client_id, c.freelancer_id, c.job_id, u.name AS client_name, u2.name AS freelancer_name
+                FROM milestones m
+                JOIN contracts c ON m.contract_id = c.id
+                JOIN users u ON c.client_id = u.id
+                JOIN users u2 ON c.freelancer_id = u2.id
+                WHERE {$where}
+                ORDER BY m.created_at DESC
+                LIMIT {$perPage} OFFSET {$offset}";
+        $stmt = $conn->prepare($sql);
+        if (!empty($types)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $milestones = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        json_response([
+            'success'    => true,
+            'milestones' => $milestones,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page'     => $perPage,
+                'total_items'  => $total,
+                'total_pages'  => (int) ceil($total / $perPage),
+            ],
+        ]);
+        break;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ADMIN: edit milestone (any non-completed status)
+    // ═══════════════════════════════════════════════════════════════════
+    case 'admin_edit':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['success' => false, 'message' => 'POST request required.'], 405);
+        }
+        if (!verify_csrf_token()) {
+            json_response(['success' => false, 'message' => 'Invalid CSRF token.'], 403);
+        }
+        if ($userRole !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
+
+        $milestoneId = sanitize_int($_POST['milestone_id'] ?? 0);
+        $title       = trim($_POST['title'] ?? '');
+        $amount      = sanitize_float($_POST['amount'] ?? 0);
+        $description = trim($_POST['description'] ?? '');
+        $dueDate     = trim($_POST['due_date'] ?? '');
+
+        if ($milestoneId <= 0) {
+            json_response(['success' => false, 'message' => 'Invalid milestone ID.'], 400);
+        }
+
+        $milestone = get_milestone($milestoneId);
+        if (!$milestone) {
+            json_response(['success' => false, 'message' => 'Milestone not found.'], 404);
+        }
+        if ($milestone['status'] === 'released') {
+            json_response(['success' => false, 'message' => 'Cannot edit completed milestones.'], 400);
+        }
+
+        if (empty($title) || strlen($title) > 255) {
+            json_response(['success' => false, 'message' => 'Title is required (max 255 chars).'], 400);
+        }
+        if ($amount <= 0) {
+            json_response(['success' => false, 'message' => 'Amount must be greater than 0.'], 400);
+        }
+
+        $conn->begin_transaction();
+        try {
+            $dueDateParam = !empty($dueDate) ? $dueDate : null;
+            if ($dueDateParam) {
+                $stmt = $conn->prepare('UPDATE milestones SET title = ?, amount = ?, description = ?, due_date = ?, updated_at = NOW() WHERE id = ?');
+                $stmt->bind_param('sdssi', $title, $amount, $description, $dueDateParam, $milestoneId);
+            } else {
+                $stmt = $conn->prepare('UPDATE milestones SET title = ?, amount = ?, description = ?, due_date = NULL, updated_at = NOW() WHERE id = ?');
+                $stmt->bind_param('sdsi', $title, $amount, $description, $milestoneId);
+            }
+            $stmt->execute();
+            $stmt->close();
+
+            $conn->commit();
+
+            $updated = get_milestone($milestoneId);
+            json_response([
+                'success'   => true,
+                'message'   => 'Milestone updated successfully.',
+                'milestone' => $updated,
+            ]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            json_response(['success' => false, 'message' => 'Failed to update milestone.'], 500);
+        }
+        break;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ADMIN: force-complete a milestone (skip client approval)
+    // ═══════════════════════════════════════════════════════════════════
+    case 'admin_force_complete':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['success' => false, 'message' => 'POST request required.'], 405);
+        }
+        if (!verify_csrf_token()) {
+            json_response(['success' => false, 'message' => 'Invalid CSRF token.'], 403);
+        }
+        if ($userRole !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
+
+        $milestoneId = sanitize_int($_POST['milestone_id'] ?? 0);
+        if ($milestoneId <= 0) {
+            json_response(['success' => false, 'message' => 'Invalid milestone ID.'], 400);
+        }
+
+        $milestone = get_milestone($milestoneId);
+        if (!$milestone) {
+            json_response(['success' => false, 'message' => 'Milestone not found.'], 404);
+        }
+        if ($milestone['status'] === 'released') {
+            json_response(['success' => false, 'message' => 'Milestone is already completed.'], 400);
+        }
+        if ($milestone['status'] === 'pending') {
+            json_response(['success' => false, 'message' => 'Milestone has not been funded.'], 400);
+        }
+
+        $freelancerId = (int) $milestone['freelancer_id'];
+        $amount       = (float) $milestone['amount'];
+        $feePercent   = get_platform_fee_percent();
+        $platformFee  = round($amount * ($feePercent / 100), 2);
+        $freelancerNet = round($amount - $platformFee, 2);
+
+        $conn->begin_transaction();
+        try {
+            $stmt = $conn->prepare('UPDATE milestones SET status = \'released\', updated_at = NOW() WHERE id = ?');
+            $stmt->bind_param('i', $milestoneId);
+            $stmt->execute();
+            $stmt->close();
+
+            // Credit freelancer wallet
+            $stmt = $conn->prepare('SELECT wallet_balance FROM users WHERE id = ?');
+            $stmt->bind_param('i', $freelancerId);
+            $stmt->execute();
+            $freelancerBalance = (float) $stmt->get_result()->fetch_assoc()['wallet_balance'];
+            $stmt->close();
+
+            $newFreelancerBalance = round($freelancerBalance + $freelancerNet, 2);
+            $stmt = $conn->prepare('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?');
+            $stmt->bind_param('di', $freelancerNet, $freelancerId);
+            $stmt->execute();
+            $stmt->close();
+
+            // Record payment
+            $stmt = $conn->prepare('INSERT INTO payments (milestone_id, payer_id, payee_id, total_amount, platform_fee, freelancer_net, status, created_at) VALUES (?, ?, ?, ?, ?, ?, \'completed\', NOW())');
+            $stmt->bind_param('iiiddd', $milestoneId, $milestone['client_id'], $freelancerId, $amount, $platformFee, $freelancerNet);
+            $stmt->execute();
+            $stmt->close();
+
+            increment_freelancer_earnings($conn, $freelancerId, $freelancerNet);
+
+            $desc = 'Payment received for milestone #' . $milestoneId . ' (Admin force-complete)';
+            $stmt = $conn->prepare('INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at) VALUES (?, \'escrow_release\', ?, ?, ?, \'milestone\', ?, NOW())');
+            $stmt->bind_param('iddis', $freelancerId, $freelancerNet, $newFreelancerBalance, $milestoneId, $desc);
+            $stmt->execute();
+            $stmt->close();
+
+            check_contract_completion((int) $milestone['contract_id']);
+
+            $conn->commit();
+
+            // Notify freelancer
+            notifyMilestoneForceCompleted($freelancerId, $milestone['title'], (int) $milestone['contract_id']);
+
+            $updated = get_milestone($milestoneId);
+            json_response([
+                'success'        => true,
+                'message'        => 'Milestone force-completed. Payment of ' . format_currency($freelancerNet) . ' released.',
+                'milestone'      => $updated,
+                'freelancer_net' => $freelancerNet,
+                'platform_fee'   => $platformFee,
+            ]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            json_response(['success' => false, 'message' => 'Failed to force-complete milestone.'], 500);
+        }
+        break;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ADMIN: delete milestone (pending/funded_in_escrow only)
+    // ═══════════════════════════════════════════════════════════════════
+    case 'admin_delete':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['success' => false, 'message' => 'POST request required.'], 405);
+        }
+        if (!verify_csrf_token()) {
+            json_response(['success' => false, 'message' => 'Invalid CSRF token.'], 403);
+        }
+        if ($userRole !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
+
+        $milestoneId = sanitize_int($_POST['milestone_id'] ?? 0);
+        if ($milestoneId <= 0) {
+            json_response(['success' => false, 'message' => 'Invalid milestone ID.'], 400);
+        }
+
+        $milestone = get_milestone($milestoneId);
+        if (!$milestone) {
+            json_response(['success' => false, 'message' => 'Milestone not found.'], 404);
+        }
+        if (in_array($milestone['status'], ['submitted', 'released', 'disputed'])) {
+            json_response(['success' => false, 'message' => 'Cannot delete milestones in this status.'], 400);
+        }
+
+        // Prevent deletion if payment exists
+        $pStmt = $conn->prepare('SELECT id FROM payments WHERE milestone_id = ? AND status IN (\'held\', \'completed\')');
+        $pStmt->bind_param('i', $milestoneId);
+        $pStmt->execute();
+        if ($pStmt->get_result()->num_rows > 0) {
+            $pStmt->close();
+            json_response(['success' => false, 'message' => 'Cannot delete milestone with existing escrow or payment.'], 400);
+        }
+        $pStmt->close();
+
+        $contractId    = $milestone['contract_id'];
+        $milestoneTitle = $milestone['title'];
+        $freelancerId   = (int) $milestone['freelancer_id'];
+
+        $conn->begin_transaction();
+        try {
+            $stmt = $conn->prepare('DELETE FROM milestones WHERE id = ?');
+            $stmt->bind_param('i', $milestoneId);
+            $stmt->execute();
+            $stmt->close();
+
+            $conn->commit();
+
+            notifyMilestoneDeleted($freelancerId, $milestoneTitle, $contractId);
+
+            json_response(['success' => true, 'message' => 'Milestone deleted successfully.']);
+        } catch (Exception $e) {
+            $conn->rollback();
+            json_response(['success' => false, 'message' => 'Failed to delete milestone.'], 500);
         }
         break;
 

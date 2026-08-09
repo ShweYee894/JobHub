@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../auth/auth.php';
+require_once __DIR__ . '/../includes/ai_engine.php';
 require_role('client');
 
 $currentPage = 'recommended_freelancers';
@@ -34,150 +35,27 @@ if ($job_id) {
     $stmt->close();
 
     if ($job) {
-        // Get job embedding
+        // Load or generate job embedding using ai_engine
         $embedding = json_decode($job['embedding_vector'] ?? '{}', true) ?: [];
 
         if (empty($embedding)) {
-            $STOP_WORDS = [
-                'the',
-                'is',
-                'at',
-                'which',
-                'on',
-                'a',
-                'an',
-                'and',
-                'or',
-                'but',
-                'in',
-                'with',
-                'to',
-                'for',
-                'of',
-                'not',
-                'no',
-                'can',
-                'had',
-                'has',
-                'was',
-                'were',
-                'are',
-                'be',
-                'been',
-                'being',
-                'have',
-                'having',
-                'do',
-                'does',
-                'did',
-                'doing',
-                'will',
-                'would',
-                'could',
-                'should',
-                'may',
-                'might',
-                'shall',
-                'must',
-                'that',
-                'this',
-                'these',
-                'those',
-                'it',
-                'its',
-                'from',
-                'by',
-                'as',
-                'if',
-                'then',
-                'than',
-                'so',
-                'just',
-                'also',
-                'about',
-                'into',
-                'over',
-                'after',
-                'before',
-                'between',
-                'under',
-                'above',
-                'out',
-                'off',
-                'up',
-                'down',
-                'all',
-                'each',
-                'every',
-                'both',
-                'few',
-                'more',
-                'most',
-                'other',
-                'some',
-                'such',
-                'any',
-                'only',
-                'same',
-                'own',
-                'too',
-                'very',
-                'here',
-                'there',
-                'when',
-                'where',
-                'why',
-                'how',
-                'what',
-                'who',
-                'whom',
-                'whose',
-                'through',
-                'during',
-                'until',
-                'while',
-                'again',
-                'further',
-                'once',
-                'because',
-                'nor',
-                'against',
-                'during',
-                'once',
-                'twice',
-            ];
-
-            $title_words = [];
-            $text = strtolower($job['title']);
-            $text = preg_replace('/[^a-z0-9\s]/', ' ', $text);
-            $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
-            $freq = [];
-            foreach ($words as $w) {
-                if (strlen($w) < 3 || in_array($w, $STOP_WORDS, true))
-                    continue;
-                $freq[$w] = ($freq[$w] ?? 0) + 1;
-            }
-            arsort($freq);
-            $title_words = array_slice(array_keys($freq), 0, 20);
-
+            // Generate embedding on the fly using ai_engine
             $s2 = $conn->prepare('SELECT skill_id FROM job_skills WHERE job_id = ?');
             $s2->bind_param('i', $job_id);
             $s2->execute();
             $r2 = $s2->get_result();
-            $embedding['skill_ids'] = [];
+            $job_skill_ids = [];
             while ($row = $r2->fetch_assoc()) {
-                $embedding['skill_ids'][] = (int) $row['skill_id'];
+                $job_skill_ids[] = (int) $row['skill_id'];
             }
             $s2->close();
-            $embedding['word_count'] = str_word_count($job['title'] . ' ' . ($job['description'] ?? ''));
+            $embedding_json = ai_generate_job_embedding($job['title'], $job['description'] ?? $job['title'], $job_skill_ids, (float) $job['budget']);
+            $embedding = json_decode($embedding_json, true);
         }
 
-        $job_skill_ids = $embedding['skill_ids'] ?? [];
         $job_budget = (float) $job['budget'];
-        $estimated_hours = max(1, intval($embedding['word_count'] ?? 10));
-        $max_rate = max(1, $job_budget / $estimated_hours);
 
-        // Match freelancers
+        // Match freelancers using ai_engine scoring (cosine similarity when dense vectors exist)
         $fl_stmt = $conn->prepare('
             SELECT f.id, f.user_id, f.title, f.skills_vector, f.hourly_rate, f.years_of_experience, f.availability,
                    u.name, u.profile_image
@@ -192,6 +70,7 @@ if ($job_id) {
             $vector = json_decode($fl['skills_vector'] ?? '{}', true) ?: [];
 
             if (empty($vector)) {
+                // Generate vector on the fly using ai_engine
                 $s3 = $conn->prepare('
                     SELECT fs.skill_id, s.skill_name
                     FROM freelancer_skills fs
@@ -201,41 +80,29 @@ if ($job_id) {
                 $s3->bind_param('i', $fl['id']);
                 $s3->execute();
                 $r3 = $s3->get_result();
-                $vector['skill_ids'] = [];
-                $vector['skill_names'] = [];
+                $fl_skill_ids = [];
+                $fl_skill_names = [];
                 while ($row = $r3->fetch_assoc()) {
-                    $vector['skill_ids'][] = (int) $row['skill_id'];
-                    $vector['skill_names'][] = $row['skill_name'];
+                    $fl_skill_ids[] = (int) $row['skill_id'];
+                    $fl_skill_names[] = $row['skill_name'];
                 }
                 $s3->close();
-                $vector['hourly_rate'] = (float) $fl['hourly_rate'];
-                $vector['experience_years'] = (int) $fl['years_of_experience'];
-                $vector['availability'] = $fl['availability'] ?? 'Available';
+
+                $flVectorJson = ai_generate_freelancer_vector(
+                    $fl_skill_ids,
+                    $fl_skill_names,
+                    (float) $fl['hourly_rate'],
+                    (int) $fl['years_of_experience'],
+                    $fl['availability'] ?? 'Available',
+                    ($fl['title'] ?? '') . ' ' . implode(' ', $fl_skill_names)
+                );
+                $vector = json_decode($flVectorJson, true);
             }
 
-            $fl_skill_ids = $vector['skill_ids'] ?? [];
+            // Score using ai_engine
+            $scoreResult = ai_score_freelancer_for_job($embedding, $vector, $job_budget);
 
-            $skill_score = 0;
-            if (!empty($job_skill_ids)) {
-                $common = count(array_intersect($fl_skill_ids, $job_skill_ids));
-                $skill_score = ($common / count($job_skill_ids)) * 50;
-            }
-
-            $fl_rate = $vector['hourly_rate'] ?? $fl['hourly_rate'];
-            $rate_score = 0;
-            if ($fl_rate <= $max_rate) {
-                $rate_score = 20;
-            } elseif ($fl_rate <= $max_rate * 1.5) {
-                $rate_score = 10;
-            }
-
-            $exp_score = min(15, ($vector['experience_years'] ?? $fl['years_of_experience'] ?? 0) * 2);
-            $avail_score = ($vector['availability'] ?? $fl['availability']) === 'Available' ? 15 : 0;
-
-            $total_score = round($skill_score + $rate_score + $exp_score + $avail_score, 2);
-
-            if ($total_score <= 0)
-                continue;
+            if ($scoreResult['total_score'] <= 0) continue;
 
             $recommended[] = [
                 'freelancer_id' => $fl['id'],
@@ -243,17 +110,12 @@ if ($job_id) {
                 'name' => $fl['name'],
                 'profile_image' => $fl['profile_image'],
                 'title' => $fl['title'],
-                'hourly_rate' => $fl_rate,
+                'hourly_rate' => $vector['hourly_rate'] ?? $fl['hourly_rate'],
                 'years_of_experience' => $vector['experience_years'] ?? $fl['years_of_experience'],
                 'availability' => $vector['availability'] ?? $fl['availability'],
                 'skill_names' => $vector['skill_names'] ?? [],
-                'total_score' => $total_score,
-                'breakdown' => [
-                    'skill_match' => round($skill_score, 2),
-                    'rate_fit' => round($rate_score, 2),
-                    'experience' => round($exp_score, 2),
-                    'availability' => round($avail_score, 2),
-                ],
+                'total_score' => $scoreResult['total_score'],
+                'breakdown' => $scoreResult['breakdown'],
             ];
         }
 
@@ -280,12 +142,12 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <option value="">Select your job...</option>
                 <?php while ($j = $client_jobs->fetch_assoc()): ?>
                     <option value="<?= $j['id'] ?>" <?= $j['id'] == $job_id ? 'selected' : '' ?>>
-                        <?= sanitize_string($j['title']) ?> (#<?= $j['id'] ?>)
+                        <?= decode_over_encoded($j['title']) ?> (#<?= $j['id'] ?>)
                     </option>
                 <?php endwhile; ?>
             </select>
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2 whitespace-nowrap">
-                <i class="fas fa-search"></i> Find Matches
+                <i data-lucide="search" class="w-4 h-4"></i> Find Matches
             </button>
         </form>
     </div>
@@ -294,7 +156,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <?php if ($job_id && empty($recommended)): ?>
         <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
             <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-user-slash text-2xl text-gray-400"></i>
+                <i data-lucide="user-x" class="w-8 h-8 text-gray-400"></i>
             </div>
             <p class="text-gray-500 text-sm mb-2">No matching freelancers found</p>
             <p class="text-gray-400 text-xs">Try posting a job with different requirements or skills.</p>
@@ -322,9 +184,9 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                             <p class="font-bold text-gray-900 text-sm"><?= sanitize_string($match['name']) ?></p>
                             <p class="text-xs text-gray-400"><?= sanitize_string($match['title'] ?? 'Freelancer') ?></p>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="text-xs text-gray-500"><i class="fas fa-clock mr-1"></i><?= $match['years_of_experience'] ?>yr</span>
+                                <span class="text-xs text-gray-500"><i data-lucide="clock" class="w-4 h-4 mr-1"></i><?= $match['years_of_experience'] ?>yr</span>
                                 <span class="text-xs <?= $match['availability'] === 'Available' ? 'text-emerald-600' : 'text-amber-600' ?>">
-                                    <i class="fas fa-circle text-[6px] mr-1"></i><?= $match['availability'] ?>
+                                    <i data-lucide="circle" class="w-2 h-2 mr-1"></i><?= $match['availability'] ?>
                                 </span>
                             </div>
                         </div>
@@ -374,9 +236,9 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         <span class="text-sm font-bold text-gray-900"><?= format_currency($match['hourly_rate']) ?><span class="text-xs font-normal text-gray-400">/hr</span></span>
 
                         <!--  FIXED: Changed $row['freelancer_id'] to $match['freelancer_id'] and styled beautifully -->
-                        <a href="/finalproject/freelancer/profile.php?id=<?= $match['user_id'] ?>"
+                        <a href="/jobhub/freelancer/profile.php?id=<?= $match['user_id'] ?>"
                             class="text-xs text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-1 transition-colors">
-                            View Profile <i class="fas fa-arrow-right text-[9px]"></i>
+                            View Profile <i data-lucide="arrow-right" class="w-3 h-3"></i>
                         </a>
                     </div>
                 </div>
@@ -386,7 +248,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <?php elseif (!$job_id): ?>
         <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
             <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-brain text-2xl text-blue-400"></i>
+                <i data-lucide="brain" class="w-8 h-8 text-blue-400"></i>
             </div>
             <p class="text-gray-500 text-sm mb-2">Select a job to see AI recommendations</p>
             <p class="text-gray-400 text-xs">Our AI analyzes skill requirements, budget, and experience to find the best matches.</p>

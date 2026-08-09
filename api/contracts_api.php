@@ -8,15 +8,16 @@
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../auth/auth.php';
 
 header('Content-Type: application/json');
 
-$userId = $_SESSION['user_id'] ?? null;
-$userRole = $_SESSION['user_role'] ?? null;
-
-if (!$userId) {
+if (!is_logged_in()) {
     json_response(['error' => 'Unauthorized'], 401);
 }
+
+$userId   = (int) $_SESSION['user_id'];
+$userRole = $_SESSION['user_role'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     json_response(['error' => 'Method not allowed'], 405);

@@ -73,7 +73,7 @@ $availableJobs = $stmt->get_result()->fetch_assoc()['total'];
 $stmt->close();
 
 // Average rating
-$stmt = $conn->prepare('SELECT COALESCE(AVG(rating), 0) AS avg_rating FROM reviews WHERE reviewee_id = ?');
+$stmt = $conn->prepare('SELECT COALESCE(AVG(rating), 0) AS avg_rating FROM reviews WHERE reviewee_id = ? AND COALESCE(is_hidden, 0) = 0');
 $stmt->bind_param('i', $userId);
 $stmt->execute();
 $avgRating = round((float) $stmt->get_result()->fetch_assoc()['avg_rating'], 1);
@@ -179,7 +179,7 @@ $stmt->close();
 // Recent Reviews
 $stmt = $conn->prepare('
     SELECT r.rating, r.comment, r.created_at, u.name AS reviewer_name, u.profile_image AS reviewer_image
-    FROM reviews r JOIN users u ON r.reviewer_id = u.id WHERE r.reviewee_id = ? ORDER BY r.created_at DESC LIMIT 3
+    FROM reviews r JOIN users u ON r.reviewer_id = u.id WHERE r.reviewee_id = ? AND COALESCE(r.is_hidden, 0) = 0 ORDER BY r.created_at DESC LIMIT 3
 ');
 $stmt->bind_param('i', $userId);
 $stmt->execute();
@@ -232,13 +232,13 @@ $milestoneBadges = ['pending' => 'bdg-orange', 'funded_in_escrow' => 'bdg-cyan',
 
 // Navigation items
 $navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'fa-user'],
-    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'fa-search'],
-    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'fa-file-alt'],
-    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'fa-handshake'],
-    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'fa-comment-dots'],
-    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'fa-wallet'],
+    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'layout-grid'],
+    ['key' => 'profile', 'label' => 'Profile', 'url' => 'profile.php', 'icon' => 'user'],
+    ['key' => 'browse_jobs', 'label' => 'Browse Jobs', 'url' => 'browse_jobs.php', 'icon' => 'search'],
+    ['key' => 'proposals', 'label' => 'Proposals', 'url' => 'proposals.php', 'icon' => 'file-text'],
+    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'handshake'],
+    ['key' => 'messages', 'label' => 'Messages', 'url' => 'messages.php', 'icon' => 'message-circle'],
+    ['key' => 'earnings', 'label' => 'Earnings', 'url' => 'earnings.php', 'icon' => 'wallet'],
 ];
 $pageTitle = 'Freelancer Dashboard';
 $pageSubtitle = 'Welcome back, ' . htmlspecialchars($freelancerFirst) . " — here's your overview";
@@ -270,7 +270,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 </div>
                 <div class="bg-white/15 backdrop-blur-sm rounded-[14px] px-4 py-3 text-white text-center">
                     <p class="text-[11px] m-0 mb-0.5 opacity-80">Rating</p>
-                    <p class="text-lg font-extrabold m-0"><i class="fas fa-star text-xs text-amber-400"></i> <?= $avgRating ?></p>
+                    <p class="text-lg font-extrabold m-0"><i data-lucide="star" class="text-xs text-amber-400"></i> <?= $avgRating ?></p>
                 </div>
                 <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/15 text-white text-xs font-semibold backdrop-blur-sm">
                     <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
@@ -284,12 +284,12 @@ require_once __DIR__ . '/../components/layout_start.php';
     <div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <?php
-            renderStatCard('Available Jobs', $availableJobs, 'up', '+15%', 'vs last week', 'fa-briefcase', 'blue', 'Jobs', 'browse_jobs.php', 0);
-            renderStatCard('Submitted Proposals', $totalProposals, 'up', '+8%', 'vs last month', 'fa-file-signature', 'emerald', 'Proposals', 'proposals.php', 1);
-            renderStatCard('Active Contracts', $activeContracts, 'neutral', '', '', 'fa-file-contract', 'purple', 'Contracts', 'contracts.php', 2);
-            renderStatCard('Pending Payments', $pendingPayments, 'neutral', '', '', 'fa-clock', 'orange', 'Pending', 'earnings.php', 3);
-            renderStatCard('This Month', $monthEarnings, 'up', '+22%', 'vs last month', 'fa-dollar-sign', 'cyan', 'Earned', 'earnings.php', 4);
-            renderStatCard('Unread Messages', $unreadMessages, 'neutral', '', '', 'fa-comments', 'rose', 'Messages', 'messages.php', 5);
+            renderStatCard('Available Jobs', $availableJobs, 'up', '+15%', 'vs last week', 'briefcase', 'indigo', 'Jobs', 'browse_jobs.php', 0);
+            renderStatCard('Submitted Proposals', $totalProposals, 'up', '+8%', 'vs last month', 'file-pen', 'emerald', 'Proposals', 'proposals.php', 1);
+            renderStatCard('Active Contracts', $activeContracts, 'neutral', '', '', 'file-text', 'purple', 'Contracts', 'contracts.php', 2);
+            renderStatCard('Pending Payments', $pendingPayments, 'neutral', '', '', 'clock', 'orange', 'Pending', 'earnings.php', 3);
+            renderStatCard('This Month', $monthEarnings, 'up', '+22%', 'vs last month', 'dollar-sign', 'cyan', 'Earned', 'earnings.php', 4);
+            renderStatCard('Unread Messages', $unreadMessages, 'neutral', '', '', 'messages-square', 'rose', 'Messages', 'messages.php', 5);
             ?>
         </div>
     </div>
@@ -298,7 +298,7 @@ require_once __DIR__ . '/../components/layout_start.php';
     <div>
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-base font-bold text-gray-900 dark:text-white m-0">Recommended Jobs</h3>
-            <a href="browse_jobs.php" class="text-xs font-semibold text-blue-600 no-underline">Browse All &rarr;</a>
+            <a href="browse_jobs.php" class="text-xs font-semibold text-indigo-600 no-underline">Browse All &rarr;</a>
         </div>
         <?php if ($recommendedJobs->num_rows > 0): ?>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -309,17 +309,17 @@ require_once __DIR__ . '/../components/layout_start.php';
                         <p class="text-xs text-slate-500 dark:text-slate-400 m-0 mb-3.5 line-clamp-2"><?= htmlspecialchars($job['description'] ?? '') ?></p>
                         <div class="mt-auto flex items-center justify-between">
                             <span class="text-base font-extrabold text-gray-900 dark:text-white"><?= format_currency((float) $job['budget']) ?></span>
-                            <a href="job_detail.php?id=<?= (int) $job['id'] ?>" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition no-underline">Apply</a>
+                            <a href="job_detail.php?id=<?= (int) $job['id'] ?>" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition no-underline">Apply</a>
                         </div>
-                        <p class="text-[11px] text-slate-400 mt-2 m-0"><i class="fas fa-clock mr-1"></i><?= time_ago($job['created_at']) ?></p>
+                        <p class="text-[11px] text-slate-400 mt-2 m-0"><i data-lucide="clock" class="mr-1"></i><?= time_ago($job['created_at']) ?></p>
                     </div>
                 <?php endwhile; ?>
             </div>
         <?php else: ?>
             <div class="dh-card p-6 text-center">
-                <i class="fas fa-briefcase text-4xl text-slate-300 mb-3 block"></i>
+                <i data-lucide="briefcase" class="text-4xl text-slate-300 mb-3 block"></i>
                 <p class="text-slate-500 text-sm m-0 mb-3">No jobs available right now</p>
-                <a href="browse_jobs.php" class="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl no-underline inline-block">Browse Jobs</a>
+                <a href="browse_jobs.php" class="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl no-underline inline-block">Browse Jobs</a>
             </div>
         <?php endif; ?>
     </div>
@@ -330,7 +330,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         <div class="dh-card fade-in p-6">
             <div class="flex items-center justify-between mb-5">
                 <h4 class="text-sm font-bold text-gray-900 dark:text-white m-0">Recent Proposals</h4>
-                <a href="proposals.php" class="text-xs font-semibold text-blue-600 no-underline">View All &rarr;</a>
+                <a href="proposals.php" class="text-xs font-semibold text-indigo-600 no-underline">View All &rarr;</a>
             </div>
             <?php if ($recentProposals->num_rows > 0): ?>
                 <div class="overflow-x-auto">
@@ -357,7 +357,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         <div class="dh-card fade-in p-6">
             <div class="flex items-center justify-between mb-5">
                 <h4 class="text-sm font-bold text-gray-900 dark:text-white m-0">Active Contracts</h4>
-                <a href="contracts.php" class="text-xs font-semibold text-blue-600 no-underline">View All &rarr;</a>
+                <a href="contracts.php" class="text-xs font-semibold text-indigo-600 no-underline">View All &rarr;</a>
             </div>
             <?php if ($activeContractsList->num_rows > 0): ?>
                 <div class="flex flex-col gap-3">
@@ -396,7 +396,7 @@ require_once __DIR__ . '/../components/layout_start.php';
     <div class="dh-card fade-in p-6">
         <div class="flex items-center justify-between mb-5">
             <h4 class="text-sm font-bold text-gray-900 dark:text-white m-0">Earnings Overview</h4>
-            <a href="earnings.php" class="text-xs font-semibold text-blue-600 no-underline">View Details &rarr;</a>
+            <a href="earnings.php" class="text-xs font-semibold text-indigo-600 no-underline">View Details &rarr;</a>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
             <div class="p-4 rounded-[14px] bg-emerald-50 dark:bg-emerald-900/20 text-center">
@@ -407,8 +407,8 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <p class="text-[11px] text-orange-600 dark:text-orange-400 m-0 mb-1 font-semibold">Pending</p>
                 <p class="text-xl font-extrabold text-gray-900 dark:text-white m-0"><?= format_currency($pendingPayments) ?></p>
             </div>
-            <div class="p-4 rounded-[14px] bg-blue-50 dark:bg-blue-900/20 text-center">
-                <p class="text-[11px] text-blue-600 dark:text-blue-400 m-0 mb-1 font-semibold">This Month</p>
+            <div class="p-4 rounded-[14px] bg-indigo-50 dark:bg-indigo-900/20 text-center">
+                <p class="text-[11px] text-indigo-600 dark:text-indigo-400 m-0 mb-1 font-semibold">This Month</p>
                 <p class="text-xl font-extrabold text-gray-900 dark:text-white m-0"><?= format_currency($monthEarnings) ?></p>
             </div>
         </div>
@@ -447,7 +447,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         <div>
             <div class="flex items-center justify-between mb-3">
                 <h4 class="text-sm font-bold text-gray-900 dark:text-white m-0">Recent Reviews</h4>
-                <a href="reviews.php" class="text-xs font-semibold text-blue-600 no-underline">View All &rarr;</a>
+                <a href="reviews.php" class="text-xs font-semibold text-indigo-600 no-underline">View All &rarr;</a>
             </div>
             <?php if ($recentReviews->num_rows > 0): ?>
                 <div class="flex flex-col gap-3">
@@ -459,7 +459,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                     <p class="text-xs font-semibold text-gray-900 dark:text-white m-0"><?= htmlspecialchars($review['reviewer_name']) ?></p>
                                     <div class="flex gap-0.5 mt-0.5">
                                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star text-[10px]" style="color:<?= $i <= $review['rating'] ? '#f59e0b' : '#e2e8f0' ?>;"></i>
+                                            <i data-lucide="star" class="text-[10px]" style="color:<?= $i <= $review['rating'] ? '#f59e0b' : '#e2e8f0' ?>;"></i>
                                         <?php endfor; ?>
                                     </div>
                                 </div>
@@ -481,7 +481,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         <div class="dh-card fade-in p-6">
             <div class="flex items-center justify-between mb-4">
                 <h4 class="text-sm font-bold text-gray-900 dark:text-white m-0">Recent Messages</h4>
-                <a href="messages.php" class="text-xs font-semibold text-blue-600 no-underline">Open Chat &rarr;</a>
+                <a href="messages.php" class="text-xs font-semibold text-indigo-600 no-underline">Open Chat &rarr;</a>
             </div>
             <?php if ($recentMessages->num_rows > 0): ?>
                 <div class="flex flex-col gap-2.5">
@@ -506,22 +506,22 @@ require_once __DIR__ . '/../components/layout_start.php';
             <h4 class="text-sm font-bold text-gray-900 dark:text-white m-0 mb-4">Profile Performance</h4>
             <div class="grid grid-cols-2 gap-3">
                 <div class="p-4 rounded-[14px] bg-emerald-50 dark:bg-emerald-900/20 text-center">
-                    <i class="fas fa-trophy text-emerald-600 text-xl mb-2 block"></i>
+                    <i data-lucide="trophy" class="text-emerald-600 text-xl mb-2 block"></i>
                     <p class="text-[22px] font-extrabold text-gray-900 dark:text-white m-0"><?= $jobSuccessScore ?>%</p>
                     <p class="text-[11px] text-slate-400 mt-1 m-0">Job Success</p>
                 </div>
-                <div class="p-4 rounded-[14px] bg-blue-50 dark:bg-blue-900/20 text-center">
-                    <i class="fas fa-eye text-blue-600 text-xl mb-2 block"></i>
+                <div class="p-4 rounded-[14px] bg-indigo-50 dark:bg-indigo-900/20 text-center">
+                    <i data-lucide="eye" class="text-indigo-600 text-xl mb-2 block"></i>
                     <p class="text-[22px] font-extrabold text-gray-900 dark:text-white m-0"><?= number_format($profileViews) ?></p>
                     <p class="text-[11px] text-slate-400 mt-1 m-0">Profile Views</p>
                 </div>
                 <div class="p-4 rounded-[14px] bg-purple-50 dark:bg-purple-900/20 text-center">
-                    <i class="fas fa-paper-plane text-purple-600 text-xl mb-2 block"></i>
+                    <i data-lucide="send" class="text-purple-600 text-xl mb-2 block"></i>
                     <p class="text-[22px] font-extrabold text-gray-900 dark:text-white m-0"><?= number_format($totalProposals) ?></p>
                     <p class="text-[11px] text-slate-400 mt-1 m-0">Proposals Sent</p>
                 </div>
                 <div class="p-4 rounded-[14px] bg-orange-50 dark:bg-orange-900/20 text-center">
-                    <i class="fas fa-bolt text-orange-600 text-xl mb-2 block"></i>
+                    <i data-lucide="zap" class="text-orange-600 text-xl mb-2 block"></i>
                     <p class="text-[22px] font-extrabold text-gray-900 dark:text-white m-0"><?= $responseRate ?>%</p>
                     <p class="text-[11px] text-slate-400 mt-1 m-0">Response Rate</p>
                 </div>
@@ -534,22 +534,22 @@ require_once __DIR__ . '/../components/layout_start.php';
         <h3 class="text-base font-bold text-gray-900 dark:text-white m-0 mb-4">Quick Actions</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <a href="browse_jobs.php" class="qa-card fade-in no-underline">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-600"><i class="fas fa-search"></i></div>
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600"><i data-lucide="search"></i></div>
                 <h5 class="text-sm font-bold text-gray-900 dark:text-white mt-3 mb-1">Browse Jobs</h5>
                 <p class="text-xs text-slate-400 m-0">Find new opportunities</p>
             </a>
             <a href="proposals.php" class="qa-card fade-in no-underline">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600"><i class="fas fa-file-alt"></i></div>
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600"><i data-lucide="file-text"></i></div>
                 <h5 class="text-sm font-bold text-gray-900 dark:text-white mt-3 mb-1">My Proposals</h5>
                 <p class="text-xs text-slate-400 m-0">Track submissions</p>
             </a>
             <a href="earnings.php" class="qa-card fade-in no-underline">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-purple-50 dark:bg-purple-900/30 text-purple-600"><i class="fas fa-wallet"></i></div>
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-purple-50 dark:bg-purple-900/30 text-purple-600"><i data-lucide="wallet"></i></div>
                 <h5 class="text-sm font-bold text-gray-900 dark:text-white mt-3 mb-1">Withdraw Earnings</h5>
                 <p class="text-xs text-slate-400 m-0">Cash out balance</p>
             </a>
             <a href="profile.php" class="qa-card fade-in no-underline">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-orange-50 dark:bg-orange-900/30 text-orange-600"><i class="fas fa-user-pen"></i></div>
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-orange-50 dark:bg-orange-900/30 text-orange-600"><i data-lucide="pencil"></i></div>
                 <h5 class="text-sm font-bold text-gray-900 dark:text-white mt-3 mb-1">Edit Profile</h5>
                 <p class="text-xs text-slate-400 m-0">Update info</p>
             </a>

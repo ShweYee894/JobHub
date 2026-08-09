@@ -4,12 +4,12 @@ require_role('client');
 require_once __DIR__ . '/../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect('/finalproject/client/proposals.php');
+    redirect('/jobhub/client/proposals.php');
 }
 
 if (!verify_csrf_token()) {
     set_flash('error', 'Invalid security token. Please try again.');
-    redirect('/finalproject/client/proposals.php');
+    redirect('/jobhub/client/proposals.php');
 }
 
 $proposalId = sanitize_int($_POST['proposal_id'] ?? 0);
@@ -17,7 +17,7 @@ $userId = $_SESSION['user_id'];
 
 if ($proposalId <= 0) {
     set_flash('error', 'Invalid proposal reference.');
-    redirect('/finalproject/client/proposals.php');
+    redirect('/jobhub/client/proposals.php');
 }
 
 $stmt = $conn->prepare('
@@ -33,12 +33,12 @@ $stmt->close();
 
 if (!$proposal) {
     set_flash('error', 'Proposal not found or access denied.');
-    redirect('/finalproject/client/proposals.php');
+    redirect('/jobhub/client/proposals.php');
 }
 
 if ($proposal['status'] !== 'pending') {
     set_flash('error', 'Only pending proposals can be rejected.');
-    redirect('/finalproject/client/proposal_detail.php?id=' . $proposalId);
+    redirect('/jobhub/client/proposal_detail.php?id=' . $proposalId);
 }
 
 $upd = $conn->prepare("UPDATE proposals SET status = 'rejected' WHERE id = ? AND status = 'pending'");
@@ -52,4 +52,4 @@ if ($upd->affected_rows > 0) {
     set_flash('error', 'Unable to reject proposal. It may have already been processed.');
 }
 
-redirect('/finalproject/client/proposal_detail.php?id=' . $proposalId);
+redirect('/jobhub/client/proposal_detail.php?id=' . $proposalId);

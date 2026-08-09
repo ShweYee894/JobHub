@@ -107,6 +107,23 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
 
+            // Notify the other party about the dispute
+            require_once __DIR__ . '/../shared/notification_helper.php';
+            $disputerName = $isClient ? 'A client' : 'A freelancer';
+            $stmtUser = $conn->prepare('SELECT name FROM users WHERE id = ?');
+            $stmtUser->bind_param('i', $userId);
+            $stmtUser->execute();
+            $disputerName = $stmtUser->get_result()->fetch_assoc()['name'] ?? $disputerName;
+            $stmtUser->close();
+
+            $stmtJob = $conn->prepare('SELECT j.title FROM contracts c JOIN jobs j ON c.job_id = j.id WHERE c.id = ?');
+            $stmtJob->bind_param('i', $contractId);
+            $stmtJob->execute();
+            $jobTitle = $stmtJob->get_result()->fetch_assoc()['title'] ?? 'Contract';
+            $stmtJob->close();
+
+            notifyDisputeOpened($againstId, $disputerName, $jobTitle, $contractId);
+
             $conn->commit();
             json_response([
                 'success'    => true,
@@ -278,7 +295,8 @@ switch ($action) {
         $stmt->close();
 
         // Update contract dispute_status
-        $contractDisputeStatus = $newStatus === 'resolved' ? 'resolved' : ($newStatus === 'escalated' ? 'escalated' : 'open');
+        $statusMap = ['resolved' => 'resolved', 'dismissed' => 'resolved', 'escalated' => 'escalated'];
+        $contractDisputeStatus = $statusMap[$newStatus] ?? 'open';
         $stmt = $conn->prepare('UPDATE contracts SET dispute_status = ?, updated_at = NOW() WHERE id = ?');
         $stmt->bind_param('si', $contractDisputeStatus, $dispute['contract_id']);
         $stmt->execute();
@@ -301,7 +319,6 @@ switch ($action) {
 
         $disputeId  = sanitize_int($_POST['dispute_id'] ?? 0);
         $resolution = trim($_POST['resolution'] ?? '');
-        $actionType = $_POST['resolution_action'] ?? '';
 
         if ($disputeId <= 0) {
             json_response(['success' => false, 'message' => 'Invalid dispute ID.'], 400);
@@ -310,7 +327,7 @@ switch ($action) {
             json_response(['success' => false, 'message' => 'Resolution must be at least 10 characters.'], 400);
         }
 
-        $stmt = $conn->prepare('SELECT id, status, contract_id, milestone_id FROM dispute_tickets WHERE id = ?');
+        $stmt = $conn->prepare('SELECT id, status, contract_id, milestone_id, raised_by, against FROM dispute_tickets WHERE id = ?');
         $stmt->bind_param('i', $disputeId);
         $stmt->execute();
         $dispute = $stmt->get_result()->fetch_assoc();
@@ -323,6 +340,20 @@ switch ($action) {
             json_response(['success' => false, 'message' => 'This dispute has already been resolved.'], 400);
         }
 
+        $stmt = $conn->prepare('SELECT j.title AS job_title, c.client_id, c.freelancer_id FROM contracts c JOIN jobs j ON c.job_id = j.id WHERE c.id = ?');
+        $stmt->bind_param('i', $dispute['contract_id']);
+        $stmt->execute();
+        $contractInfo = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        $adminStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+        $adminStmt->bind_param('i', $userId);
+        $adminStmt->execute();
+        $adminRow = $adminStmt->get_result()->fetch_assoc();
+        $adminStmt->close();
+        $adminName = $adminRow['name'] ?? 'Admin';
+        $contractTitle = $contractInfo['job_title'] ?? 'Contract #' . $dispute['contract_id'];
+
         $conn->begin_transaction();
         try {
             $stmt = $conn->prepare(
@@ -332,17 +363,130 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
 
-            $stmt = $conn->prepare('UPDATE contracts SET dispute_status = "resolved", updated_at = NOW() WHERE id = ?');
+            $stmt = $conn->prepare('UPDATE contracts SET status = "active", dispute_status = "resolved", updated_at = NOW() WHERE id = ?');
             $stmt->bind_param('i', $dispute['contract_id']);
             $stmt->execute();
             $stmt->close();
 
+            if (!empty($dispute['milestone_id'])) {
+                $stmt = $conn->prepare('UPDATE milestones SET status = "pending", updated_at = NOW() WHERE id = ? AND status = "disputed"');
+                $stmt->bind_param('i', $dispute['milestone_id']);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                $stmt = $conn->prepare('UPDATE milestones SET status = "pending", updated_at = NOW() WHERE contract_id = ? AND status = "disputed"');
+                $stmt->bind_param('i', $dispute['contract_id']);
+                $stmt->execute();
+                $stmt->close();
+            }
+
             $conn->commit();
-            json_response(['success' => true, 'message' => 'Dispute resolved successfully.']);
         } catch (Exception $e) {
             $conn->rollback();
             json_response(['success' => false, 'message' => 'Failed to resolve dispute.'], 500);
         }
+
+        require_once __DIR__ . '/../shared/notification_helper.php';
+        $parties = [$dispute['raised_by'], $dispute['against']];
+        foreach ($parties as $partyId) {
+            if ((int)$partyId !== $userId) {
+                notifyDisputeResolved((int)$partyId, $adminName, $contractTitle, (int)$dispute['contract_id'], $resolution);
+            }
+        }
+
+        json_response(['success' => true, 'message' => 'Dispute resolved successfully.']);
+        break;
+
+    // ── DISMISS (admin) ────────────────────────────────────────────────
+    case 'dismiss':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            json_response(['success' => false, 'message' => 'POST request required.'], 405);
+        }
+        if (!verify_csrf_token()) {
+            json_response(['success' => false, 'message' => 'Invalid CSRF token.'], 403);
+        }
+        if ($userRole !== 'admin') {
+            json_response(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
+
+        $disputeId = sanitize_int($_POST['dispute_id'] ?? 0);
+        $resolution = trim($_POST['resolution'] ?? '');
+
+        if ($disputeId <= 0) {
+            json_response(['success' => false, 'message' => 'Invalid dispute ID.'], 400);
+        }
+        if (empty($resolution) || strlen($resolution) < 10) {
+            json_response(['success' => false, 'message' => 'Dismissal reason must be at least 10 characters.'], 400);
+        }
+
+        $stmt = $conn->prepare('SELECT id, status, contract_id, raised_by, against FROM dispute_tickets WHERE id = ?');
+        $stmt->bind_param('i', $disputeId);
+        $stmt->execute();
+        $dispute = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$dispute) {
+            json_response(['success' => false, 'message' => 'Dispute not found.'], 404);
+        }
+        if ($dispute['status'] === 'resolved' || $dispute['status'] === 'dismissed') {
+            json_response(['success' => false, 'message' => 'This dispute has already been closed.'], 400);
+        }
+
+        $stmt = $conn->prepare('SELECT j.title AS job_title FROM contracts c JOIN jobs j ON c.job_id = j.id WHERE c.id = ?');
+        $stmt->bind_param('i', $dispute['contract_id']);
+        $stmt->execute();
+        $contractInfo = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        $adminStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+        $adminStmt->bind_param('i', $userId);
+        $adminStmt->execute();
+        $adminRow = $adminStmt->get_result()->fetch_assoc();
+        $adminStmt->close();
+        $adminName = $adminRow['name'] ?? 'Admin';
+        $contractTitle = $contractInfo['job_title'] ?? 'Contract #' . $dispute['contract_id'];
+
+        $conn->begin_transaction();
+        try {
+            $stmt = $conn->prepare(
+                'UPDATE dispute_tickets SET status = "dismissed", resolution = ?, resolved_by = ?, updated_at = NOW() WHERE id = ?'
+            );
+            $stmt->bind_param('sii', $resolution, $userId, $disputeId);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $conn->prepare('UPDATE contracts SET status = "active", dispute_status = "resolved", updated_at = NOW() WHERE id = ?');
+            $stmt->bind_param('i', $dispute['contract_id']);
+            $stmt->execute();
+            $stmt->close();
+
+            if (!empty($dispute['milestone_id'])) {
+                $stmt = $conn->prepare('UPDATE milestones SET status = "pending", updated_at = NOW() WHERE id = ? AND status = "disputed"');
+                $stmt->bind_param('i', $dispute['milestone_id']);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                $stmt = $conn->prepare('UPDATE milestones SET status = "pending", updated_at = NOW() WHERE contract_id = ? AND status = "disputed"');
+                $stmt->bind_param('i', $dispute['contract_id']);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            json_response(['success' => false, 'message' => 'Failed to dismiss dispute.'], 500);
+        }
+
+        require_once __DIR__ . '/../shared/notification_helper.php';
+        $parties = [$dispute['raised_by'], $dispute['against']];
+        foreach ($parties as $partyId) {
+            if ((int)$partyId !== $userId) {
+                notifyDisputeDismissed((int)$partyId, $adminName, $contractTitle, (int)$dispute['contract_id'], $resolution);
+            }
+        }
+
+        json_response(['success' => true, 'message' => 'Dispute dismissed successfully.']);
         break;
 
     default:

@@ -6,15 +6,15 @@ require_once __DIR__ . '/../config/helpers.php';
 generate_csrf_token();
 
 $success = '';
-$error   = '';
+$error = '';
 
 if (isset($_SESSION['flash']['success'])) {
-    $success = $_SESSION['flash']['success'];
-    unset($_SESSION['flash']['success']);
+  $success = $_SESSION['flash']['success'];
+  unset($_SESSION['flash']['success']);
 }
 if (isset($_SESSION['flash']['error'])) {
-    $error = $_SESSION['flash']['error'];
-    unset($_SESSION['flash']['error']);
+  $error = $_SESSION['flash']['error'];
+  unset($_SESSION['flash']['error']);
 }
 ?>
 <!DOCTYPE html>
@@ -26,7 +26,7 @@ if (isset($_SESSION['flash']['error'])) {
   <meta name="description" content="Reset your JobHub account password." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -100,10 +100,10 @@ if (isset($_SESSION['flash']['error'])) {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
       <a href="../index.php" class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25">
-          <i class="fas fa-bolt text-white text-sm"></i>
+          <img src="../assets/upload/logos/logo.png" alt="JobHub" class="w-9 h-9 rounded-xl object-cover">
         </div>
         <span class="text-xl font-extrabold tracking-tight">
-          <span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span>
+          <span class="text-gray-900">Job</span><span class="grad-text">Hub</span>
         </span>
       </a>
       <div class="flex items-center gap-3">
@@ -121,7 +121,7 @@ if (isset($_SESSION['flash']['error'])) {
       <!-- Header -->
       <div class="text-center mb-8">
         <div class="w-14 h-14 rounded-2xl btn-grad flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
-          <i class="fas fa-key text-white text-lg"></i>
+          <i data-lucide="key" class="w-5 h-5 text-white"></i>
         </div>
         <h1 class="text-3xl font-black text-gray-900 mb-2">Forgot Password?</h1>
         <p class="text-gray-500 text-sm">Enter your email and we'll send you a reset link</p>
@@ -131,7 +131,7 @@ if (isset($_SESSION['flash']['error'])) {
       <?php if ($success): ?>
       <div class="mb-5 rounded-xl p-4 bg-emerald-50 border border-emerald-200">
         <div class="flex items-start gap-3">
-          <i class="fas fa-circle-check text-emerald-500 text-base mt-0.5"></i>
+          <i data-lucide="circle-check" class="w-4 h-4 text-emerald-500 mt-0.5"></i>
           <div>
             <p class="text-emerald-700 text-sm font-medium"><?= sanitize_string($success) ?></p>
             <p class="text-emerald-600 text-xs mt-1">Check your inbox and follow the instructions to reset your password.</p>
@@ -144,7 +144,7 @@ if (isset($_SESSION['flash']['error'])) {
       <?php if ($error): ?>
       <div class="mb-5 rounded-xl p-3 bg-red-50 border border-red-200 shake">
         <div class="flex items-center gap-2.5">
-          <i class="fas fa-exclamation-triangle text-red-500 text-sm"></i>
+          <i data-lucide="triangle-alert" class="w-4 h-4 text-red-500"></i>
           <p class="text-red-600 text-xs"><?= sanitize_string($error) ?></p>
         </div>
       </div>
@@ -160,7 +160,7 @@ if (isset($_SESSION['flash']['error'])) {
           <div class="mb-6">
             <label for="email" class="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
             <div class="relative">
-              <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="mail" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="email" id="email" name="email"
                 placeholder="you@example.com"
                 autocomplete="email"
@@ -173,7 +173,7 @@ if (isset($_SESSION['flash']['error'])) {
           <!-- Submit -->
           <button type="submit" id="submit-btn"
             class="btn-grad w-full text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
-            <i class="fas fa-paper-plane" id="submit-icon"></i>
+            <i data-lucide="send" id="submit-icon" class="w-4 h-4"></i>
             <span id="submit-text">Send Reset Link</span>
           </button>
         </form>
@@ -209,9 +209,12 @@ document.getElementById('forgot-form').addEventListener('submit', function(e) {
   const icon = document.getElementById('submit-icon');
   const txt  = document.getElementById('submit-text');
   btn.disabled = true;
-  icon.className = 'fas fa-spinner fa-spin';
+  icon.setAttribute('data-lucide', 'loader');
+  icon.classList.add('animate-spin');
+  lucide.createIcons();
   txt.textContent = 'Sending\u2026';
 });
 </script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

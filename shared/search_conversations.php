@@ -26,6 +26,10 @@ if ($query === '') {
     exit;
 }
 
+// ── Release session lock ────────────────────────────────────────────────────
+define('SESSION_CLOSED', true);
+session_write_close();
+
 require_once __DIR__ . '/../config/db.php';
 
 $searchParam = "%$query%";

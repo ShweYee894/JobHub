@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once __DIR__ . '/../includes/wallet_functions.php';
+require_once __DIR__ . '/../includes/ai_engine.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: post_job.php');
@@ -76,27 +78,10 @@ if (!empty($errors)) {
     exit();
 }
 
-function generate_embedding_vector(string $title, string $description, array $skillIds): string {
-    $allText = strtolower($title . ' ' . $description);
-    $allText = preg_replace('/[^a-z0-9\s]/', ' ', $allText);
-    $words = array_values(array_filter(explode(' ', $allText), function($w) { return strlen($w) > 2; }));
-    $words = array_unique($words);
-    $titleText = strtolower($title);
-    $titleText = preg_replace('/[^a-z0-9\s]/', ' ', $titleText);
-    $titleWords = array_values(array_filter(explode(' ', $titleText), function($w) { return strlen($w) > 2; }));
-    $titleWords = array_unique($titleWords);
-    $embedding = [
-        'keywords' => array_values(array_slice($words, 0, 50)),
-        'skill_ids' => $skillIds,
-        'word_count' => count($words),
-        'title_words' => array_values(array_slice($titleWords, 0, 20))
-    ];
-    return json_encode($embedding);
-}
-
+// Embedding generation now uses ai_engine.php (includes dense vectors + cosine similarity support)
 $conn->begin_transaction();
 try {
-    $embeddingJson = generate_embedding_vector($title, $description, $skillIds);
+    $embeddingJson = ai_generate_job_embedding($title, $description, $skillIds, $budget);
     $deadlineVal = !empty($deadline) ? $deadline : null;
 
     if ($jobId > 0) {
@@ -124,6 +109,8 @@ try {
         $stmt->execute();
         $jobId = $conn->insert_id;
         $stmt->close();
+
+        increment_client_total_jobs($conn, $clientId);
     }
 
     if (!empty($skillIds)) {
@@ -161,7 +148,7 @@ try {
     exit();
 } catch (Exception $e) {
     $conn->rollback();
-    set_flash('error', 'Database error: ' . $e->getMessage());
+    set_flash('error', 'An error occurred while saving your job. Please try again.');
     if ($jobId > 0 && isset($_POST['job_id']) && intval($_POST['job_id']) > 0) {
         header('Location: edit_job.php?id=' . intval($_POST['job_id']));
     } else {

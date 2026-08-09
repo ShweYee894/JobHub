@@ -50,6 +50,12 @@ if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token'])
     exit;
 }
 
+// ── Release session lock ────────────────────────────────────────────────────
+// All session data needed for auth/CSRF is captured. Close the session file
+// so SSE (sse.php) and other AJAX requests don't block on it.
+define('SESSION_CLOSED', true);
+session_write_close();
+
 // ── Validate room_id ────────────────────────────────────────────────────────
 if (!isset($_POST['room_id']) || !is_numeric($_POST['room_id'])) {
     http_response_code(400);
@@ -147,40 +153,42 @@ if ($messageId === null) {
 }
 
 // ── Send notification to recipient ────────────────────────────────────────────
-$senderName = htmlspecialchars($_SESSION['user_name'] ?? 'Someone', ENT_QUOTES, 'UTF-8');
+$senderName = $_SESSION['user_name'] ?? 'Someone';
 
-$recipientStmt = $conn->prepare(
-    'SELECT c.client_id, c.freelancer_id, uc.role AS client_role, uf.role AS freelancer_role
-     FROM chat_rooms cr
-     JOIN contracts c ON cr.contract_id = c.id
-     JOIN users uc ON c.client_id = uc.id
-     JOIN users uf ON c.freelancer_id = uf.id
-     WHERE cr.id = ? LIMIT 1'
-);
-if ($recipientStmt) {
-    $recipientStmt->bind_param('i', $roomId);
-    $recipientStmt->execute();
-    $recipientRow = $recipientStmt->get_result()->fetch_assoc();
-    $recipientStmt->close();
+try {
+    $recipientStmt = $conn->prepare(
+        'SELECT c.client_id, c.freelancer_id, uc.role AS client_role, uf.role AS freelancer_role
+         FROM chat_rooms cr
+         JOIN contracts c ON cr.contract_id = c.id
+         JOIN users uc ON c.client_id = uc.id
+         JOIN users uf ON c.freelancer_id = uf.id
+         WHERE cr.id = ? LIMIT 1'
+    );
+    if ($recipientStmt) {
+        $recipientStmt->bind_param('i', $roomId);
+        $recipientStmt->execute();
+        $recipientRow = $recipientStmt->get_result()->fetch_assoc();
+        $recipientStmt->close();
 
-    if ($recipientRow) {
-        $recipientId = ($userId === (int) $recipientRow['client_id'])
-            ? (int) $recipientRow['freelancer_id']
-            : (int) $recipientRow['client_id'];
-        $recipientRole = ($userId === (int) $recipientRow['client_id'])
-            ? $recipientRow['freelancer_role']
-            : $recipientRow['client_role'];
+        if ($recipientRow) {
+            $recipientId = ($userId === (int) $recipientRow['client_id'])
+                ? (int) $recipientRow['freelancer_id']
+                : (int) $recipientRow['client_id'];
+            $recipientRole = ($userId === (int) $recipientRow['client_id'])
+                ? $recipientRow['freelancer_role']
+                : $recipientRow['client_role'];
 
-        notifyNewMessage($recipientId, $senderName, $roomId, $recipientRole);
+            notifyNewMessage($recipientId, $senderName, $roomId, $recipientRole);
+        }
     }
+} catch (\Throwable $e) {
+    // Notification failure must not break the message response
+    error_log('send_message notify error: ' . $e->getMessage());
 }
 
 // ── Response ─────────────────────────────────────────────────────────────────
 // Build the message directly from session data — avoids a redundant DB round-trip.
-$senderImage = $_SESSION['user_profile_image'] ?? null;
-if ($senderImage) {
-    $senderImage = htmlspecialchars($senderImage, ENT_QUOTES, 'UTF-8');
-}
+$senderImage = chat_resolve_profile_image($_SESSION['profile_image'] ?? null);
 
 echo json_encode([
     'success' => true,
@@ -190,7 +198,7 @@ echo json_encode([
         'sender_id'    => $userId,
         'sender_name'  => $senderName,
         'sender_image' => $senderImage,
-        'message_text' => htmlspecialchars($messageText, ENT_QUOTES, 'UTF-8'),
+        'message_text' => $messageText,
         'is_read'      => 0,
         'created_at'   => date('Y-m-d H:i:s'),
     ],

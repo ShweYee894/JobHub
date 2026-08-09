@@ -2,76 +2,40 @@
 /**
  * Batch Generate Embeddings
  * POST only, CSRF protected.
+ * Now uses ai_engine.php for dense vector generation (cosine similarity support).
  */
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../auth/auth.php';
+require_once __DIR__ . '/../includes/ai_engine.php';
 require_role('admin');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     set_flash('error', 'Invalid request method.');
-    redirect('/finalproject/admin/ai_matching.php');
+    redirect('/jobhub/admin/ai_matching.php');
 }
 
 if (!verify_csrf_token()) {
     set_flash('error', 'Invalid CSRF token. Please try again.');
-    redirect('/finalproject/admin/ai_matching.php');
-}
-
-// ── Stop Words ──────────────────────────────────────────────────────────────
-$STOP_WORDS = [
-    'the','is','at','which','on','a','an','and','or','but','in','with','to','for',
-    'of','not','no','can','had','has','was','were','are','be','been','being',
-    'have','having','do','does','did','doing','will','would','could','should',
-    'may','might','shall','must','that','this','these','those','it','its',
-    'from','by','as','if','then','than','so','just','also','about','into',
-    'over','after','before','between','under','above','out','off','up','down',
-    'all','each','every','both','few','more','most','other','some','such','any',
-    'only','same','own','too','very','here','there','when','where','why','how',
-    'what','who','whom','whose','through','during','until','while','again',
-    'further','once','because','nor','against','during','once','twice',
-];
-
-function extract_keywords(string $text, array $stop_words): array {
-    $text = strtolower($text);
-    $text = preg_replace('/[^a-z0-9\s]/', ' ', $text);
-    $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
-    $freq = [];
-    foreach ($words as $word) {
-        if (strlen($word) < 3 || in_array($word, $stop_words, true)) continue;
-        $freq[$word] = ($freq[$word] ?? 0) + 1;
-    }
-    arsort($freq);
-    return array_slice(array_keys($freq), 0, 20);
+    redirect('/jobhub/admin/ai_matching.php');
 }
 
 // ── Generate Embeddings for Jobs ───────────────────────────────────────────
 $jobs_generated = 0;
-$r = $conn->query("SELECT id, title, description, budget FROM jobs WHERE embedding_vector IS NULL OR embedding_vector = ''");
+$r = $conn->query("SELECT id, title, description, budget FROM jobs WHERE embedding_vector IS NULL OR embedding_vector = '' OR JSON_EXTRACT(embedding_vector, '$.dense_vector') IS NULL");
 while ($job = $r->fetch_assoc()) {
-    $title_words = extract_keywords($job['title'], $STOP_WORDS);
-    $desc_words = extract_keywords($job['description'] ?? $job['title'], $STOP_WORDS);
-    $all_keywords = array_unique(array_merge($title_words, $desc_words));
-    $all_keywords = array_slice($all_keywords, 0, 20);
-    $word_count = str_word_count(strtolower($job['title'] . ' ' . ($job['description'] ?? '')));
-
-    $s = $conn->prepare('SELECT skill_id FROM job_skills WHERE job_id = ?');
-    $s->bind_param('i', $job['id']);
-    $s->execute();
-    $res = $s->get_result();
+    $stmt = $conn->prepare('SELECT skill_id FROM job_skills WHERE job_id = ?');
+    $stmt->bind_param('i', $job['id']);
+    $stmt->execute();
+    $res = $stmt->get_result();
     $skill_ids = [];
     while ($row = $res->fetch_assoc()) {
         $skill_ids[] = (int) $row['skill_id'];
     }
-    $s->close();
+    $stmt->close();
 
-    $embedding = json_encode([
-        'keywords'          => $all_keywords,
-        'skill_ids'         => $skill_ids,
-        'word_count'        => $word_count,
-        'title_words'       => $title_words,
-        'budget_normalized' => round(min(1.0, (float) $job['budget'] / 10000), 4),
-    ]);
+    // Generate embedding using ai_engine (includes dense vector for cosine similarity)
+    $embedding = ai_generate_job_embedding($job['title'], $job['description'] ?? $job['title'], $skill_ids, (float) $job['budget']);
 
     $u = $conn->prepare('UPDATE jobs SET embedding_vector = ? WHERE id = ?');
     $u->bind_param('si', $embedding, $job['id']);
@@ -83,35 +47,38 @@ while ($job = $r->fetch_assoc()) {
 // ── Generate Vectors for Freelancers ───────────────────────────────────────
 $freelancers_generated = 0;
 $r = $conn->query("
-    SELECT f.id, f.hourly_rate, f.years_of_experience, f.availability
+    SELECT f.id, f.hourly_rate, f.years_of_experience, f.availability, f.title, f.bio
     FROM freelancers f
-    WHERE f.skills_vector IS NULL OR f.skills_vector = ''
+    WHERE f.skills_vector IS NULL OR f.skills_vector = '' OR JSON_EXTRACT(f.skills_vector, '$.dense_vector') IS NULL
 ");
 while ($fl = $r->fetch_assoc()) {
-    $s = $conn->prepare('
+    $stmt = $conn->prepare('
         SELECT fs.skill_id, s.skill_name
         FROM freelancer_skills fs
         JOIN skills s ON fs.skill_id = s.id
         WHERE fs.freelancer_id = ?
     ');
-    $s->bind_param('i', $fl['id']);
-    $s->execute();
-    $res = $s->get_result();
+    $stmt->bind_param('i', $fl['id']);
+    $stmt->execute();
+    $res = $stmt->get_result();
     $skill_ids = [];
     $skill_names = [];
     while ($row = $res->fetch_assoc()) {
         $skill_ids[] = (int) $row['skill_id'];
         $skill_names[] = $row['skill_name'];
     }
-    $s->close();
+    $stmt->close();
 
-    $vector = json_encode([
-        'skill_ids'        => $skill_ids,
-        'skill_names'      => $skill_names,
-        'hourly_rate'      => (float) $fl['hourly_rate'],
-        'experience_years' => (int) $fl['years_of_experience'],
-        'availability'     => $fl['availability'] ?? 'Available',
-    ]);
+    // Generate vector using ai_engine (includes dense vector for cosine similarity)
+    $embeddingText = ($fl['title'] ?? '') . ' ' . ($fl['bio'] ?? '');
+    $vector = ai_generate_freelancer_vector(
+        $skill_ids,
+        $skill_names,
+        (float) $fl['hourly_rate'],
+        (int) $fl['years_of_experience'],
+        $fl['availability'] ?? 'Available',
+        $embeddingText
+    );
 
     $u = $conn->prepare('UPDATE freelancers SET skills_vector = ? WHERE id = ?');
     $u->bind_param('si', $vector, $fl['id']);
@@ -123,4 +90,4 @@ while ($fl = $r->fetch_assoc()) {
 $conn->close();
 
 set_flash('success', "Embeddings generated successfully! Jobs: {$jobs_generated}, Freelancers: {$freelancers_generated}");
-redirect('/finalproject/admin/ai_matching.php');
+redirect('/jobhub/admin/ai_matching.php');

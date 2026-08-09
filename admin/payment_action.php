@@ -8,16 +8,19 @@
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../auth/auth.php';
+require_once __DIR__ . '/../includes/wallet_functions.php';
 require_role('admin');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    set_flash('error', 'Invalid request method.');
-    redirect('/finalproject/admin/payments.php');
+    http_response_code(405);
+    echo 'Invalid request method.';
+    exit;
 }
 
 if (!verify_csrf_token()) {
-    set_flash('error', 'Invalid CSRF token. Please try again.');
-    redirect('/finalproject/admin/payments.php');
+    http_response_code(403);
+    echo 'Invalid CSRF token. Please try again.';
+    exit;
 }
 
 $action    = trim($_POST['action'] ?? '');
@@ -177,9 +180,10 @@ if ($action === 'export_pdf') {
 
     echo "<!DOCTYPE html><html><head><meta charset='utf-8'>
     <title>Payments Report - " . date('M j, Y') . "</title>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; padding:40px; color:#1e293b; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; padding:40px; color:#1e293b; background:#fff; }
         .header { text-align:center; margin-bottom:30px; }
         .header h1 { font-size:24px; font-weight:800; color:#1e293b; }
         .header p { font-size:12px; color:#64748b; margin-top:4px; }
@@ -191,8 +195,8 @@ if ($action === 'export_pdf') {
         .summary-box .label { font-size:10px; text-transform:uppercase; color:#64748b; letter-spacing:0.05em; }
         .summary-box .value { font-size:20px; font-weight:800; margin-top:4px; }
         .footer { text-align:center; margin-top:30px; font-size:11px; color:#94a3b8; }
-        @media print { body { padding:20px; } }
     </style></head><body>
+    <div id='pdfContent'>
     <div class='header'>
         <h1>JobHub Payment Report</h1>
         <p>Generated: " . date('F j, Y \a\t g:i A') . " | Filters: " . htmlspecialchars($filterStr) . "</p>
@@ -211,6 +215,34 @@ if ($action === 'export_pdf') {
         <tbody>{$rows}</tbody>
     </table>
     <div class='footer'>JobHub Freelancer Marketplace &mdash; Confidential Payment Report</div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof html2pdf === 'undefined') {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage('pdf_done', '*');
+            }
+            return;
+        }
+        var element = document.getElementById('pdfContent');
+        var opt = {
+            margin: 0.5,
+            filename: 'JobHub_Payment_Report_" . date('Y-m-d') . ".pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(element).save().then(function() {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage('pdf_done', '*');
+            }
+        }).catch(function() {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage('pdf_done', '*');
+            }
+        });
+    });
+    </script>
     </body></html>";
     exit;
 }
@@ -220,12 +252,12 @@ if ($action === 'export_pdf') {
 // ═══════════════════════════════════════════════════════════════════
 if (!in_array($action, ['processing', 'completed', 'refunded'])) {
     set_flash('error', 'Invalid action.');
-    redirect('/finalproject/admin/payments.php');
+    redirect('/jobhub/admin/payments.php');
 }
 
 if ($paymentId <= 0) {
     set_flash('error', 'Invalid payment ID.');
-    redirect('/finalproject/admin/payments.php');
+    redirect('/jobhub/admin/payments.php');
 }
 
 // Fetch payment
@@ -246,7 +278,7 @@ $stmt->close();
 
 if (!$payment) {
     set_flash('error', 'Payment not found.');
-    redirect('/finalproject/admin/payments.php');
+    redirect('/jobhub/admin/payments.php');
 }
 
 $adminId   = (int) $_SESSION['user_id'];
@@ -261,7 +293,7 @@ $validTransitions = [
 
 if (!in_array($oldStatus, $validTransitions[$action] ?? [])) {
     set_flash('error', "Cannot change payment from '{$oldStatus}' to '{$action}'.");
-    redirect('/finalproject/admin/payments.php');
+    redirect('/jobhub/admin/payments.php');
 }
 
 $conn->begin_transaction();
@@ -315,6 +347,8 @@ try {
             $creditStmt->bind_param('di', $payment['freelancer_net'], $payment['payee_id']);
             $creditStmt->execute();
             $creditStmt->close();
+
+            increment_freelancer_earnings($conn, (int) $payment['payee_id'], (float) $payment['freelancer_net']);
         }
     }
 
@@ -348,4 +382,4 @@ try {
     set_flash('error', 'Failed to process payment action: ' . $e->getMessage());
 }
 
-redirect('/finalproject/admin/payments.php');
+redirect('/jobhub/admin/payments.php');

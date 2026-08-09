@@ -10,6 +10,7 @@
 session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../auth/auth.php';
+require_once __DIR__ . '/../includes/wallet_functions.php';
 
 header('Content-Type: application/json');
 
@@ -20,6 +21,42 @@ if (!is_logged_in()) {
 $userId   = (int) $_SESSION['user_id'];
 $userRole = $_SESSION['user_role'] ?? '';
 $action   = $_GET['action'] ?? $_POST['action'] ?? '';
+
+function check_contract_completion(int $contractId): void {
+    global $conn;
+    $stmt = $conn->prepare('SELECT COUNT(*) AS total, SUM(CASE WHEN status = \'released\' THEN 1 ELSE 0 END) AS released FROM milestones WHERE contract_id = ?');
+    $stmt->bind_param('i', $contractId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $total = (int) $row['total'];
+    $released = (int) ($row['released'] ?? 0);
+    if ($total > 0 && $total === $released) {
+        $stmt = $conn->prepare('UPDATE contracts SET status = \'completed\', updated_at = NOW() WHERE id = ? AND status = \'active\'');
+        $stmt->bind_param('i', $contractId);
+        $stmt->execute();
+        $stmt->close();
+
+        // Increment freelancers.completed_jobs
+        $flStmt = $conn->prepare('SELECT freelancer_id FROM contracts WHERE id = ?');
+        $flStmt->bind_param('i', $contractId);
+        $flStmt->execute();
+        $flRow = $flStmt->get_result()->fetch_assoc();
+        $flStmt->close();
+        if ($flRow) {
+            increment_freelancer_completed_jobs($conn, (int) $flRow['freelancer_id']);
+        }
+
+        $stmt = $conn->prepare('UPDATE jobs SET status = \'completed\', updated_at = NOW() WHERE id = (SELECT job_id FROM contracts WHERE id = ?)');
+        $stmt->bind_param('i', $contractId);
+        $stmt->execute();
+        $stmt->close();
+        $stmt = $conn->prepare('UPDATE clients SET total_spent = total_spent + (SELECT COALESCE(SUM(total_amount), 0) FROM payments p JOIN milestones m ON p.milestone_id = m.id WHERE m.contract_id = ? AND p.status = \'completed\') WHERE client_id = (SELECT client_id FROM contracts WHERE id = ?)');
+        $stmt->bind_param('ii', $contractId, $contractId);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
 
 switch ($action) {
 
@@ -81,8 +118,9 @@ switch ($action) {
             ], 400);
         }
 
-        $platformFee  = round($amount * 0.10, 2);
-        $freelancerNet = round($amount * 0.90, 2);
+        $feePercent = get_platform_fee_percent();
+        $platformFee  = round($amount * ($feePercent / 100), 2);
+        $freelancerNet = round($amount - $platformFee, 2);
 
         $conn->begin_transaction();
         try {
@@ -104,7 +142,7 @@ switch ($action) {
             // c. Insert payment record
             $stmt = $conn->prepare('
                 INSERT INTO payments (milestone_id, payer_id, payee_id, total_amount, platform_fee, freelancer_net, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, \'completed\', NOW())
+                VALUES (?, ?, ?, ?, ?, ?, \'held\', NOW())
             ');
             $stmt->bind_param('iiiddd', $milestoneId, $userId, $freelancerId, $amount, $platformFee, $freelancerNet);
             $stmt->execute();
@@ -123,6 +161,22 @@ switch ($action) {
             $stmt->close();
 
             $conn->commit();
+
+            // Notify freelancer about milestone funding
+            require_once __DIR__ . '/../shared/notification_helper.php';
+            $stmtMilestone = $conn->prepare('SELECT title FROM milestones WHERE id = ?');
+            $stmtMilestone->bind_param('i', $milestoneId);
+            $stmtMilestone->execute();
+            $milestoneTitle = $stmtMilestone->get_result()->fetch_assoc()['title'] ?? 'Milestone';
+            $stmtMilestone->close();
+            $stmtContract = $conn->prepare('SELECT id FROM contracts WHERE id = (SELECT contract_id FROM milestones WHERE id = ?)');
+            $stmtContract->bind_param('i', $milestoneId);
+            $stmtContract->execute();
+            $contractIdForNotify = $stmtContract->get_result()->fetch_assoc()['id'] ?? 0;
+            $stmtContract->close();
+            if ($contractIdForNotify) {
+                notifyMilestoneFunded($freelancerId, $milestoneTitle, $amount, $contractIdForNotify);
+            }
 
             json_response([
                 'success'        => true,
@@ -184,7 +238,8 @@ switch ($action) {
 
         $freelancerId = (int) $milestone['freelancer_id'];
         $amount       = (float) $milestone['amount'];
-        $freelancerNet = round($amount * 0.90, 2);
+        $feePercent   = get_platform_fee_percent();
+        $freelancerNet = round($amount * (1 - $feePercent / 100), 2);
 
         $conn->begin_transaction();
         try {
@@ -225,6 +280,10 @@ switch ($action) {
             $stmt->close();
 
             // f. Platform fee is recorded in the payments table; no separate wallet transaction needed
+
+            // g. Check if contract is complete
+            $milestoneContract = $milestone['contract_id'];
+            check_contract_completion((int) $milestoneContract);
 
             $conn->commit();
 

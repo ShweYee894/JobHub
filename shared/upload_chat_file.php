@@ -34,6 +34,10 @@ if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) ||
     exit;
 }
 
+// ── Release session lock ────────────────────────────────────────────────────
+define('SESSION_CLOSED', true);
+session_write_close();
+
 // Validate room_id
 if (!isset($_POST['room_id']) || !is_numeric($_POST['room_id'])) {
     http_response_code(400);
@@ -124,7 +128,7 @@ if (!move_uploaded_file($file['tmp_name'], $filepath)) {
     exit;
 }
 
-$fileUrl = '/finalproject/assets/upload/chat/' . $filename;
+$fileUrl = '/jobhub/assets/upload/chat/' . $filename;
 
 echo json_encode([
     'success' => true,

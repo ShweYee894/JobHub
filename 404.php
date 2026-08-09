@@ -51,7 +51,7 @@ require_once __DIR__ . '/../config/helpers.php';
             <a href="javascript:history.back()" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all">
                 <i class="fas fa-arrow-left text-xs"></i> Go Back
             </a>
-            <a href="/finalproject/index.php" class="btn-grad inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25">
+            <a href="/jobhub/index.php" class="btn-grad inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-500/25">
                 <i class="fas fa-home text-xs"></i> Go Home
             </a>
         </div>
@@ -60,11 +60,11 @@ require_once __DIR__ . '/../config/helpers.php';
         <div class="mt-10 pt-6 border-t border-gray-200">
             <p class="text-xs text-gray-400 mb-3">Need help?</p>
             <div class="flex items-center justify-center gap-4 text-xs">
-                <a href="/finalproject/auth/login.php" class="text-blue-500 hover:text-blue-600 font-medium transition-colors">Login</a>
+                <a href="/jobhub/auth/login.php" class="text-blue-500 hover:text-blue-600 font-medium transition-colors">Login</a>
                 <span class="text-gray-300">|</span>
-                <a href="/finalproject/auth/register.php" class="text-blue-500 hover:text-blue-600 font-medium transition-colors">Register</a>
+                <a href="/jobhub/auth/register.php" class="text-blue-500 hover:text-blue-600 font-medium transition-colors">Register</a>
                 <span class="text-gray-300">|</span>
-                <a href="/finalproject/index.php" class="text-blue-500 hover:text-blue-600 font-medium transition-colors">Home</a>
+                <a href="/jobhub/index.php" class="text-blue-500 hover:text-blue-600 font-medium transition-colors">Home</a>
             </div>
         </div>
     </div>

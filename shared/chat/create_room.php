@@ -13,7 +13,7 @@
  *      // $chatRoomId is set on success, null on failure
  *
  *   2. As an AJAX endpoint (POST with csrf_token):
- *      fetch('/finalproject/shared/chat/create_room.php', {
+ *      fetch('/jobhub/shared/chat/create_room.php', {
  *          method: 'POST',
  *          body: 'contract_id=42&csrf_token=...'
  *      })
@@ -59,6 +59,10 @@ if ($isAjax || $isPost) {
 
     $userId = (int) $_SESSION['user_id'];
     $role   = $_SESSION['user_role'] ?? '';
+
+    // ── Release session lock ────────────────────────────────────────────────
+    define('SESSION_CLOSED', true);
+    session_write_close();
 
     // ── Verify contract ownership ────────────────────────────────────────
     // Admins can create rooms for any contract; clients/freelancers must be on the contract

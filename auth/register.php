@@ -37,7 +37,7 @@ unset($_SESSION['form_data']);
   <meta name="description" content="Join JobHub — create your account as a freelancer or client and start collaborating on projects worldwide." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -110,32 +110,9 @@ unset($_SESSION['form_data']);
     input[type=checkbox] { accent-color: #2563eb; }
   </style>
 </head>
-<body class="min-h-screen relative overflow-x-hidden">
+<body class="min-h-screen">
 
-  <!-- Background decorations -->
-  <div class="orb w-[500px] h-[500px] bg-blue-400 -top-40 -right-40" style="animation-delay:0s"></div>
-  <div class="orb w-[400px] h-[400px] bg-cyan-300 -bottom-32 -left-32" style="animation-delay:3s"></div>
-
-  <!-- Grid pattern -->
-  <div class="absolute inset-0 pointer-events-none opacity-[0.03]" style="background-image:radial-gradient(circle,#2563eb 1px,transparent 1px);background-size:24px 24px;"></div>
-
-  <!-- NAVBAR -->
-  <nav class="relative z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-      <a href="../index.php" class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25">
-          <i class="fas fa-bolt text-white text-sm"></i>
-        </div>
-        <span class="text-xl font-extrabold tracking-tight">
-          <span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span>
-        </span>
-      </a>
-      <div class="flex items-center gap-3">
-        <a href="login.php" class="text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-primary px-4 py-2 rounded-lg transition-all">Log In</a>
-        <a href="register.php" class="btn-grad text-sm font-semibold text-white px-5 py-2 rounded-lg shadow-lg shadow-blue-500/25">Sign Up</a>
-      </div>
-    </div>
-  </nav>
+  <?php include __DIR__ . '/../includes/auth_navbar.php'; ?>
 
   <!-- MAIN CONTENT -->
   <main class="relative z-10 flex items-center justify-center px-4 py-12 min-h-[calc(100vh-57px)]">
@@ -144,8 +121,8 @@ unset($_SESSION['form_data']);
 
       <!-- Header -->
       <div class="text-center mb-8">
-        <div class="w-14 h-14 rounded-2xl btn-grad flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
-          <i class="fas fa-user-plus text-white text-lg"></i>
+        <div class="w-[40px] h-[40px] rounded-xl bg-gradient-to-tr from-blue-500/10 via-indigo-500/10 to-blue-50/50 border border-blue-200/60 shadow-lg shadow-blue-500/10 flex items-center justify-center mx-auto mb-4 hover:scale-105 transition-transform duration-300 cursor-default">
+          <i data-lucide="user-plus" class="w-5 h-5 text-blue-600"></i>
         </div>
         <h1 class="text-3xl font-black text-gray-900 mb-2">Join JobHub</h1>
         <p class="text-gray-500 text-sm">Create your account and start your journey</p>
@@ -155,7 +132,7 @@ unset($_SESSION['form_data']);
       <?php if (!empty($errors)): ?>
       <div class="mb-5 rounded-xl p-3 bg-red-50 border border-red-200 shake">
         <div class="flex items-start gap-2.5">
-          <i class="fas fa-circle-exclamation text-red-500 text-sm mt-0.5"></i>
+          <i data-lucide="circle-alert" class="w-4 h-4 text-red-500 mt-0.5"></i>
           <div>
             <?php foreach ($errors as $e): ?>
             <p class="text-red-600 text-xs"><?= sanitize_string($e) ?></p>
@@ -179,14 +156,14 @@ unset($_SESSION['form_data']);
               <button type="button" id="btn-freelancer"
                 onclick="setRole('freelancer')"
                 class="role-btn <?= $old_role === 'freelancer' ? 'active' : '' ?> border border-gray-200 text-gray-600 rounded-xl py-3 flex flex-col items-center gap-1 cursor-pointer bg-gray-50">
-                <i class="fas fa-laptop-code text-lg <?= $old_role === 'freelancer' ? 'text-white' : 'text-blue-500' ?>" id="icon-freelancer"></i>
+                <i data-lucide="laptop" class="w-5 h-5 <?= $old_role === 'freelancer' ? 'text-white' : 'text-blue-500' ?>" id="icon-freelancer"></i>
                 <span class="font-bold text-xs">Freelancer</span>
                 <span class="text-[10px] opacity-60">Find work</span>
               </button>
               <button type="button" id="btn-client"
                 onclick="setRole('client')"
                 class="role-btn <?= $old_role === 'client' ? 'active' : '' ?> border border-gray-200 text-gray-600 rounded-xl py-3 flex flex-col items-center gap-1 cursor-pointer bg-gray-50">
-                <i class="fas fa-user-tie text-lg <?= $old_role === 'client' ? 'text-white' : 'text-blue-500' ?>" id="icon-client"></i>
+                <i data-lucide="user" class="w-5 h-5 <?= $old_role === 'client' ? 'text-white' : 'text-blue-500' ?>" id="icon-client"></i>
                 <span class="font-bold text-xs">Client</span>
                 <span class="text-[10px] opacity-60">Hire talent</span>
               </button>
@@ -197,7 +174,7 @@ unset($_SESSION['form_data']);
           <div class="mb-4">
             <label for="name" class="block text-xs font-semibold text-gray-700 mb-1.5">Full Name</label>
             <div class="relative">
-              <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="user" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="text" id="name" name="name"
                 value="<?= $old_name ?>"
                 placeholder="John Doe"
@@ -212,7 +189,7 @@ unset($_SESSION['form_data']);
           <div class="mb-4">
             <label for="email" class="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
             <div class="relative">
-              <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="mail" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="email" id="email" name="email"
                 value="<?= $old_email ?>"
                 placeholder="you@example.com"
@@ -229,7 +206,7 @@ unset($_SESSION['form_data']);
           <div class="mb-4">
             <label for="password" class="block text-xs font-semibold text-gray-700 mb-1.5">Password</label>
             <div class="relative">
-              <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="lock" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="password" id="password" name="password"
                 placeholder="Min. 8 characters"
                 autocomplete="new-password"
@@ -237,7 +214,7 @@ unset($_SESSION['form_data']);
                 required/>
               <button type="button" onclick="togglePwd('password','eye1')"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                <i id="eye1" class="fas fa-eye text-xs"></i>
+                <i id="eye1" data-lucide="eye" class="w-3 h-3"></i>
               </button>
             </div>
             <!-- Strength -->
@@ -250,11 +227,11 @@ unset($_SESSION['form_data']);
             </div>
             <p id="strength-label" class="text-[10px] mt-1 text-gray-400"></p>
             <ul class="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-0.5">
-              <li id="req-len"   class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> 8+ characters</li>
-              <li id="req-upper" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> Uppercase</li>
-              <li id="req-lower" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> Lowercase</li>
-              <li id="req-digit" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> Number</li>
-              <li id="req-spec"  class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> Special char</li>
+              <li id="req-len"   class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> 8+ characters</li>
+              <li id="req-upper" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> Uppercase</li>
+              <li id="req-lower" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> Lowercase</li>
+              <li id="req-digit" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> Number</li>
+              <li id="req-spec"  class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> Special char</li>
             </ul>
             <p id="password-err" class="text-red-500 text-[11px] mt-1 hidden"></p>
           </div>
@@ -263,7 +240,7 @@ unset($_SESSION['form_data']);
           <div class="mb-5">
             <label for="confirm_password" class="block text-xs font-semibold text-gray-700 mb-1.5">Confirm Password</label>
             <div class="relative">
-              <i class="fas fa-shield-halved absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="shield" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="password" id="confirm_password" name="confirm_password"
                 placeholder="Repeat your password"
                 autocomplete="new-password"
@@ -271,7 +248,7 @@ unset($_SESSION['form_data']);
                 required/>
               <button type="button" onclick="togglePwd('confirm_password','eye2')"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                <i id="eye2" class="fas fa-eye text-xs"></i>
+                <i id="eye2" data-lucide="eye" class="w-3 h-3"></i>
               </button>
             </div>
             <p id="confirm-err" class="text-red-500 text-[11px] mt-1 hidden"></p>
@@ -291,7 +268,7 @@ unset($_SESSION['form_data']);
           <!-- Submit -->
           <button type="submit" id="submit-btn"
             class="btn-grad w-full text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
-            <i class="fas fa-arrow-right" id="submit-icon"></i>
+            <i data-lucide="arrow-right" id="submit-icon" class="w-4 h-4"></i>
             <span id="submit-text">Create Account</span>
           </button>
         </form>
@@ -343,10 +320,12 @@ function togglePwd(fieldId, eyeId) {
   const e = document.getElementById(eyeId);
   if (f.type === 'password') {
     f.type = 'text';
-    e.classList.replace('fa-eye','fa-eye-slash');
+    e.setAttribute('data-lucide', 'eye-off');
+    lucide.createIcons();
   } else {
     f.type = 'password';
-    e.classList.replace('fa-eye-slash','fa-eye');
+    e.setAttribute('data-lucide', 'eye');
+    lucide.createIcons();
   }
 }
 
@@ -383,10 +362,12 @@ function updateStrength(pwd) {
     const ico = li.querySelector('i');
     if (v) {
       li.classList.replace('text-gray-400','text-emerald-500');
-      ico.classList.replace('fa-circle','fa-check-circle');
+      ico.setAttribute('data-lucide', 'circle-check');
+      lucide.createIcons();
     } else {
       li.classList.replace('text-emerald-500','text-gray-400');
-      ico.classList.replace('fa-check-circle','fa-circle');
+      ico.setAttribute('data-lucide', 'circle');
+      lucide.createIcons();
     }
   });
   return score;
@@ -510,9 +491,12 @@ document.getElementById('reg-form').addEventListener('submit', function(e) {
   const icon = document.getElementById('submit-icon');
   const txt  = document.getElementById('submit-text');
   btn.disabled = true;
-  icon.className = 'fas fa-spinner fa-spin';
+  icon.setAttribute('data-lucide', 'loader');
+  icon.classList.add('animate-spin');
+  lucide.createIcons();
   txt.textContent = 'Creating account\u2026';
 });
 </script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

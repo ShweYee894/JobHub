@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../auth/auth.php';
 require_role('freelancer');
+require_once __DIR__ . '/../config/helpers.php';
 
 $userId = $_SESSION['user_id'];
 
@@ -11,28 +12,40 @@ $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
+// Auto-close expired jobs (rate limited to once per hour)
+$lastAutoClose = $_SESSION['last_auto_close_jobs'] ?? 0;
+if (time() - $lastAutoClose > 3600) {
+    run_auto_close_jobs();
+    $_SESSION['last_auto_close_jobs'] = time();
+}
+
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     ($_POST['action'] ?? '') === 'submit_proposal'
 ) {
-    $jobId = intval($_POST['job_id'] ?? 0);
-    $amount = floatval($_POST['amount'] ?? 0);
+    if (!verify_csrf_token()) {
+        set_flash('error', 'Invalid security token. Please try again.');
+        redirect('/jobhub/freelancer/browse_jobs.php');
+    }
+
+    $jobId = sanitize_int($_POST['job_id'] ?? 0);
+    $amount = sanitize_float($_POST['amount'] ?? 0);
     $proposal = trim($_POST['proposal_text'] ?? '');
 
     // Validation
     if ($jobId <= 0) {
         set_flash('error', 'Invalid job.');
-        redirect('/finalproject/freelancer/browse_jobs.php');
+        redirect('/jobhub/freelancer/browse_jobs.php');
     }
 
     if ($amount <= 0) {
         set_flash('error', 'Please enter a valid bid amount.');
-        redirect('/finalproject/freelancer/job_detail.php?id=' . $jobId);
+        redirect('/jobhub/freelancer/job_detail.php?id=' . $jobId);
     }
 
     if (strlen($proposal) < 20) {
         set_flash('error', 'Proposal must contain at least 20 characters.');
-        redirect('/finalproject/freelancer/job_detail.php?id=' . $jobId);
+        redirect('/jobhub/freelancer/job_detail.php?id=' . $jobId);
     }
 
     // Check duplicate proposal
@@ -50,7 +63,7 @@ if (
 
     if ($exists) {
         set_flash('error', 'You have already submitted a proposal.');
-        redirect('/finalproject/freelancer/job_detail.php?id=' . $jobId);
+        redirect('/jobhub/freelancer/job_detail.php?id=' . $jobId);
     }
 
     // Verify job exists and is open
@@ -61,11 +74,11 @@ if (
     $jobCheck->close();
     if (!$jobRow) {
         set_flash('error', 'Job not found.');
-        redirect('/finalproject/freelancer/browse_jobs.php');
+        redirect('/jobhub/freelancer/browse_jobs.php');
     }
     if ($jobRow['status'] !== 'open') {
         set_flash('error', 'This job is no longer accepting proposals.');
-        redirect('/finalproject/freelancer/job_detail.php?id=' . $jobId);
+        redirect('/jobhub/freelancer/job_detail.php?id=' . $jobId);
     }
 
     // Insert proposal
@@ -99,19 +112,31 @@ if (
 
     $stmt->close();
 
-    redirect('/finalproject/freelancer/job_detail.php?id=' . $jobId);
+    redirect('/jobhub/freelancer/job_detail.php?id=' . $jobId);
+}
+
+// ── Helper: extract scalar from GET (mobile drawer duplicates cause arrays)
+function scalar_param($value, $default = '') {
+    if (is_array($value)) {
+        foreach ($value as $v) {
+            if ($v !== '' && $v !== null) return $v;
+        }
+        return $default;
+    }
+    return $value ?? $default;
 }
 
 // ── Sanitize filters ──────────────────────────────────────────────────────
-$search = trim($_GET['search'] ?? '');
-$budgetMin = max(0, floatval($_GET['budget_min'] ?? 0));
-$budgetMax = max(0, floatval($_GET['budget_max'] ?? 0));
-$statusFilter = $_GET['status'] ?? 'open';
+$search = trim(scalar_param($_GET['search'] ?? ''));
+$budgetMin = max(0, floatval(scalar_param($_GET['budget_min'] ?? 0)));
+$budgetMax = max(0, floatval(scalar_param($_GET['budget_max'] ?? 0)));
+$statusFilter = scalar_param($_GET['status'] ?? '', 'open');
 $skillIds = array_filter(array_map('intval', $_GET['skills'] ?? []));
-$datePosted = $_GET['date_posted'] ?? 'all';
-$sortBy = $_GET['sort'] ?? 'newest';
+$datePosted = scalar_param($_GET['date_posted'] ?? '', 'all');
+$sortBy = scalar_param($_GET['sort'] ?? '', 'newest');
 $page = max(1, intval($_GET['page'] ?? 1));
 $perPage = 12;
+$savedOnly = !empty($_GET['saved']);
 
 $allowedStatuses = ['open', 'in_progress', 'completed', 'disputed', 'cancelled', 'all'];
 if (!in_array($statusFilter, $allowedStatuses))
@@ -129,6 +154,14 @@ if (!in_array($datePosted, $allowedDates))
 $where = [];
 $params = [];
 $types = '';
+
+$where[] = 'COALESCE(j.is_archived, 0) = 0';
+
+if ($savedOnly) {
+    $where[] = 'j.id IN (SELECT job_id FROM saved_jobs WHERE freelancer_id = ?)';
+    $params[] = $userId;
+    $types .= 'i';
+}
 
 if ($statusFilter !== 'all') {
     $where[] = 'j.status = ?';
@@ -151,16 +184,12 @@ if ($budgetMax > 0) {
 }
 
 if ($search !== '') {
-    $safeSearch = preg_replace('/[^\w\s\-\+]/', '', $search);
-    $safeSearch = trim($safeSearch);
-    if ($safeSearch !== '') {
-        $searchTerms = implode(' ', array_map(function ($t) {
-            return '+' . $t;
-        }, explode(' ', $safeSearch)));
-        $where[] = 'MATCH(j.title, j.description) AGAINST(? IN BOOLEAN MODE)';
-        $params[] = $searchTerms;
-        $types .= 's';
-    }
+    $safeSearch = '%' . $search . '%';
+    $where[] = '(LOWER(j.title) LIKE LOWER(?) OR LOWER(j.description) LIKE LOWER(?) OR j.id IN (SELECT js.job_id FROM job_skills js INNER JOIN skills s ON js.skill_id = s.id WHERE LOWER(s.skill_name) LIKE LOWER(?)))';
+    $params[] = $safeSearch;
+    $params[] = $safeSearch;
+    $params[] = $safeSearch;
+    $types .= 'sss';
 }
 
 $dateCondition = '';
@@ -228,7 +257,9 @@ $orderBy = $orderMap[$sortBy] ?? 'j.created_at DESC';
 
 // ── Fetch jobs ────────────────────────────────────────────────────────────
 $querySql = "SELECT j.id, j.title, j.description, j.budget, j.status, j.created_at,
+             j.job_type, j.experience_level, j.category, j.is_featured,
              u.name AS client_name,
+             c.company_logo,
              (SELECT COUNT(*) FROM proposals WHERE job_id = j.id) AS proposal_count
              FROM jobs j
               JOIN clients c ON j.client_id = c.client_id
@@ -237,7 +268,7 @@ $querySql = "SELECT j.id, j.title, j.description, j.budget, j.status, j.created_
 if ($dateCondition !== '') {
     $querySql .= " AND j.created_at >= DATE_ADD(NOW(), INTERVAL $dateCondition)";
 }
-$querySql .= " ORDER BY $orderBy LIMIT ? OFFSET ?";
+$querySql .= " ORDER BY COALESCE(j.is_featured, 0) DESC, $orderBy LIMIT ? OFFSET ?";
 
 $finalTypes = $types . 'ii';
 $finalParams = array_merge($params, [$pagination['per_page'], $pagination['offset']]);
@@ -291,6 +322,21 @@ if (!empty($jobIds)) {
         }
     }
     $propStmt->close();
+
+    // Fetch saved status for these jobs
+    $savedStmt = $conn->prepare(
+        "SELECT job_id FROM saved_jobs WHERE freelancer_id = ? AND job_id IN ($jidPlaceholders)"
+    );
+    $savedParams = array_merge([$userId], $jobIds);
+    $savedStmt->bind_param('i' . $jidTypes, ...$savedParams);
+    $savedStmt->execute();
+    $savedRes = $savedStmt->get_result();
+    while ($sr = $savedRes->fetch_assoc()) {
+        if (isset($jobs[$sr['job_id']])) {
+            $jobs[$sr['job_id']]['is_saved'] = true;
+        }
+    }
+    $savedStmt->close();
 }
 
 // ── Build base URL for pagination ─────────────────────────────────────────
@@ -299,7 +345,7 @@ function buildBaseUrl(array $overrides = []): string
     $params = array_merge($_GET, $overrides);
     unset($params['page']);
     $qs = http_build_query(array_filter($params, fn($v) => $v !== '' && $v !== null));
-    return '/finalproject/freelancer/browse_jobs.php' . ($qs ? '?' . $qs : '');
+    return '/jobhub/freelancer/browse_jobs.php' . ($qs ? '?' . $qs : '');
 }
 
 $baseUrl = buildBaseUrl();
@@ -312,8 +358,8 @@ $statusColors = [
     'cancelled' => 'bg-gray-100 text-gray-500 border border-gray-200',
 ];
 
-$pageTitle = 'Browse Jobs';
-$pageSubtitle = 'Find new opportunities and submit proposals';
+$pageTitle = $savedOnly ? 'Saved Jobs' : 'Browse Jobs';
+$pageSubtitle = $savedOnly ? 'Jobs you have bookmarked' : 'Find new opportunities and submit proposals';
 $activePage = 'browse_jobs';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
@@ -323,22 +369,25 @@ $conn->close();
 ?>
 
                 <form method="GET" id="filterForm" class="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                    <?php if ($savedOnly): ?>
+                    <input type="hidden" name="saved" value="1">
+                    <?php endif; ?>
 
                     <!-- ═══ SEARCH BAR ═══════════════════════════════════ -->
-                    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
+                    <div class="bg-white rounded-[10px] p-5 border border-[#E5E8EB] fade-in">
                         <div class="flex flex-col sm:flex-row gap-3">
                             <div class="relative flex-1">
-                                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]"></i>
                                 <input type="text" name="search" value="<?= sanitize_string($search) ?>"
                                     placeholder="Search jobs by title, description, or skills..."
-                                    class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400">
+                                    class="fld w-full bg-[#F9FAFB] border border-[#E5E8EB] rounded-[10px] pl-11 pr-4 py-3 text-[15px] text-[#1A1A2E] placeholder-[#9CA3AF] font-medium tracking-wide focus:ring-2 focus:ring-[#4338CA] focus:border-[#4338CA] outline-none transition-all">
                             </div>
-                            <button type="submit" class="btn-grad px-8 py-3 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm shadow-blue-500/25">
-                                <i class="fas fa-search text-xs"></i> Search
+                            <button type="submit" class="bg-[#4338CA] hover:bg-[#3730A3] px-8 py-3 text-white text-[15px] font-semibold rounded-[10px] flex items-center justify-center gap-2 transition-all tracking-wide">
+                                <i data-lucide="search" class="w-4 h-4"></i> Search
                             </button>
                             <?php if ($search !== '' || $budgetMin > 0 || $budgetMax > 0 || $statusFilter !== 'open' || $datePosted !== 'all' || !empty($skillIds)): ?>
-                                <a href="browse_jobs.php" class="px-5 py-3 border border-gray-200 text-gray-600 hover:text-gray-900 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2">
-                                    <i class="fas fa-times text-xs"></i> Clear All
+                                <a href="browse_jobs.php" class="px-5 py-3 border border-[#E5E8EB] text-[#6B7280] hover:text-[#1A1A2E] hover:border-[#D1D5DB] rounded-[10px] text-[15px] font-medium transition-all flex items-center justify-center gap-2">
+                                    <i data-lucide="x" class="w-4 h-4"></i> Clear All
                                 </a>
                             <?php endif; ?>
                         </div>
@@ -350,60 +399,60 @@ $conn->close();
                         <aside id="filterPanel" class="hidden lg:block w-72 flex-shrink-0 space-y-4">
 
                             <!-- Status Filter -->
-                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
-                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 dark:text-white">
-                                    <i class="fas fa-circle-dot text-blue-500 text-xs"></i> Status
+                            <div class="bg-white rounded-[10px] p-5 border border-[#E5E8EB] fade-in">
+                                <h3 class="text-[15px] font-bold text-[#1A1A2E] mb-3 flex items-center gap-2 tracking-wide">
+                                    <i data-lucide="circle-dot" class="w-4 h-4 text-[#6B7280]"></i> Status
                                 </h3>
-                                <div class="space-y-2">
+                                <div class="space-y-1">
                                     <?php
                                     $statusOptions = [
-                                        'open' => ['Open Jobs', 'fa-circle-check', 'text-emerald-500'],
-                                        'all' => ['All Statuses', 'fa-layer-group', 'text-gray-500'],
-                                        'in_progress' => ['In Progress', 'fa-spinner', 'text-blue-500'],
-                                        'completed' => ['Completed', 'fa-check-double', 'text-gray-400'],
-                                        'disputed' => ['Disputed', 'fa-exclamation-triangle', 'text-red-500'],
+                                        'open' => ['Open Jobs', 'circle-check', 'text-[#16A34A]'],
+                                        'all' => ['All Statuses', 'layers', 'text-[#6B7280]'],
+                                        'in_progress' => ['In Progress', 'loader', 'text-[#2563EB]'],
+                                        'completed' => ['Completed', 'check', 'text-[#9CA3AF]'],
+                                        'disputed' => ['Disputed', 'triangle-alert', 'text-[#DC2626]'],
                                     ];
                                     foreach ($statusOptions as $val => $info):
                                         ?>
-                                        <label class="flex items-center gap-2.5 cursor-pointer group p-2 rounded-lg hover:bg-gray-50 transition-colors dark:hover:bg-gray-700 <?= $statusFilter === $val ? 'bg-blue-50' : '' ?>">
+                                        <label class="flex items-center gap-2.5 cursor-pointer group p-2.5 rounded-[10px] hover:bg-[#F9FAFB] transition-colors <?= $statusFilter === $val ? 'bg-[#EEF2FF]' : '' ?>">
                                             <input type="radio" name="status" value="<?= $val ?>" <?= $statusFilter === $val ? 'checked' : '' ?>
-                                                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" onchange="this.form.submit()">
-                                            <i class="fas <?= $info[1] ?> <?= $info[2] ?> text-xs"></i>
-                                            <span class="text-sm <?= $statusFilter === $val ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-600' ?> group-hover:text-gray-900 transition-colors"><?= $info[0] ?></span>
+                                                class="w-4 h-4 text-[#4338CA] border-gray-300 focus:ring-[#4338CA]" onchange="this.form.submit()">
+                                            <i data-lucide="<?= $info[1] ?>" class="w-4 h-4 <?= $info[2] ?>"></i>
+                                            <span class="text-[15px] <?= $statusFilter === $val ? 'font-semibold text-[#1A1A2E]' : 'text-[#6B7280]' ?> group-hover:text-[#1A1A2E] transition-colors tracking-wide"><?= $info[0] ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
 
                             <!-- Budget Range -->
-                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.1s">
-                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 dark:text-white">
-                                    <i class="fas fa-dollar-sign text-emerald-500 text-xs"></i> Budget Range
+                            <div class="bg-white rounded-[10px] p-5 border border-[#E5E8EB] fade-in" style="animation-delay:.1s">
+                                <h3 class="text-[15px] font-bold text-[#1A1A2E] mb-3 flex items-center gap-2 tracking-wide">
+                                    <i data-lucide="dollar-sign" class="w-4 h-4 text-[#6B7280]"></i> Budget Range
                                 </h3>
                                 <div class="flex items-center gap-2">
                                     <div class="relative flex-1">
-                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-xs">$</span>
                                         <input type="number" name="budget_min" value="<?= $budgetMin > 0 ? $budgetMin : '' ?>"
                                             placeholder="Min" min="0" step="1"
-                                            class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 text-sm text-gray-900 placeholder-gray-400">
+                                            class="fld w-full bg-[#F9FAFB] border border-[#E5E8EB] rounded-[10px] pl-7 pr-3 py-2.5 text-[15px] text-[#1A1A2E] placeholder-[#9CA3AF] font-medium focus:ring-2 focus:ring-[#4338CA] focus:border-[#4338CA] outline-none transition-all">
                                     </div>
-                                    <span class="text-gray-300 font-medium">–</span>
+                                    <span class="text-[#D1D5DB] font-medium">–</span>
                                     <div class="relative flex-1">
-                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-xs">$</span>
                                         <input type="number" name="budget_max" value="<?= $budgetMax > 0 ? $budgetMax : '' ?>"
                                             placeholder="Max" min="0" step="1"
-                                            class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 text-sm text-gray-900 placeholder-gray-400">
+                                            class="fld w-full bg-[#F9FAFB] border border-[#E5E8EB] rounded-[10px] pl-7 pr-3 py-2.5 text-[15px] text-[#1A1A2E] placeholder-[#9CA3AF] font-medium focus:ring-2 focus:ring-[#4338CA] focus:border-[#4338CA] outline-none transition-all">
                                     </div>
                                 </div>
-                                <button type="submit" class="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300">
+                                <button type="submit" class="mt-3 w-full py-2.5 bg-[#F9FAFB] hover:bg-[#F3F4F6] text-[#6B7280] text-[13px] font-semibold rounded-[10px] transition-colors border border-[#E5E8EB]">
                                     Apply Budget
                                 </button>
                             </div>
 
                             <!-- Skills Filter (grouped by category) -->
-                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.2s">
-                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 dark:text-white">
-                                    <i class="fas fa-tags text-violet-500 text-xs"></i> Skills
+                            <div class="bg-white rounded-[10px] p-5 border border-[#E5E8EB] fade-in" style="animation-delay:.2s">
+                                <h3 class="text-[15px] font-bold text-[#1A1A2E] mb-3 flex items-center gap-2 tracking-wide">
+                                    <i data-lucide="tags" class="w-4 h-4 text-[#6B7280]"></i> Skills
                                 </h3>
                                 <div class="space-y-4 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
                                     <?php
@@ -416,31 +465,31 @@ $conn->close();
                                         $col = getSkillColor($category, $skillColors, $defaultColor);
                                         ?>
                                         <div>
-                                            <p class="text-[10px] font-bold uppercase tracking-wider <?= $col['text'] ?> mb-2"><?= sanitize_string($category) ?></p>
-                                            <div class="space-y-1.5">
+                                            <p class="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] mb-2"><?= sanitize_string($category) ?></p>
+                                            <div class="space-y-0.5">
                                                 <?php foreach ($skills as $skill): ?>
-                                                    <label class="flex items-center gap-2 cursor-pointer group p-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                                                    <label class="flex items-center gap-2 cursor-pointer group p-2 rounded-[10px] hover:bg-[#F9FAFB] transition-colors">
                                                         <input type="checkbox" name="skills[]" value="<?= $skill['id'] ?>"
                                                             <?= in_array($skill['id'], $skillIds) ? 'checked' : '' ?>
-                                                            class="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                                        <span class="text-xs text-gray-600 group-hover:text-gray-900 transition-colors"><?= sanitize_string($skill['skill_name']) ?></span>
+                                                            class="w-3.5 h-3.5 text-[#4338CA] border-gray-300 rounded focus:ring-[#4338CA]">
+                                                        <span class="text-[15px] text-[#6B7280] group-hover:text-[#1A1A2E] transition-colors tracking-wide"><?= sanitize_string($skill['skill_name']) ?></span>
                                                     </label>
                                                 <?php endforeach; ?>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
-                                <button type="submit" class="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors">
+                                <button type="submit" class="mt-3 w-full py-2.5 bg-[#F9FAFB] hover:bg-[#F3F4F6] text-[#6B7280] text-[13px] font-semibold rounded-[10px] transition-colors border border-[#E5E8EB]">
                                     Apply Skills
                                 </button>
                             </div>
 
                             <!-- Date Posted -->
-                            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.3s">
-                                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 dark:text-white">
-                                    <i class="fas fa-calendar text-cyan-500 text-xs"></i> Date Posted
+                            <div class="bg-white rounded-[10px] p-5 border border-[#E5E8EB] fade-in" style="animation-delay:.3s">
+                                <h3 class="text-[15px] font-bold text-[#1A1A2E] mb-3 flex items-center gap-2 tracking-wide">
+                                    <i data-lucide="calendar" class="w-4 h-4 text-[#6B7280]"></i> Date Posted
                                 </h3>
-                                <div class="space-y-2">
+                                <div class="space-y-1">
                                     <?php
                                     $dateOptions = [
                                         'all' => 'All Time',
@@ -450,10 +499,10 @@ $conn->close();
                                     ];
                                     foreach ($dateOptions as $val => $label):
                                         ?>
-                                        <label class="flex items-center gap-2.5 cursor-pointer group p-2 rounded-lg hover:bg-gray-50 transition-colors <?= $datePosted === $val ? 'bg-blue-50' : '' ?>">
+                                        <label class="flex items-center gap-2.5 cursor-pointer group p-2.5 rounded-[10px] hover:bg-[#F9FAFB] transition-colors <?= $datePosted === $val ? 'bg-[#EEF2FF]' : '' ?>">
                                             <input type="radio" name="date_posted" value="<?= $val ?>" <?= $datePosted === $val ? 'checked' : '' ?>
-                                                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" onchange="this.form.submit()">
-                                            <span class="text-sm <?= $datePosted === $val ? 'font-semibold text-gray-900' : 'text-gray-600' ?> group-hover:text-gray-900 transition-colors"><?= $label ?></span>
+                                                class="w-4 h-4 text-[#4338CA] border-gray-300 focus:ring-[#4338CA]" onchange="this.form.submit()">
+                                            <span class="text-[15px] <?= $datePosted === $val ? 'font-semibold text-[#1A1A2E]' : 'text-[#6B7280]' ?> group-hover:text-[#1A1A2E] transition-colors tracking-wide"><?= $label ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -464,50 +513,50 @@ $conn->close();
                         </aside>
 
                         <!-- Mobile filter drawer -->
-                        <div id="mobileFilter" class="fixed inset-y-0 left-0 z-40 w-80 bg-white shadow-2xl transform -translate-x-full lg:hidden overflow-y-auto dark:bg-gray-800">
-                            <div class="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 dark:bg-gray-800 dark:border-gray-700">
-                                <h2 class="text-lg font-bold text-gray-900">Filters</h2>
-                                <button onclick="document.getElementById('mobileFilter').classList.add('translate-x-full')" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
-                                    <i class="fas fa-times text-sm"></i>
+                        <div id="mobileFilter" class="fixed inset-y-0 left-0 z-40 w-80 bg-white shadow-2xl transform -translate-x-full lg:hidden overflow-y-auto">
+                            <div class="p-5 border-b border-[#E5E8EB] flex items-center justify-between sticky top-0 bg-white z-10">
+                                <h2 class="text-lg font-bold text-[#1A1A2E] tracking-wide">Filters</h2>
+                                <button onclick="document.getElementById('mobileFilter').classList.add('translate-x-full')" class="w-8 h-8 rounded-[10px] bg-[#F5F7F9] flex items-center justify-center text-[#9CA3AF] hover:text-[#1A1A2E] transition-colors">
+                                    <i data-lucide="x" class="w-5 h-5"></i>
                                 </button>
                             </div>
                             <div class="p-5 space-y-4">
                                 <!-- Status (mobile) -->
                                 <div>
-                                    <h3 class="text-sm font-bold text-gray-900 mb-3">Status</h3>
-                                    <div class="space-y-2">
+                                    <h3 class="text-[15px] font-bold text-[#1A1A2E] mb-3 tracking-wide">Status</h3>
+                                    <div class="space-y-1">
                                         <?php foreach ($statusOptions as $val => $info): ?>
-                                            <label class="flex items-center gap-2.5 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                                            <label class="flex items-center gap-2.5 cursor-pointer p-2.5 rounded-[10px] hover:bg-[#F9FAFB]">
                                                 <input type="radio" name="status" value="<?= $val ?>" <?= $statusFilter === $val ? 'checked' : '' ?>
-                                                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                                                <span class="text-sm text-gray-600"><?= $info[0] ?></span>
+                                                    class="w-4 h-4 text-[#4338CA] border-gray-300 focus:ring-[#4338CA]">
+                                                <span class="text-[15px] text-[#6B7280] tracking-wide"><?= $info[0] ?></span>
                                             </label>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
                                 <!-- Budget (mobile) -->
                                 <div>
-                                    <h3 class="text-sm font-bold text-gray-900 mb-3">Budget Range</h3>
+                                    <h3 class="text-[15px] font-bold text-[#1A1A2E] mb-3 tracking-wide">Budget Range</h3>
                                     <div class="flex items-center gap-2">
                                         <input type="number" name="budget_min" value="<?= $budgetMin > 0 ? $budgetMin : '' ?>" placeholder="Min" min="0"
-                                            class="fld flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
-                                        <span class="text-gray-300">–</span>
+                                            class="fld flex-1 bg-[#F9FAFB] border border-[#E5E8EB] rounded-[10px] px-3 py-2.5 text-[15px] font-medium">
+                                        <span class="text-[#D1D5DB]">–</span>
                                         <input type="number" name="budget_max" value="<?= $budgetMax > 0 ? $budgetMax : '' ?>" placeholder="Max" min="0"
-                                            class="fld flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
+                                            class="fld flex-1 bg-[#F9FAFB] border border-[#E5E8EB] rounded-[10px] px-3 py-2.5 text-[15px] font-medium">
                                     </div>
                                 </div>
                                 <!-- Skills (mobile) -->
                                 <div>
-                                    <h3 class="text-sm font-bold text-gray-900 mb-3">Skills</h3>
-                                    <div class="space-y-3 max-h-60 overflow-y-auto">
+                                    <h3 class="text-[15px] font-bold text-[#1A1A2E] mb-3 tracking-wide">Skills</h3>
+                                    <div class="space-y-0.5 max-h-60 overflow-y-auto">
                                         <?php foreach ($grouped as $category => $skills): ?>
                                             <div>
-                                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5"><?= sanitize_string($category) ?></p>
+                                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] mb-1.5"><?= sanitize_string($category) ?></p>
                                                 <?php foreach ($skills as $skill): ?>
-                                                    <label class="flex items-center gap-2 cursor-pointer p-1">
+                                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-[10px] hover:bg-[#F9FAFB]">
                                                         <input type="checkbox" name="skills[]" value="<?= $skill['id'] ?>" <?= in_array($skill['id'], $skillIds) ? 'checked' : '' ?>
-                                                            class="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                                        <span class="text-xs text-gray-600"><?= sanitize_string($skill['skill_name']) ?></span>
+                                                            class="w-3.5 h-3.5 text-[#4338CA] border-gray-300 rounded focus:ring-[#4338CA]">
+                                                        <span class="text-[15px] text-[#6B7280] tracking-wide"><?= sanitize_string($skill['skill_name']) ?></span>
                                                     </label>
                                                 <?php endforeach; ?>
                                             </div>
@@ -516,38 +565,38 @@ $conn->close();
                                 </div>
                                 <!-- Date (mobile) -->
                                 <div>
-                                    <h3 class="text-sm font-bold text-gray-900 mb-3">Date Posted</h3>
-                                    <div class="space-y-2">
+                                    <h3 class="text-[15px] font-bold text-[#1A1A2E] mb-3 tracking-wide">Date Posted</h3>
+                                    <div class="space-y-1">
                                         <?php foreach ($dateOptions as $val => $label): ?>
-                                            <label class="flex items-center gap-2.5 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                                            <label class="flex items-center gap-2.5 cursor-pointer p-2.5 rounded-[10px] hover:bg-[#F9FAFB]">
                                                 <input type="radio" name="date_posted" value="<?= $val ?>" <?= $datePosted === $val ? 'checked' : '' ?>
-                                                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                                                <span class="text-sm text-gray-600"><?= $label ?></span>
+                                                    class="w-4 h-4 text-[#4338CA] border-gray-300 focus:ring-[#4338CA]">
+                                                <span class="text-[15px] text-[#6B7280] tracking-wide"><?= $label ?></span>
                                             </label>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
                                 <input type="hidden" name="sort" value="<?= sanitize_string($sortBy) ?>">
                                 <input type="hidden" name="search" value="<?= sanitize_string($search) ?>">
-                                <button type="submit" class="w-full btn-grad py-3 text-white text-sm font-semibold rounded-xl">Apply Filters</button>
+                                <button type="submit" class="w-full bg-[#4338CA] hover:bg-[#3730A3] py-3 text-white text-[15px] font-semibold rounded-[10px] transition-all tracking-wide">Apply Filters</button>
                             </div>
                         </div>
 
                         <!-- ═══ JOB LISTING ═══════════════════════════════ -->
-                        <div class="flex-1 min-w-0 space-y-5">
+                        <div class="flex-1 min-w-0 space-y-5 lg:pl-8">
 
                             <!-- Results bar -->
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 fade-in">
-                                <p class="text-sm text-gray-500">
-                                    <span class="font-bold text-gray-900"><?= number_format($totalFiltered) ?></span> job<?= $totalFiltered !== 1 ? 's' : '' ?> found
+                                <p class="text-[15px] text-[#6B7280]">
+                                    <span class="font-bold text-[#1A1A2E]"><?= number_format($totalFiltered) ?></span> job<?= $totalFiltered !== 1 ? 's' : '' ?> found
                                     <?php if ($search !== ''): ?>
-                                        for "<span class="font-semibold text-blue-600"><?= sanitize_string($search) ?></span>"
+                                        for "<span class="font-semibold text-[#4338CA]"><?= sanitize_string($search) ?></span>"
                                     <?php endif; ?>
                                 </p>
                                 <div class="flex items-center gap-2">
-                                    <label class="text-xs text-gray-500 font-medium">Sort:</label>
+                                    <label class="text-[13px] text-[#9CA3AF] font-medium">Sort:</label>
                                     <select name="sort" onchange="this.form.submit()"
-                                        class="appearance-none fld bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 cursor-pointer pr-8"
+                                        class="appearance-none fld bg-white border border-[#E5E8EB] rounded-[10px] px-3 py-2 text-[13px] text-[#6B7280] cursor-pointer pr-8 font-medium focus:ring-2 focus:ring-[#4338CA] focus:border-[#4338CA] outline-none transition-all"
                                         style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'><path stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/></svg>'); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem;">
                                         <option value="newest" <?= $sortBy === 'newest' ? 'selected' : '' ?>>Newest First</option>
                                         <option value="oldest" <?= $sortBy === 'oldest' ? 'selected' : '' ?>>Oldest First</option>
@@ -558,75 +607,74 @@ $conn->close();
                             </div>
 
                             <?php if (!empty($jobs)): ?>
-                                <div class="space-y-4">
+                                <?php
+                                $jobTypeLabels = ['hourly' => 'Hourly', 'fixed' => 'Fixed'];
+                                $levelLabels = ['entry' => 'Entry level', 'intermediate' => 'Intermediate', 'expert' => 'Expert'];
+                                ?>
+                                <div class="space-y-0">
                                     <?php foreach ($jobs as $index => $job): ?>
-                                        <div class="job-card bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:<?= 0.05 + ($index * 0.04) ?>s">
-                                            <div class="p-6">
-                                                <div class="flex flex-col lg:flex-row lg:items-start gap-4">
-                                                    <div class="flex-1 min-w-0">
-                                                        <div class="flex flex-wrap items-center gap-2 mb-2">
-                                                            <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors dark:text-white dark:hover:text-blue-400">
-                                                                <?= sanitize_string($job['title']) ?>
-                                                            </a>
-                                                            <span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-semibold <?= $statusColors[$job['status']] ?? $statusColors['open'] ?>">
-                                                                <?= ucfirst(str_replace('_', ' ', $job['status'])) ?>
-                                                            </span>
-                                                        </div>
-
-                                                        <p class="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2">
-                                                            <?= sanitize_string(mb_strimwidth($job['description'], 0, 120, '...')) ?>
-                                                        </p>
-
-                                                        <?php if (!empty($job['skills'])): ?>
-                                                            <div class="flex flex-wrap gap-1.5 mb-3">
-                                                                <?php
-                                                                foreach ($job['skills'] as $skill):
-                                                                    $col = getSkillColor($skill['category'] ?? 'General', $skillColors, $defaultColor);
-                                                                    ?>
-                                                                    <span class="skill-tag inline-flex items-center px-2.5 py-1 <?= $col['bg'] ?> <?= $col['text'] ?> text-[11px] font-medium rounded-lg border <?= $col['border'] ?>">
-                                                                        <?= sanitize_string($skill['skill_name']) ?>
-                                                                    </span>
-                                                                <?php endforeach; ?>
-                                                            </div>
-                                                        <?php endif; ?>
-
-                                                        <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400">
-                                                            <span class="flex items-center gap-1.5">
-                                                                <i class="fas fa-dollar-sign text-emerald-500"></i>
-                                                                <span class="font-bold text-gray-900 dark:text-white"><?= format_currency($job['budget']) ?></span>
-                                                            </span>
-                                                            <span class="flex items-center gap-1.5">
-                                                                <i class="fas fa-clock text-blue-400"></i>
-                                                                <?= time_ago($job['created_at']) ?>
-                                                            </span>
-                                                            <span class="flex items-center gap-1.5">
-                                                                <i class="fas fa-file-alt text-violet-400"></i>
-                                                                <span class="font-semibold text-gray-600"><?= $job['proposal_count'] ?></span> proposal<?= $job['proposal_count'] !== 1 ? 's' : '' ?>
-                                                            </span>
-                                                            <span class="flex items-center gap-1.5">
-                                                                <i class="fas fa-user text-gray-400"></i>
-                                                                <?= sanitize_string($job['client_name']) ?>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:flex-col lg:items-stretch lg:min-w-[150px]">
-                                                        <a href="job_detail.php?id=<?= $job['id'] ?>"
-                                                            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 text-xs font-semibold rounded-xl transition-all dark:border-gray-600 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-400">
-                                                            <i class="fas fa-eye text-[10px]"></i> View Details
-                                                        </a>
-                                                        <?php if ($job['has_proposed']): ?>
-                                                            <span class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-xl">
-                                                                <i class="fas fa-check text-[10px]"></i> Applied
-                                                            </span>
-                                                        <?php else: ?>
-                                                            <button type="button" onclick="openProposalModal(<?= $job['id'] ?>, '<?= sanitize_string(addslashes($job['title'])) ?>', <?= $job['budget'] ?>)"
-                                                                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 btn-grad text-white text-xs font-semibold rounded-xl shadow-sm shadow-blue-500/25">
-                                                                <i class="fas fa-paper-plane text-[10px]"></i> Apply Now
-                                                            </button>
-                                                        <?php endif; ?>
-                                                    </div>
+                                        <div class="bg-white py-5 px-4 -mx-4 rounded-[10px] hover:bg-gray-50 transition-colors fade-in <?= $index > 0 ? 'border-t border-gray-200' : '' ?>" style="animation-delay:<?= 0.05 + ($index * 0.04) ?>s">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <p class="text-xs text-gray-400">
+                                                    Posted <?= time_ago($job['created_at']) ?>
+                                                    <span class="mx-1">•</span>
+                                                    Proposals: <?= $job['proposal_count'] > 50 ? '50+' : $job['proposal_count'] ?>
+                                                </p>
+                                                <div class="flex items-center gap-1">
+                                                    <button type="button" onclick="toggleSave(<?= $job['id'] ?>, this)" class="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-yellow-500 transition-colors" title="Bookmark" data-saved="<?= !empty($job['is_saved']) ? '1' : '0' ?>">
+                                                        <i data-lucide="heart" class="w-5 h-5 <?= !empty($job['is_saved']) ? 'text-yellow-500' : '' ?>"></i>
+                                                    </button>
                                                 </div>
+                                            </div>
+
+                                            <a href="job_detail.php?id=<?= $job['id'] ?>" class="block text-lg font-bold text-gray-900 hover:text-[#4338CA] transition-colors mb-1.5">
+                                                <?= decode_over_encoded($job['title']) ?>
+                                            </a>
+
+                                            <p class="text-sm text-gray-500 mb-3">
+                                                <?php if (!empty($job['job_type'])): ?>
+                                                    <?= sanitize_string($jobTypeLabels[$job['job_type']] ?? ucfirst($job['job_type'])) ?>:
+                                                    <?= format_currency($job['budget']) ?>
+                                                <?php else: ?>
+                                                    <?= format_currency($job['budget']) ?>
+                                                <?php endif; ?>
+                                                <?php if (!empty($job['experience_level'])): ?>
+                                                    - <?= sanitize_string($levelLabels[$job['experience_level']] ?? ucfirst($job['experience_level'])) ?>
+                                                <?php endif; ?>
+                                            </p>
+
+                                            <p class="text-sm text-gray-600 leading-relaxed mb-4 line-clamp-3">
+                                                <?= sanitize_string(mb_strimwidth($job['description'], 0, 250, '...')) ?>
+                                            </p>
+
+                                            <?php if (!empty($job['skills'])): ?>
+                                            <div class="flex flex-wrap gap-2 mb-4">
+                                                <?php foreach (array_slice($job['skills'], 0, 6) as $sk): ?>
+                                                    <span class="inline-block px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700">
+                                                        <?= sanitize_string($sk['skill_name']) ?>
+                                                    </span>
+                                                <?php endforeach; ?>
+                                                <?php if (count($job['skills']) > 6): ?>
+                                                    <span class="inline-block px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-500">+<?= count($job['skills']) - 6 ?> more</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php endif; ?>
+
+                                            <div class="flex items-center gap-3 mt-1">
+                                                <a href="job_detail.php?id=<?= $job['id'] ?>"
+                                                    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 hover:border-[#4338CA] hover:text-[#4338CA] text-xs font-semibold rounded-[10px] transition-all">
+                                                    Details
+                                                </a>
+                                                <?php if ($job['has_proposed']): ?>
+                                                    <span class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-200 text-gray-500 text-xs font-semibold rounded-[10px] cursor-not-allowed">
+                                                        <i data-lucide="check" class="w-3 h-3"></i> Applied
+                                                    </span>
+                                                <?php else: ?>
+                                                    <button type="button" onclick="openProposalModal(<?= $job['id'] ?>, '<?= sanitize_string(addslashes($job['title'])) ?>', <?= $job['budget'] ?>)"
+                                                        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-semibold rounded-[10px] transition-all">
+                                                        Apply Now
+                                                    </button>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
@@ -634,7 +682,7 @@ $conn->close();
 
                                 <!-- ═══ PAGINATION ═══════════════════════════════════ -->
                                 <?php if ($pagination['total_pages'] > 1): ?>
-                                    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
+                                    <div class="flex items-center justify-between bg-white rounded-[10px] p-4 border border-[#E5E8EB] fade-in">
                                         <p class="text-xs text-gray-400">
                                             Page <span class="font-semibold text-gray-600"><?= $pagination['current_page'] ?></span>
                                             of <span class="font-semibold text-gray-600"><?= $pagination['total_pages'] ?></span>
@@ -644,8 +692,8 @@ $conn->close();
                                         <div class="flex items-center gap-1">
                                             <?php if ($pagination['has_prev']): ?>
                                                 <a href="<?= $baseUrl ?>&page=<?= $pagination['current_page'] - 1 ?>"
-                                                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm transition-all dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
-                                                    <i class="fas fa-chevron-left text-xs"></i>
+                                                    class="w-9 h-9 flex items-center justify-center rounded-[10px] border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm transition-all">
+                                                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
                                                 </a>
                                             <?php endif; ?>
 
@@ -654,26 +702,26 @@ $conn->close();
                                             $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
                                             if ($startPage > 1):
                                                 ?>
-                                                <a href="<?= $baseUrl ?>&page=1" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all dark:text-gray-400 dark:hover:bg-gray-700">1</a>
+                                                <a href="<?= $baseUrl ?>&page=1" class="w-9 h-9 flex items-center justify-center rounded-[10px] text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all">1</a>
                                                 <?php if ($startPage > 2): ?><span class="text-gray-300 px-1">...</span><?php endif; ?>
                                             <?php endif; ?>
 
                                             <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                                                 <a href="<?= $baseUrl ?>&page=<?= $i ?>"
-                                                    class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700' ?>">
+                                                    class="w-9 h-9 flex items-center justify-center rounded-[10px] text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'bg-[#4338CA] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' ?>">
                                                     <?= $i ?>
                                                 </a>
                                             <?php endfor; ?>
 
                                             <?php if ($endPage < $pagination['total_pages']): ?>
                                                 <?php if ($endPage < $pagination['total_pages'] - 1): ?><span class="text-gray-300 px-1">...</span><?php endif; ?>
-                                                <a href="<?= $baseUrl ?>&page=<?= $pagination['total_pages'] ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all dark:text-gray-400 dark:hover:bg-gray-700"><?= $pagination['total_pages'] ?></a>
+                                                <a href="<?= $baseUrl ?>&page=<?= $pagination['total_pages'] ?>" class="w-9 h-9 flex items-center justify-center rounded-[10px] text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all"><?= $pagination['total_pages'] ?></a>
                                             <?php endif; ?>
 
                                             <?php if ($pagination['has_next']): ?>
                                                 <a href="<?= $baseUrl ?>&page=<?= $pagination['current_page'] + 1 ?>"
-                                                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm transition-all dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
-                                                    <i class="fas fa-chevron-right text-xs"></i>
+                                                    class="w-9 h-9 flex items-center justify-center rounded-[10px] border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm transition-all">
+                                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
                                                 </a>
                                             <?php endif; ?>
                                         </div>
@@ -682,20 +730,20 @@ $conn->close();
 
                             <?php else: ?>
                                 <!-- ═══ EMPTY STATE ═════════════════════════════════ -->
-                                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
+                                <div class="bg-white rounded-[10px] border border-[#E5E8EB] fade-in">
                                     <div class="text-center py-16 px-6">
-                                        <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mx-auto mb-6 border border-blue-100">
-                                            <i class="fas fa-search text-4xl text-blue-300"></i>
+                                        <div class="w-20 h-20 rounded-[10px] bg-[#F5F7F9] flex items-center justify-center mx-auto mb-5">
+                                            <i data-lucide="search" class="w-10 h-10 text-gray-300"></i>
                                         </div>
-                                        <h3 class="text-xl font-bold text-gray-900 mb-2 dark:text-white">No jobs found</h3>
+                                        <h3 class="text-lg font-bold text-gray-900 mb-2">No jobs found</h3>
                                         <p class="text-sm text-gray-400 mb-6 max-w-md mx-auto">
                                             <?= ($search !== '' || $budgetMin > 0 || $budgetMax > 0 || $statusFilter !== 'open' || $datePosted !== 'all' || !empty($skillIds))
                                                 ? 'Try adjusting your filters or search terms to find more opportunities.'
                                                 : 'Check back later for new job postings.' ?>
                                         </p>
                                         <?php if ($search !== '' || $budgetMin > 0 || $budgetMax > 0 || $statusFilter !== 'open' || $datePosted !== 'all' || !empty($skillIds)): ?>
-                                            <a href="browse_jobs.php" class="btn-grad inline-flex items-center gap-2 text-white font-bold px-6 py-3 rounded-xl text-sm">
-                                                <i class="fas fa-times text-xs"></i> Clear All Filters
+                                            <a href="browse_jobs.php" class="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold px-6 py-3 rounded-[10px] text-sm transition-all">
+                                                <i data-lucide="x" class="w-4 h-4"></i> Clear All Filters
                                             </a>
                                         <?php endif; ?>
                                     </div>
@@ -710,30 +758,31 @@ $conn->close();
     <div id="proposalModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeProposalModal()"></div>
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl relative z-10 fade-in dark:bg-gray-800">
+            <div class="bg-white rounded-[10px] p-8 max-w-lg w-full shadow-2xl relative z-10 fade-in">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Submit Proposal</h3>
+                        <h3 class="text-lg font-bold text-gray-900">Submit Proposal</h3>
                         <p class="text-xs text-gray-400 mt-1">for <span id="modalJobTitle" class="font-semibold text-gray-600"></span></p>
                     </div>
-                    <button onclick="closeProposalModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors dark:bg-gray-700">
-                        <i class="fas fa-times text-sm"></i>
+                    <button onclick="closeProposalModal()" class="w-8 h-8 rounded-[10px] bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
-                <form method="POST" action="/finalproject/freelancer/browse_jobs.php" class="space-y-4">
+                <form method="POST" action="/jobhub/freelancer/browse_jobs.php" class="space-y-4">
                     <input type="hidden" name="action" value="submit_proposal">
                     <input type="hidden" name="job_id" id="modalJobId" value="">
+                    <?= csrf_field() ?>
 
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Your Bid Amount ($) <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            <div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                                <i class="fas fa-dollar-sign text-emerald-600 text-xs"></i>
+                            <div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-[10px] bg-indigo-50">
+                                <i data-lucide="dollar-sign" class="w-4 h-4 text-[#4338CA]"></i>
                             </div>
                             <input type="number" name="amount" step="0.01" min="0.01" required id="modalBudget"
                                 placeholder="0.00"
-                                class="fld w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                class="fld w-full bg-gray-50 border border-gray-200 rounded-[10px] pl-12 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#4338CA] focus:border-[#4338CA] outline-none transition-all">
                         </div>
                         <p class="text-[11px] text-gray-400 mt-1">Job budget: <span id="modalBudgetDisplay" class="font-semibold text-gray-600">$0.00</span></p>
                     </div>
@@ -742,18 +791,18 @@ $conn->close();
                         <label class="block text-xs font-semibold text-gray-700 mb-1.5">Proposal Message <span class="text-red-500">*</span></label>
                         <textarea name="proposal_text" rows="6" required
                             placeholder="Explain why you're the best fit for this job. Mention relevant experience, your approach, and timeline..."
-                            class="fld w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                            class="fld w-full bg-gray-50 border border-gray-200 rounded-[10px] px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 resize-none focus:ring-2 focus:ring-[#4338CA] focus:border-[#4338CA] outline-none transition-all"></textarea>
                         <p class="text-[11px] text-gray-400 mt-1">Minimum 20 characters</p>
                     </div>
 
                     <div class="flex gap-3 pt-2">
                         <button type="button" onclick="closeProposalModal()"
-                            class="flex-1 px-5 py-3 border border-gray-200 hover:border-gray-300 text-gray-600 rounded-xl text-sm font-semibold transition-all dark:border-gray-600 dark:text-gray-400">
+                            class="flex-1 px-5 py-3 border border-gray-200 hover:border-gray-300 text-gray-600 rounded-[10px] text-sm font-semibold transition-all">
                             Cancel
                         </button>
                         <button type="submit"
-                            class="flex-1 px-5 py-3 btn-grad text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
-                            <i class="fas fa-paper-plane text-xs"></i> Submit Proposal
+                            class="flex-1 px-5 py-3 bg-[#4338CA] hover:bg-[#3730A3] text-white rounded-[10px] text-sm font-semibold flex items-center justify-center gap-2 transition-all">
+                            <i data-lucide="send" class="w-4 h-4"></i> Submit Proposal
                         </button>
                     </div>
                 </form>
@@ -781,5 +830,28 @@ $conn->close();
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeProposalModal();
         });
+
+        async function toggleSave(jobId, btn) {
+            try {
+                var fd = new FormData();
+                fd.append('job_id', jobId);
+                var r = await fetch('toggle_saved_job.php', { method: 'POST', body: fd });
+                var j = await r.json();
+                if (j.success) {
+                    var icon = btn.querySelector('i');
+                    if (j.saved) {
+                        btn.dataset.saved = '1';
+                        icon.setAttribute('data-lucide', 'heart');
+                        icon.classList.add('text-yellow-500');
+                        lucide.createIcons();
+                    } else {
+                        btn.dataset.saved = '0';
+                        icon.setAttribute('data-lucide', 'heart');
+                        icon.classList.remove('text-yellow-500');
+                        lucide.createIcons();
+                    }
+                }
+            } catch (e) {}
+        }
     </script>
 <?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

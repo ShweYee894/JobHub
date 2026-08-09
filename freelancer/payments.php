@@ -79,15 +79,15 @@ require_once __DIR__ . '/../components/freelancer_header.php';
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in">
             <div class="flex items-center justify-between mb-3">
-                <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center"><i class="fas fa-wallet text-blue-500"></i></div>
-                <span class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider">Balance</span>
+                <div class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center"><i data-lucide="wallet" class="text-indigo-500"></i></div>
+                <span class="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider">Balance</span>
             </div>
             <p class="text-2xl font-black text-gray-900"><?= format_currency($walletBalance) ?></p>
             <p class="text-xs text-gray-400 mt-1">Wallet Balance</p>
         </div>
         <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.05s">
             <div class="flex items-center justify-between mb-3">
-                <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center"><i class="fas fa-dollar-sign text-emerald-500"></i></div>
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center"><i data-lucide="dollar-sign" class="text-emerald-500"></i></div>
                 <span class="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider">Total</span>
             </div>
             <p class="text-2xl font-black text-gray-900"><?= format_currency($totalEarnings) ?></p>
@@ -95,7 +95,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         </div>
         <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.1s">
             <div class="flex items-center justify-between mb-3">
-                <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center"><i class="fas fa-calendar-check text-violet-500"></i></div>
+                <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center"><i data-lucide="calendar-check" class="text-violet-500"></i></div>
                 <span class="text-[10px] font-semibold text-violet-500 uppercase tracking-wider">This Month</span>
             </div>
             <p class="text-2xl font-black text-gray-900"><?= format_currency($monthEarnings) ?></p>
@@ -103,7 +103,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         </div>
         <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.15s">
             <div class="flex items-center justify-between mb-3">
-                <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center"><i class="fas fa-coins text-red-500"></i></div>
+                <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center"><i data-lucide="coins" class="text-red-500"></i></div>
                 <span class="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Fees</span>
             </div>
             <p class="text-2xl font-black text-gray-900"><?= format_currency($totalFees) ?></p>
@@ -115,11 +115,11 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         <div class="p-6">
             <div class="flex items-center justify-between mb-5">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><i class="fas fa-receipt text-blue-500"></i></div>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><i data-lucide="receipt" class="text-indigo-500"></i></div>
                     <div><h2 class="text-base font-bold text-gray-900">Payment History</h2><p class="text-xs text-gray-400"><?= $totalPayments ?> payment<?= $totalPayments !== 1 ? 's' : '' ?></p></div>
                 </div>
-                <a href="withdraw.php" class="btn-grad inline-flex items-center gap-2 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-lg shadow-blue-500/25">
-                    <i class="fas fa-money-bill-wave text-[10px]"></i> Withdraw Funds
+                <a href="withdraw.php" class="btn-grad inline-flex items-center gap-2 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-lg shadow-indigo-500/25">
+                    <i data-lucide="banknote" class="text-[10px]"></i> Withdraw Funds
                 </a>
             </div>
 
@@ -156,20 +156,20 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         <p class="text-xs text-gray-400">Page <span class="font-semibold text-gray-600"><?= $pagination['current_page'] ?></span> of <span class="font-semibold text-gray-600"><?= $pagination['total_pages'] ?></span></p>
                         <div class="flex items-center gap-1">
                             <?php if ($pagination['has_prev']): ?>
-                                <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i class="fas fa-chevron-left text-xs"></i></a>
+                                <a href="?page=<?= $pagination['current_page'] - 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i data-lucide="chevron-left" class="text-xs"></i></a>
                             <?php endif; ?>
                             <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
                                 <a href="?page=<?= $i ?>" class="w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-all <?= $i === $pagination['current_page'] ? 'btn-grad text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' ?>"><?= $i ?></a>
                             <?php endfor; ?>
                             <?php if ($pagination['has_next']): ?>
-                                <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i class="fas fa-chevron-right text-xs"></i></a>
+                                <a href="?page=<?= $pagination['current_page'] + 1 ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"><i data-lucide="chevron-right" class="text-xs"></i></a>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php endif; ?>
             <?php else: ?>
                 <div class="text-center py-12">
-                    <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><i class="fas fa-receipt text-2xl text-gray-300"></i></div>
+                    <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><i data-lucide="receipt" class="text-2xl text-gray-300"></i></div>
                     <p class="text-gray-500 text-sm font-medium">No payments yet</p>
                     <p class="text-gray-400 text-xs mt-1">Complete milestones to receive your first payment</p>
                 </div>

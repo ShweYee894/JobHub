@@ -18,7 +18,7 @@ $stmt->close();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_invitation') {
     if (!verify_csrf_token()) {
         set_flash('error', 'Invalid security token. Please try again.');
-        redirect('/finalproject/client/invite_jobs.php');
+        redirect('/jobhub/client/invite_jobs.php');
     }
 
     $freelancerUserId = intval($_POST['freelancer_id'] ?? 0);
@@ -28,15 +28,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
     // Validation
     if ($freelancerUserId <= 0) {
         set_flash('error', 'Please select a freelancer.');
-        redirect('/finalproject/client/invite_jobs.php');
+        redirect('/jobhub/client/invite_jobs.php');
     }
     if ($jobId <= 0) {
         set_flash('error', 'Please select a job.');
-        redirect('/finalproject/client/invite_jobs.php');
+        redirect('/jobhub/client/invite_jobs.php');
     }
     if (strlen($message) < 10) {
         set_flash('error', 'Please enter a message (at least 10 characters).');
-        redirect('/finalproject/client/invite_jobs.php?freelancer_id=' . $freelancerUserId);
+        redirect('/jobhub/client/invite_jobs.php?freelancer_id=' . $freelancerUserId);
     }
 
     // Verify job belongs to client and is open
@@ -48,11 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 
     if (!$jobRow) {
         set_flash('error', 'Job not found or you do not own it.');
-        redirect('/finalproject/client/invite_jobs.php');
+        redirect('/jobhub/client/invite_jobs.php');
     }
     if ($jobRow['status'] !== 'open') {
         set_flash('error', 'This job is no longer open.');
-        redirect('/finalproject/client/invite_jobs.php');
+        redirect('/jobhub/client/invite_jobs.php');
     }
 
     // Verify freelancer exists and is active
@@ -64,15 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 
     if (!$flRow) {
         set_flash('error', 'Freelancer not found.');
-        redirect('/finalproject/client/invite_jobs.php');
+        redirect('/jobhub/client/invite_jobs.php');
     }
     if ($flRow['status'] !== 'active') {
         set_flash('error', 'Cannot invite suspended or flagged users.');
-        redirect('/finalproject/client/invite_jobs.php');
+        redirect('/jobhub/client/invite_jobs.php');
     }
     if ($freelancerUserId === $clientId) {
         set_flash('error', 'You cannot invite yourself.');
-        redirect('/finalproject/client/invite_jobs.php');
+        redirect('/jobhub/client/invite_jobs.php');
     }
 
     // Check for duplicate invitation (using notifications table)
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 
     if ($existing) {
         set_flash('error', 'You have already invited this freelancer to this job.');
-        redirect('/finalproject/client/invite_jobs.php?freelancer_id=' . $freelancerUserId);
+        redirect('/jobhub/client/invite_jobs.php?freelancer_id=' . $freelancerUserId);
     }
 
     // Also check if freelancer already has a proposal for this job
@@ -99,11 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 
     if ($hasProposal) {
         set_flash('error', 'This freelancer has already submitted a proposal for this job.');
-        redirect('/finalproject/client/invite_jobs.php?freelancer_id=' . $freelancerUserId);
+        redirect('/jobhub/client/invite_jobs.php?freelancer_id=' . $freelancerUserId);
     }
 
     // Create invitation via notifications table
-    $link = "/finalproject/freelancer/invitation_action.php?job_id={$jobId}&client_id={$clientId}";
+    $link = "/jobhub/freelancer/invitation_action.php?job_id={$jobId}&client_id={$clientId}";
     $notifService = getNotificationService();
     $notifId = $notifService->create(
         $freelancerUserId,
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
         set_flash('error', 'Failed to send invitation. Please try again.');
     }
 
-    redirect('/finalproject/client/invite_jobs.php');
+    redirect('/jobhub/client/invite_jobs.php');
 }
 
 // ── Fetch freelancer profile if ID provided ──────────────────────────────
@@ -130,7 +130,7 @@ $freelancerSkills = [];
 if ($freelancerId > 0) {
     $flStmt = $conn->prepare(
         "SELECT u.id AS user_id, u.name, u.email, u.profile_image, u.created_at,
-                f.id AS freelancer_id, f.title, f.bio, f.hourly_rate, f.portfolio_url,
+                f.id AS freelancer_id, f.title, f.bio, f.hourly_rate, f.portfolio_url, f.social_links,
                 f.years_of_experience, f.availability, f.completed_jobs, f.total_earnings
          FROM users u
          JOIN freelancers f ON u.id = f.user_id
@@ -140,6 +140,21 @@ if ($freelancerId > 0) {
     $flStmt->execute();
     $freelancer = $flStmt->get_result()->fetch_assoc();
     $flStmt->close();
+
+    // Parse social_links JSON (fallback to legacy portfolio_url)
+    if ($freelancer) {
+        $freelancer['social_links_parsed'] = ['website' => '', 'github' => '', 'linkedin' => ''];
+        if (!empty($freelancer['social_links'])) {
+            $decoded = json_decode($freelancer['social_links'], true);
+            if (is_array($decoded)) {
+                $freelancer['social_links_parsed']['website'] = $decoded['website'] ?? '';
+                $freelancer['social_links_parsed']['github'] = $decoded['github'] ?? '';
+                $freelancer['social_links_parsed']['linkedin'] = $decoded['linkedin'] ?? '';
+            }
+        } elseif (!empty($freelancer['portfolio_url'])) {
+            $freelancer['social_links_parsed']['website'] = $freelancer['portfolio_url'];
+        }
+    }
 
     if ($freelancer) {
         // Fetch skills
@@ -161,7 +176,7 @@ if ($freelancerId > 0) {
         // Fetch rating
         $ratStmt = $conn->prepare(
             'SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS review_count
-             FROM reviews WHERE reviewee_id = ?'
+             FROM reviews WHERE reviewee_id = ? AND COALESCE(is_hidden, 0) = 0'
         );
         $ratStmt->bind_param('i', $freelancerId);
         $ratStmt->execute();
@@ -240,7 +255,7 @@ if ($filterExperience !== '' && in_array($filterExperience, ['entry', 'intermedi
 }
 
 if ($filterMinRating > 0) {
-    $flWhere[] = 'u.id IN (SELECT reviewee_id FROM reviews GROUP BY reviewee_id HAVING AVG(rating) >= ?)';
+    $flWhere[] = 'u.id IN (SELECT reviewee_id FROM reviews WHERE COALESCE(is_hidden, 0) = 0 GROUP BY reviewee_id HAVING AVG(rating) >= ?)';
     $flParams[] = $filterMinRating;
     $flTypes .= 'd';
 }
@@ -255,8 +270,8 @@ $flWhereSQL = implode(' AND ', $flWhere);
 
 $flSql = "SELECT u.id AS user_id, u.name, u.profile_image,
                  f.title, f.hourly_rate, f.availability, f.years_of_experience, f.completed_jobs,
-                 COALESCE((SELECT AVG(rating) FROM reviews WHERE reviewee_id = u.id), 0) AS avg_rating,
-                 COALESCE((SELECT COUNT(*) FROM reviews WHERE reviewee_id = u.id), 0) AS review_count
+                 COALESCE((SELECT AVG(rating) FROM reviews WHERE reviewee_id = u.id AND COALESCE(is_hidden, 0) = 0), 0) AS avg_rating,
+                 COALESCE((SELECT COUNT(*) FROM reviews WHERE reviewee_id = u.id AND COALESCE(is_hidden, 0) = 0), 0) AS review_count
           FROM users u
           JOIN freelancers f ON u.id = f.user_id
           WHERE $flWhereSQL
@@ -289,274 +304,293 @@ require_once __DIR__ . '/../includes/client_topbar.php';
 $conn->close();
 ?>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+<main class="min-h-screen ">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
-    <!-- Breadcrumb -->
-    <nav class="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <a href="dashboard.php" class="hover:text-gray-600 transition-colors">Dashboard</a>
-        <i class="fas fa-chevron-right text-[10px]"></i>
-        <span class="text-gray-900 font-semibold">Invite Freelancer</span>
-    </nav>
-
-    <?php display_flash('success'); ?>
-    <?php display_flash('error'); ?>
-
-    <!-- Page Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl font-extrabold text-gray-900">Invite <span class="text-blue-600">Freelancer</span></h1>
-        <p class="text-sm text-gray-500 mt-1">Send a direct job invitation to a freelancer. Select one of your open jobs and send a personalized message.</p>
-    </div>
-
-    <?php if (empty($openJobs)): ?>
-        <!-- No Open Jobs -->
-        <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
-            <div class="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-exclamation-triangle text-2xl text-amber-400"></i>
+        <!-- Page Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div>
+                <nav class="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
+                    <a href="dashboard.php" class="hover:text-gray-600 transition-colors">Dashboard</a>
+                    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                    <span class="text-gray-900 font-medium">Invite Freelancer</span>
+                </nav>
+                <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Invite Freelancer</h1>
+                <p class="text-sm text-gray-500 mt-1">Send a direct job invitation. Select a freelancer and choose from your open jobs.</p>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">No Open Jobs</h3>
-            <p class="text-sm text-gray-400 mb-5">You need at least one open job to send invitations.</p>
-            <a href="post_job.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
-                <i class="fas fa-plus text-xs"></i> Post a Job
-            </a>
         </div>
-    <?php else: ?>
-        <div class="flex flex-col lg:flex-row gap-6">
 
-            <!-- ═══ LEFT COLUMN: Freelancer Search + Selection ═══════════ -->
-            <div class="flex-1 min-w-0 space-y-6">
+        <?php display_flash('success'); ?>
+        <?php display_flash('error'); ?>
 
-                <!-- Search & Filters -->
-                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                    <form method="GET" class="space-y-4">
-                        <input type="hidden" name="freelancer_id" value="<?= $freelancerId ?>">
-
-                        <!-- Search Bar -->
-                        <div class="flex gap-3">
-                            <div class="relative flex-1">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                                <input type="text" name="search" value="<?= sanitize_string($searchQuery) ?>"
-                                    placeholder="Search freelancers by name or title..."
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-                            </div>
-                            <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
-                                <i class="fas fa-search text-xs"></i>
-                            </button>
-                        </div>
-
-                        <!-- Filters Row -->
-                        <div class="flex flex-wrap gap-3">
-                            <select name="skill" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">All Skills</option>
-                                <?php foreach ($allSkills as $sk): ?>
-                                    <option value="<?= sanitize_string($sk) ?>" <?= $filterSkill === $sk ? 'selected' : '' ?>><?= sanitize_string($sk) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-
-                            <select name="availability" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">Any Availability</option>
-                                <option value="Available" <?= $filterAvailability === 'Available' ? 'selected' : '' ?>>Available</option>
-                                <option value="Busy" <?= $filterAvailability === 'Busy' ? 'selected' : '' ?>>Busy</option>
-                                <option value="Unavailable" <?= $filterAvailability === 'Unavailable' ? 'selected' : '' ?>>Unavailable</option>
-                            </select>
-
-                            <select name="experience" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">Any Experience</option>
-                                <option value="entry" <?= $filterExperience === 'entry' ? 'selected' : '' ?>>Entry (0-2 yrs)</option>
-                                <option value="intermediate" <?= $filterExperience === 'intermediate' ? 'selected' : '' ?>>Intermediate (3-5 yrs)</option>
-                                <option value="expert" <?= $filterExperience === 'expert' ? 'selected' : '' ?>>Expert (6+ yrs)</option>
-                            </select>
-
-                            <select name="min_rating" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">Any Rating</option>
-                                <option value="4" <?= $filterMinRating == 4 ? 'selected' : '' ?>>4+ Stars</option>
-                                <option value="3" <?= $filterMinRating == 3 ? 'selected' : '' ?>>3+ Stars</option>
-                                <option value="2" <?= $filterMinRating == 2 ? 'selected' : '' ?>>2+ Stars</option>
-                            </select>
-
-                            <div class="flex items-center gap-1">
-                                <input type="number" name="min_rate" value="<?= $filterMinRate > 0 ? $filterMinRate : '' ?>" placeholder="Min $" min="0" step="5"
-                                    class="w-20 bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <span class="text-gray-300">-</span>
-                                <input type="number" name="max_rate" value="<?= $filterMaxRate > 0 ? $filterMaxRate : '' ?>" placeholder="Max $" min="0" step="5"
-                                    class="w-20 bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                            </div>
-                        </div>
-                    </form>
+        <?php if (empty($openJobs)): ?>
+            <!-- No Open Jobs -->
+            <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="triangle-alert" class="w-6 h-6 text-amber-500"></i>
                 </div>
-
-                <!-- Freelancer List -->
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
-                    <div class="p-5 border-b border-gray-100">
-                        <h3 class="text-sm font-bold text-gray-900">
-                            <i class="fas fa-users text-blue-500 mr-2"></i>Select Freelancer
-                            <span class="text-gray-400 font-normal ml-2">(<?= count($freelancers) ?> found)</span>
-                        </h3>
-                    </div>
-
-                    <?php if (!empty($freelancers)): ?>
-                        <div class="divide-y divide-gray-50 max-h-[600px] overflow-y-auto">
-                            <?php
-                            foreach ($freelancers as $fl):
-                                $isSelected = ($fl['user_id'] == $freelancerId);
-                                $availColor = $fl['availability'] === 'Available' ? 'text-emerald-600 bg-emerald-50' : ($fl['availability'] === 'Busy' ? 'text-amber-600 bg-amber-50' : 'text-gray-500 bg-gray-100');
-                                ?>
-                                <a href="?freelancer_id=<?= $fl['user_id'] ?><?= $searchQuery ? '&search=' . urlencode($searchQuery) : '' ?>"
-                                    class="flex items-center gap-4 p-4 hover:bg-blue-50/50 transition-all <?= $isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : '' ?>">
-                                    <img src="<?= get_profile_image($fl['profile_image']) ?>" class="w-12 h-12 rounded-full object-cover border-2 border-gray-100 flex-shrink-0">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="font-bold text-gray-900 text-sm"><?= sanitize_string($fl['name']) ?></p>
-                                        <p class="text-xs text-gray-500 truncate"><?= sanitize_string($fl['title'] ?? 'Freelancer') ?></p>
-                                        <div class="flex items-center gap-3 mt-1">
-                                            <span class="text-xs font-semibold text-blue-600">$<?= number_format($fl['hourly_rate'], 0) ?>/hr</span>
-                                            <span class="text-xs <?= $availColor ?> px-2 py-0.5 rounded-full font-medium"><?= $fl['availability'] ?></span>
-                                            <?php if ($fl['avg_rating'] > 0): ?>
-                                                <span class="text-xs text-amber-500"><i class="fas fa-star text-[10px]"></i> <?= number_format($fl['avg_rating'], 1) ?></span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                    <?php if ($isSelected): ?>
-                                        <i class="fas fa-check-circle text-blue-500 text-lg"></i>
-                                    <?php endif; ?>
-                                </a>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="p-8 text-center">
-                            <i class="fas fa-user-slash text-3xl text-gray-300 mb-3"></i>
-                            <p class="text-sm text-gray-400">No freelancers found matching your criteria.</p>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                <h3 class="text-base font-semibold text-gray-900 mb-1">No Open Jobs</h3>
+                <p class="text-sm text-gray-500 mb-5">You need at least one open job to send invitations.</p>
+                <a href="post_job.php" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Post a Job
+                </a>
             </div>
+        <?php else: ?>
 
-            <!-- ═══ RIGHT COLUMN: Selected Freelancer + Job Selection ═══ -->
-            <div class="w-full lg:w-96 space-y-6">
+            <!-- ═══ FILTER BAR ════════════════════════════════════════ -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+                <form method="GET" class="space-y-3">
+                    <input type="hidden" name="freelancer_id" value="<?= $freelancerId ?>">
 
-                <?php if ($freelancer): ?>
-                    <!-- Freelancer Profile Card -->
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div class="bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-center">
-                            <img src="<?= get_profile_image($freelancer['profile_image']) ?>" class="w-20 h-20 rounded-full object-cover border-4 border-white mx-auto mb-3 shadow-lg">
-                            <h3 class="text-lg font-bold text-white"><?= sanitize_string($freelancer['name']) ?></h3>
-                            <p class="text-blue-100 text-sm"><?= sanitize_string($freelancer['title'] ?? 'Freelancer') ?></p>
+                    <!-- Search Row -->
+                    <div class="flex gap-3">
+                        <div class="relative flex-1">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" name="search" value="<?= sanitize_string($searchQuery) ?>"
+                                placeholder="Search by name or title..."
+                                class="w-full bg-gray-50 border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                         </div>
-                        <div class="p-5 space-y-4">
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="bg-gray-50 rounded-xl p-3 text-center">
-                                    <p class="text-lg font-black text-gray-900">$<?= number_format($freelancer['hourly_rate'], 0) ?></p>
-                                    <p class="text-[10px] text-gray-400 font-medium">Hourly Rate</p>
-                                </div>
-                                <div class="bg-gray-50 rounded-xl p-3 text-center">
-                                    <p class="text-lg font-black text-gray-900"><?= $freelancer['avg_rating'] > 0 ? number_format($freelancer['avg_rating'], 1) : '—' ?></p>
-                                    <p class="text-[10px] text-gray-400 font-medium">Rating (<?= $freelancer['review_count'] ?>)</p>
-                                </div>
-                                <div class="bg-gray-50 rounded-xl p-3 text-center">
-                                    <p class="text-lg font-black text-gray-900"><?= $freelancer['completed_jobs'] ?? 0 ?></p>
-                                    <p class="text-[10px] text-gray-400 font-medium">Completed</p>
-                                </div>
-                                <div class="bg-gray-50 rounded-xl p-3 text-center">
-                                    <p class="text-lg font-black text-gray-900"><?= $freelancer['years_of_experience'] ?>yr</p>
-                                    <p class="text-[10px] text-gray-400 font-medium">Experience</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-400">Availability:</span>
-                                <span class="text-xs font-semibold <?= $freelancer['availability'] === 'Available' ? 'text-emerald-600' : 'text-amber-600' ?>">
-                                    <?= $freelancer['availability'] ?>
-                                </span>
-                            </div>
-
-                            <?php if (!empty($freelancerSkills)): ?>
-                                <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Top Skills</p>
-                                    <div class="flex flex-wrap gap-1.5">
-                                        <?php foreach (array_slice($freelancerSkills, 0, 6) as $sk): ?>
-                                            <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold"><?= sanitize_string($sk['skill_name']) ?></span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($freelancer['portfolio_url'])): ?>
-                                <a href="<?= sanitize_string($freelancer['portfolio_url']) ?>" target="_blank" class="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-medium">
-                                    <i class="fas fa-external-link-alt text-[10px]"></i> View Portfolio
-                                </a>
-                            <?php endif; ?>
-
-                            <a href="/finalproject/freelancer/profile.php?id=<?= $freelancer['user_id'] ?>" target="_blank" class="block text-center py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-all">
-                                <i class="fas fa-user mr-1"></i> View Full Profile
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Invitation Form -->
-                    <form method="POST" action="/finalproject/client/invite_jobs.php" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="send_invitation">
-                        <input type="hidden" name="freelancer_id" value="<?= $freelancer['user_id'] ?>">
-
-                        <h3 class="text-sm font-bold text-gray-900">
-                            <i class="fas fa-paper-plane text-blue-500 mr-2"></i>Send Invitation
-                        </h3>
-
-                        <!-- Job Selection -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-2">Select a Job <span class="text-red-500">*</span></label>
-                            <div class="space-y-2 max-h-60 overflow-y-auto">
-                                <?php
-                                foreach ($openJobs as $job):
-                                    $jobTypeLabel = $job['job_type'] === 'hourly' ? 'Hourly' : 'Fixed';
-                                    $jobTypeColor = $job['job_type'] === 'hourly' ? 'text-purple-600' : 'text-cyan-600';
-                                    ?>
-                                    <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer transition-all">
-                                        <input type="radio" name="job_id" value="<?= $job['id'] ?>" required
-                                            class="mt-0.5 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-bold text-gray-900 truncate"><?= sanitize_string($job['title']) ?></p>
-                                            <div class="flex items-center gap-2 mt-1">
-                                                <span class="text-xs font-semibold text-gray-900">$<?= number_format($job['budget'], 0) ?></span>
-                                                <span class="text-xs <?= $jobTypeColor ?> font-medium">· <?= $jobTypeLabel ?></span>
-                                                <span class="text-xs text-gray-400">· <?= $job['proposal_count'] ?> proposals</span>
-                                            </div>
-                                            <?php if (!empty($job['skills_list'])): ?>
-                                                <p class="text-[10px] text-gray-400 mt-1 truncate"><?= sanitize_string($job['skills_list']) ?></p>
-                                            <?php endif; ?>
-                                        </div>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Message -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Message <span class="text-red-500">*</span></label>
-                            <textarea name="message" rows="5" required
-                                placeholder="Hello,&#10;&#10;I reviewed your profile and think you are a great fit for this project. I'd like to invite you to submit a proposal.&#10;&#10;Looking forward to working with you!"
-                                class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-all"></textarea>
-                            <p class="text-[10px] text-gray-400 mt-1">Minimum 10 characters</p>
-                        </div>
-
-                        <!-- Submit -->
-                        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25">
-                            <i class="fas fa-paper-plane text-xs"></i> Send Invitation
+                        <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0">
+                            Search
                         </button>
-                    </form>
-
-                <?php else: ?>
-                    <!-- No Freelancer Selected -->
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-                        <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-user-plus text-2xl text-blue-300"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-900 mb-2">Select a Freelancer</h3>
-                        <p class="text-sm text-gray-400">Choose a freelancer from the list to view their profile and send an invitation.</p>
                     </div>
-                <?php endif; ?>
 
+                    <!-- Filter Pills -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select name="skill" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                            <option value="">All Skills</option>
+                            <?php foreach ($allSkills as $sk): ?>
+                                <option value="<?= sanitize_string($sk) ?>" <?= $filterSkill === $sk ? 'selected' : '' ?>><?= sanitize_string($sk) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <select name="availability" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                            <option value="">Availability</option>
+                            <option value="Available" <?= $filterAvailability === 'Available' ? 'selected' : '' ?>>Available</option>
+                            <option value="Busy" <?= $filterAvailability === 'Busy' ? 'selected' : '' ?>>Busy</option>
+                            <option value="Unavailable" <?= $filterAvailability === 'Unavailable' ? 'selected' : '' ?>>Unavailable</option>
+                        </select>
+
+                        <select name="experience" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                            <option value="">Experience</option>
+                            <option value="entry" <?= $filterExperience === 'entry' ? 'selected' : '' ?>>Entry (0-2 yrs)</option>
+                            <option value="intermediate" <?= $filterExperience === 'intermediate' ? 'selected' : '' ?>>Intermediate (3-5 yrs)</option>
+                            <option value="expert" <?= $filterExperience === 'expert' ? 'selected' : '' ?>>Expert (6+ yrs)</option>
+                        </select>
+
+                        <select name="min_rating" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                            <option value="">Rating</option>
+                            <option value="4" <?= $filterMinRating == 4 ? 'selected' : '' ?>>4+ Stars</option>
+                            <option value="3" <?= $filterMinRating == 3 ? 'selected' : '' ?>>3+ Stars</option>
+                            <option value="2" <?= $filterMinRating == 2 ? 'selected' : '' ?>>2+ Stars</option>
+                        </select>
+
+                        <div class="flex items-center gap-1.5">
+                            <input type="number" name="min_rate" value="<?= $filterMinRate > 0 ? $filterMinRate : '' ?>" placeholder="Min $" min="0" step="5"
+                                class="w-20 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2 text-xs text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <span class="text-gray-300 text-xs">—</span>
+                            <input type="number" name="max_rate" value="<?= $filterMaxRate > 0 ? $filterMaxRate : '' ?>" placeholder="Max $" min="0" step="5"
+                                class="w-20 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-2 text-xs text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+                </form>
             </div>
-        </div>
-    <?php endif; ?>
+
+            <!-- ═══ SPLIT WORKSPACE ══════════════════════════════════ -->
+            <div class="flex flex-col lg:flex-row gap-6">
+
+                <!-- ─── LEFT PANE: Candidate List (35%) ──────────── -->
+                <div class="w-full lg:w-[35%] shrink-0">
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <div class="px-5 py-4 border-b border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-gray-900">Candidates</h3>
+                                <span class="text-xs text-gray-400"><?= count($freelancers) ?> found</span>
+                            </div>
+                        </div>
+
+                        <?php if (!empty($freelancers)): ?>
+                            <div class="divide-y divide-gray-50 max-h-[640px] overflow-y-auto">
+                                <?php
+                                foreach ($freelancers as $fl):
+                                    $isSelected = ($fl['user_id'] == $freelancerId);
+                                    $availColor = $fl['availability'] === 'Available' ? 'bg-emerald-50 text-emerald-700' : ($fl['availability'] === 'Busy' ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500');
+                                    ?>
+                                    <a href="?freelancer_id=<?= $fl['user_id'] ?><?= $searchQuery ? '&search=' . urlencode($searchQuery) : '' ?>"
+                                        class="flex items-center gap-3 px-5 py-4 transition-all <?= $isSelected ? 'bg-indigo-50/50 border-l-4 border-indigo-600' : 'border-l-4 border-transparent hover:bg-gray-50' ?>">
+                                        <img src="<?= get_profile_image($fl['profile_image']) ?>" class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900 truncate"><?= sanitize_string($fl['name']) ?></p>
+                                            <p class="text-xs text-gray-500 truncate"><?= sanitize_string($fl['title'] ?? 'Freelancer') ?></p>
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="text-xs font-semibold text-indigo-600">$<?= number_format($fl['hourly_rate'], 0) ?>/hr</span>
+                                                <span class="text-[10px] <?= $availColor ?> px-1.5 py-0.5 rounded-full font-medium"><?= $fl['availability'] ?></span>
+                                                <?php if ($fl['avg_rating'] > 0): ?>
+                                                    <span class="text-xs text-amber-500 flex items-center gap-0.5"><i data-lucide="star" class="w-3 h-3 fill-amber-400"></i><?= number_format($fl['avg_rating'], 1) ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <?php if ($isSelected): ?>
+                                            <i data-lucide="check-circle-2" class="w-4 h-4 text-indigo-600 shrink-0"></i>
+                                        <?php endif; ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="p-10 text-center">
+                                <i data-lucide="users" class="w-8 h-8 text-gray-300 mx-auto mb-3"></i>
+                                <p class="text-sm text-gray-500">No freelancers match your filters.</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- ─── RIGHT PANE: Detail & Invitation (65%) ────── -->
+                <div class="flex-1 min-w-0 space-y-6">
+
+                    <?php if ($freelancer): ?>
+
+                        <!-- Freelancer Profile Header -->
+                        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                            <div class="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-5">
+                                <div class="flex items-center gap-4">
+                                    <img src="<?= get_profile_image($freelancer['profile_image']) ?>" class="w-16 h-16 rounded-full object-cover ring-4 ring-white/20 shadow-lg">
+                                    <div class="flex-1 min-w-0">
+                                        <h2 class="text-lg font-semibold text-white"><?= sanitize_string($freelancer['name']) ?></h2>
+                                        <p class="text-indigo-200 text-sm"><?= sanitize_string($freelancer['title'] ?? 'Freelancer') ?></p>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium <?= $freelancer['availability'] === 'Available' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' ?>">
+                                        <span class="w-1.5 h-1.5 rounded-full <?= $freelancer['availability'] === 'Available' ? 'bg-emerald-500' : 'bg-amber-500' ?>"></span>
+                                        <?= $freelancer['availability'] ?>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="px-6 py-5">
+                                <!-- Stats Row -->
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+                                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                        <p class="text-lg font-bold text-gray-900">$<?= number_format($freelancer['hourly_rate'], 0) ?></p>
+                                        <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Hourly Rate</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <p class="text-lg font-bold text-gray-900"><?= $freelancer['avg_rating'] > 0 ? number_format($freelancer['avg_rating'], 1) : '—' ?></p>
+                                            <?php if ($freelancer['avg_rating'] > 0): ?><i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i><?php endif; ?>
+                                        </div>
+                                        <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider"><?= $freelancer['review_count'] ?> reviews</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                        <p class="text-lg font-bold text-gray-900"><?= $freelancer['completed_jobs'] ?? 0 ?></p>
+                                        <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Completed</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                                        <p class="text-lg font-bold text-gray-900"><?= $freelancer['years_of_experience'] ?> yr</p>
+                                        <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Experience</p>
+                                    </div>
+                                </div>
+
+                                <!-- Top Skills -->
+                                <?php if (!empty($freelancerSkills)): ?>
+                                    <div class="mb-5">
+                                        <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2.5">Top Skills</p>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            <?php foreach (array_slice($freelancerSkills, 0, 8) as $sk): ?>
+                                                <span class="inline-flex items-center px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium"><?= sanitize_string($sk['skill_name']) ?></span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <!-- Actions -->
+                                <div class="flex items-center gap-3">
+                                    <?php if (!empty($freelancer['social_links_parsed']['website'])): ?>
+                                        <a href="<?= sanitize_string($freelancer['social_links_parsed']['website']) ?>" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Portfolio
+                                        </a>
+                                    <?php endif; ?>
+                                    <a href="/jobhub/freelancer/profile.php?id=<?= $freelancer['user_id'] ?>" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-indigo-600 transition-colors">
+                                        <i data-lucide="user" class="w-3.5 h-3.5"></i> View Full Profile
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Invitation Form -->
+                        <form method="POST" action="/jobhub/client/invite_jobs.php" class="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="send_invitation">
+                            <input type="hidden" name="freelancer_id" value="<?= $freelancer['user_id'] ?>">
+
+                            <div class="flex items-center gap-2.5 mb-1">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                                    <i data-lucide="send" class="w-4 h-4 text-indigo-600"></i>
+                                </div>
+                                <h3 class="text-sm font-semibold text-gray-900">Send Invitation</h3>
+                            </div>
+
+                            <!-- Job Selection -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-2.5">Select a Job <span class="text-red-500">*</span></label>
+                                <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                    <?php
+                                    foreach ($openJobs as $job):
+                                        $jobTypeLabel = $job['job_type'] === 'hourly' ? 'Hourly' : 'Fixed';
+                                        $jobTypeColor = $job['job_type'] === 'hourly' ? 'bg-violet-50 text-violet-700' : 'bg-cyan-50 text-cyan-700';
+                                        ?>
+                                        <label class="flex items-start gap-3 p-3.5 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30 cursor-pointer transition-all group">
+                                            <input type="radio" name="job_id" value="<?= $job['id'] ?>" required
+                                                class="mt-0.5 w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate group-hover:text-indigo-700 transition-colors"><?= decode_over_encoded($job['title']) ?></p>
+                                                <div class="flex items-center gap-2 mt-1">
+                                                    <span class="text-xs font-semibold text-gray-900">$<?= number_format($job['budget'], 0) ?></span>
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold <?= $jobTypeColor ?>"><?= $jobTypeLabel ?></span>
+                                                    <span class="text-xs text-gray-400"><?= $job['proposal_count'] ?> proposals</span>
+                                                </div>
+                                                <?php if (!empty($job['skills_list'])): ?>
+                                                    <p class="text-[11px] text-gray-400 mt-1.5 truncate"><?= sanitize_string($job['skills_list']) ?></p>
+                                                <?php endif; ?>
+                                            </div>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <!-- Message -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-2">Message <span class="text-red-500">*</span></label>
+                                <textarea name="message" rows="5" required
+                                    placeholder="Hello,&#10;&#10;I reviewed your profile and think you are a great fit for this project. I'd like to invite you to submit a proposal.&#10;&#10;Looking forward to working with you!"
+                                    class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 placeholder:text-xs text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none transition-all"></textarea>
+                                <p class="text-[10px] text-gray-400 mt-1.5">Minimum 10 characters</p>
+                            </div>
+
+                            <!-- Submit -->
+                            <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm shadow-indigo-200 hover:shadow-md hover:shadow-indigo-300">
+                                <i data-lucide="send" class="w-4 h-4"></i> Send Invitation
+                            </button>
+                        </form>
+
+                    <?php else: ?>
+
+                        <!-- No Freelancer Selected -->
+                        <div class="bg-white rounded-xl border border-gray-200 p-16 text-center">
+                            <div class="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="user-plus" class="w-7 h-7 text-indigo-400"></i>
+                            </div>
+                            <h3 class="text-base font-semibold text-gray-900 mb-1">Select a Freelancer</h3>
+                            <p class="text-sm text-gray-500">Choose a candidate from the list to view their profile and send an invitation.</p>
+                        </div>
+
+                    <?php endif; ?>
+
+                </div>
+            </div>
+
+        <?php endif; ?>
+
+    </div>
 </main>
 
 <?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

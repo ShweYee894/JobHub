@@ -34,7 +34,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
   <meta name="description" content="Reset your JobHub account password." />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -110,7 +110,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
       <a href="../index.php" class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl btn-grad flex items-center justify-center shadow-lg shadow-blue-500/25">
-          <i class="fas fa-bolt text-white text-sm"></i>
+          <i data-lucide="zap" class="w-4 h-4 text-white"></i>
         </div>
         <span class="text-xl font-extrabold tracking-tight">
           <span class="text-gray-900">Freelance</span><span class="grad-text">Hub</span>
@@ -131,7 +131,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
       <!-- Header -->
       <div class="text-center mb-8">
         <div class="w-14 h-14 rounded-2xl btn-grad flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
-          <i class="fas fa-lock text-white text-lg"></i>
+          <i data-lucide="lock" class="w-5 h-5 text-white"></i>
         </div>
         <h1 class="text-3xl font-black text-gray-900 mb-2">Reset Password</h1>
         <p class="text-gray-500 text-sm">Create a new password for your account</p>
@@ -141,7 +141,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
       <?php if ($error): ?>
       <div class="mb-5 rounded-xl p-3 bg-red-50 border border-red-200 shake">
         <div class="flex items-center gap-2.5">
-          <i class="fas fa-exclamation-triangle text-red-500 text-sm"></i>
+          <i data-lucide="triangle-alert" class="w-4 h-4 text-red-500"></i>
           <p class="text-red-600 text-xs"><?= sanitize_string($error) ?></p>
         </div>
       </div>
@@ -158,7 +158,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
           <div class="mb-4">
             <label for="password" class="block text-xs font-semibold text-gray-700 mb-1.5">New Password</label>
             <div class="relative">
-              <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="lock" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="password" id="password" name="password"
                 placeholder="Min. 8 characters"
                 autocomplete="new-password"
@@ -166,7 +166,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
                 required/>
               <button type="button" onclick="togglePwd('password','eye1')"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                <i id="eye1" class="fas fa-eye text-xs"></i>
+                <i id="eye1" data-lucide="eye" class="w-3 h-3"></i>
               </button>
             </div>
             <!-- Strength -->
@@ -179,11 +179,11 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
             </div>
             <p id="strength-label" class="text-[10px] mt-1 text-gray-400"></p>
             <ul class="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-0.5">
-              <li id="req-len"   class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> 8+ characters</li>
-              <li id="req-upper" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> Uppercase</li>
-              <li id="req-lower" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> Lowercase</li>
-              <li id="req-digit" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> Number</li>
-              <li id="req-spec"  class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i class="fas fa-circle text-[5px]"></i> Special char</li>
+              <li id="req-len"   class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> 8+ characters</li>
+              <li id="req-upper" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> Uppercase</li>
+              <li id="req-lower" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> Lowercase</li>
+              <li id="req-digit" class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> Number</li>
+              <li id="req-spec"  class="req-item text-[10px] text-gray-400 flex items-center gap-1"><i data-lucide="circle" class="w-[5px] h-[5px]"></i> Special char</li>
             </ul>
             <p id="password-err" class="text-red-500 text-[11px] mt-1 hidden"></p>
           </div>
@@ -192,7 +192,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
           <div class="mb-6">
             <label for="confirm_password" class="block text-xs font-semibold text-gray-700 mb-1.5">Confirm New Password</label>
             <div class="relative">
-              <i class="fas fa-shield-halved absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <i data-lucide="shield" class="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               <input type="password" id="confirm_password" name="confirm_password"
                 placeholder="Repeat your password"
                 autocomplete="new-password"
@@ -200,7 +200,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
                 required/>
               <button type="button" onclick="togglePwd('confirm_password','eye2')"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                <i id="eye2" class="fas fa-eye text-xs"></i>
+                <i id="eye2" data-lucide="eye" class="w-3 h-3"></i>
               </button>
             </div>
             <p id="confirm-err" class="text-red-500 text-[11px] mt-1 hidden"></p>
@@ -209,7 +209,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
           <!-- Submit -->
           <button type="submit" id="submit-btn"
             class="btn-grad w-full text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
-            <i class="fas fa-check-circle" id="submit-icon"></i>
+            <i data-lucide="circle-check" id="submit-icon" class="w-4 h-4"></i>
             <span id="submit-text">Reset Password</span>
           </button>
         </form>
@@ -218,7 +218,7 @@ $plain_token = $_SESSION['reset_token_plain'] ?? '';
       <!-- Back to Login -->
       <p class="text-center text-gray-500 text-sm mt-6">
         <a href="login.php" class="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
-          <i class="fas fa-arrow-left mr-1 text-xs"></i>Back to Sign In
+          <i data-lucide="arrow-left" class="w-3 h-3 mr-1"></i>Back to Sign In
         </a>
       </p>
 
@@ -234,10 +234,12 @@ function togglePwd(fieldId, eyeId) {
   const e = document.getElementById(eyeId);
   if (f.type === 'password') {
     f.type = 'text';
-    e.classList.replace('fa-eye','fa-eye-slash');
+    e.setAttribute('data-lucide', 'eye-off');
+    lucide.createIcons();
   } else {
     f.type = 'password';
-    e.classList.replace('fa-eye-slash','fa-eye');
+    e.setAttribute('data-lucide', 'eye');
+    lucide.createIcons();
   }
 }
 
@@ -274,10 +276,12 @@ function updateStrength(pwd) {
     const ico = li.querySelector('i');
     if (v) {
       li.classList.replace('text-gray-400','text-emerald-500');
-      ico.classList.replace('fa-circle','fa-check-circle');
+      ico.setAttribute('data-lucide', 'circle-check');
+      lucide.createIcons();
     } else {
       li.classList.replace('text-emerald-500','text-gray-400');
-      ico.classList.replace('fa-check-circle','fa-circle');
+      ico.setAttribute('data-lucide', 'circle');
+      lucide.createIcons();
     }
   });
   return score;
@@ -337,9 +341,12 @@ document.getElementById('reset-form').addEventListener('submit', function(e) {
   const icon = document.getElementById('submit-icon');
   const txt  = document.getElementById('submit-text');
   btn.disabled = true;
-  icon.className = 'fas fa-spinner fa-spin';
+  icon.setAttribute('data-lucide', 'loader');
+  icon.classList.add('animate-spin');
+  lucide.createIcons();
   txt.textContent = 'Resetting\u2026';
 });
 </script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

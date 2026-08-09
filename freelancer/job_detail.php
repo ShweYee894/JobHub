@@ -7,7 +7,7 @@ $userId = $_SESSION['user_id'];
 $jobId = intval($_GET['id'] ?? 0);
 
 if ($jobId <= 0) {
-    redirect('/finalproject/freelancer/browse_jobs.php');
+    redirect('/jobhub/freelancer/browse_jobs.php');
 }
 
 $stmt = $conn->prepare('SELECT name, profile_image FROM users WHERE id = ?');
@@ -19,8 +19,9 @@ $stmt->close();
 // ── Fetch job ─────────────────────────────────────────────────────────────
 $stmt = $conn->prepare('
     SELECT j.id, j.title, j.description, j.budget, j.status, j.created_at, j.updated_at,
+           j.deadline, j.job_type, j.experience_level, j.category,
            u.name AS client_name, u.created_at AS client_joined, u.id AS client_user_id,
-           c.client_id AS client_fk
+           c.client_id AS client_fk, c.company_logo
     FROM jobs j
     JOIN clients c ON j.client_id = c.client_id
     JOIN users u ON c.client_id = u.id
@@ -33,7 +34,7 @@ $stmt->close();
 
 if (!$job) {
     set_flash('error', 'Job not found.');
-    redirect('/finalproject/freelancer/browse_jobs.php');
+    redirect('/jobhub/freelancer/browse_jobs.php');
 }
 
 // ── Fetch job skills ──────────────────────────────────────────────────────
@@ -153,7 +154,7 @@ $statusColors = [
     'cancelled' => 'bg-gray-100 text-gray-500 border border-gray-200',
 ];
 
-$pageTitle = sanitize_string($job['title']);
+$pageTitle = decode_over_encoded($job['title']);
 $activePage = 'browse_jobs';
 $user = ['name' => $user['name'] ?? 'Freelancer', 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = get_unread_message_count($userId, 'freelancer');
@@ -171,7 +172,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             <!-- Job Header Card -->
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in">
                 <div class="flex flex-wrap items-center gap-2 mb-4">
-                    <h2 class="text-xl font-extrabold text-gray-900"><?= sanitize_string($job['title']) ?></h2>
+                    <h2 class="text-xl font-extrabold text-gray-900"><a href="browse_jobs.php"><i data-lucide="arrow-left" class="text-sm pr-2"></i></a><?= decode_over_encoded($job['title']) ?></h2>
                     <span class="inline-block px-3 py-1 rounded-lg text-xs font-bold <?= $statusColors[$job['status']] ?? $statusColors['open'] ?>">
                         <?= ucfirst(str_replace('_', ' ', $job['status'])) ?>
                     </span>
@@ -180,7 +181,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                 <div class="flex flex-wrap items-center gap-5 text-sm text-gray-500 mb-5">
                     <span class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                            <i class="fas fa-dollar-sign text-emerald-500 text-xs"></i>
+                            <i data-lucide="dollar-sign" class="text-emerald-500 text-xs"></i>
                         </div>
                         <div>
                             <p class="text-[10px] text-gray-400 uppercase tracking-wider">Budget</p>
@@ -188,8 +189,8 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         </div>
                     </span>
                     <span class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                            <i class="fas fa-clock text-blue-500 text-xs"></i>
+                        <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                            <i data-lucide="clock" class="text-indigo-500 text-xs"></i>
                         </div>
                         <div>
                             <p class="text-[10px] text-gray-400 uppercase tracking-wider">Posted</p>
@@ -198,13 +199,35 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                     </span>
                     <span class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
-                            <i class="fas fa-calendar text-violet-500 text-xs"></i>
+                            <i data-lucide="calendar" class="text-violet-500 text-xs"></i>
                         </div>
                         <div>
                             <p class="text-[10px] text-gray-400 uppercase tracking-wider">Deadline</p>
-                            <p class="font-semibold text-gray-700">Open</p>
+                            <p class="font-semibold text-gray-700"><?= $job['deadline'] ? date('M d, Y', strtotime($job['deadline'])) : 'Open' ?></p>
                         </div>
                     </span>
+                    <?php if (!empty($job['job_type'])): ?>
+                    <span class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center">
+                            <i data-lucide="briefcase" class="text-cyan-500 text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-wider">Job Type</p>
+                            <p class="font-semibold text-gray-700"><?= ucfirst($job['job_type']) ?></p>
+                        </div>
+                    </span>
+                    <?php endif; ?>
+                    <?php if (!empty($job['experience_level'])): ?>
+                    <span class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                            <i data-lucide="layers" class="text-amber-500 text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-wider">Experience</p>
+                            <p class="font-semibold text-gray-700"><?= ucfirst($job['experience_level']) ?></p>
+                        </div>
+                    </span>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Skills -->
@@ -217,7 +240,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                 $col = $skillColors[$skill['category']] ?? $defaultColor;
                                 ?>
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 <?= $col['bg'] ?> <?= $col['text'] ?> text-xs font-semibold rounded-lg border <?= $col['border'] ?>">
-                                    <i class="fas fa-tag text-[8px] opacity-60"></i>
+                                    <i data-lucide="tag" class="text-[8px] opacity-60"></i>
                                     <?= sanitize_string($skill['skill_name']) ?>
                                 </span>
                             <?php endforeach; ?>
@@ -239,8 +262,8 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.1s">
                     <?php if ($hasApplied): ?>
                         <div class="flex items-center gap-4 p-5 bg-gray-50 rounded-xl border border-gray-200">
-                            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-check-circle text-blue-500 text-xl"></i>
+                            <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="circle-check" class="text-indigo-500 text-xl"></i>
                             </div>
                             <div class="flex-1">
                                 <h4 class="font-bold text-gray-900 text-sm">You've Already Applied</h4>
@@ -250,15 +273,15 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                     Bid: <span class="font-semibold text-gray-700"><?= format_currency($existingProposal['amount']) ?></span>
                                 </p>
                             </div>
-                            <a href="proposals.php" class="text-xs text-blue-600 hover:text-blue-700 font-semibold transition-colors">
-                                View Proposal <i class="fas fa-arrow-right ml-1 text-[9px]"></i>
+                            <a href="proposals.php" class="text-xs text-indigo-600 hover:text-indigo-700 font-semibold transition-colors">
+                                View Proposal <i data-lucide="arrow-right" class="ml-1 text-[9px]"></i>
                             </a>
                         </div>
                     <?php else: ?>
                         <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <i class="fas fa-paper-plane text-blue-500 text-sm"></i> Submit Your Proposal
+                            <i data-lucide="send" class="text-indigo-500 text-sm"></i> Submit Your Proposal
                         </h3>
-                        <form method="POST" action="/finalproject/freelancer/browse_jobs.php" class="space-y-4">
+                        <form method="POST" action="/jobhub/freelancer/browse_jobs.php" class="space-y-4">
                             <input type="hidden" name="action" value="submit_proposal">
                             <input type="hidden" name="job_id" value="<?= $job['id'] ?>">
 
@@ -266,7 +289,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Your Bid Amount ($) <span class="text-red-500">*</span></label>
                                 <div class="relative">
                                     <div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-100">
-                                        <i class="fas fa-dollar-sign text-emerald-600 text-xs"></i>
+                                        <i data-lucide="dollar-sign" class="text-emerald-600 text-xs"></i>
                                     </div>
                                     <input type="number" name="amount" step="0.01" min="0.01" required
                                         placeholder="0.00" max="<?= $job['budget'] * 2 ?>"
@@ -283,8 +306,8 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                 <p class="text-[11px] text-gray-400 mt-1">Minimum 20 characters</p>
                             </div>
 
-                            <button type="submit" class="w-full btn-grad py-3.5 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
-                                <i class="fas fa-paper-plane text-xs"></i> Submit Proposal
+                            <button type="submit" class="w-full btn-grad py-3.5 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
+                                <i data-lucide="send" class="text-xs"></i> Submit Proposal
                             </button>
                         </form>
                     <?php endif; ?>
@@ -299,16 +322,23 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             <!-- Client Info Card -->
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.15s">
                 <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="fas fa-user-tie text-blue-500 text-xs"></i> About the Client
+                    <i data-lucide="user" class="text-indigo-500 text-xs"></i> About the Client
                 </h3>
 
                 <div class="flex items-center gap-3 mb-5">
                     <?php
-                    $clientAvatar = !empty($clientImage)
-                        ? '../' . htmlspecialchars($clientImage)
-                        : 'https://ui-avatars.com/api/?name=' . urlencode($job['client_name']) . '&background=2563eb&color=fff&bold=true&size=80';
+                    $clientAvatar = get_profile_image($clientImage);
+                    $hasRealImage = $clientImage && $clientAvatar !== '/jobhub/assets/upload/profile.png';
+                    $clientName = $job['client_name'] ?? 'C';
+                    $clientInitials = strtoupper(substr($clientName, 0, 1));
                     ?>
-                    <img src="<?= $clientAvatar ?>" class="w-12 h-12 rounded-xl object-cover border-2 border-gray-100" alt="Client">
+                    <?php if ($hasRealImage): ?>
+                        <img src="<?= htmlspecialchars($clientAvatar) ?>" class="w-12 h-12 rounded-xl object-cover border-2 border-gray-100" alt="Client">
+                    <?php else: ?>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm border-2 border-indigo-200/50">
+                            <?= $clientInitials ?>
+                        </div>
+                    <?php endif; ?>
                     <div>
                         <p class="font-bold text-gray-900 text-sm"><?= sanitize_string($job['client_name']) ?></p>
                         <p class="text-[11px] text-gray-400">Member since <?= date('M Y', strtotime($job['client_joined'])) ?></p>
@@ -330,7 +360,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             <!-- Job Summary Card -->
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.2s">
                 <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="fas fa-receipt text-violet-500 text-xs"></i> Job Summary
+                    <i data-lucide="receipt" class="text-violet-500 text-xs"></i> Job Summary
                 </h3>
                 <div class="space-y-3">
                     <div class="flex items-center justify-between py-2 border-b border-gray-50">
@@ -355,6 +385,22 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         <span class="text-xs text-gray-500">Posted</span>
                         <span class="text-xs font-semibold text-gray-700"><?= time_ago($job['created_at']) ?></span>
                     </div>
+                    <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                        <span class="text-xs text-gray-500">Deadline</span>
+                        <span class="text-xs font-semibold text-gray-700"><?= $job['deadline'] ? date('M d, Y', strtotime($job['deadline'])) : 'Open' ?></span>
+                    </div>
+                    <?php if (!empty($job['job_type'])): ?>
+                    <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                        <span class="text-xs text-gray-500">Job Type</span>
+                        <span class="text-xs font-semibold text-gray-700"><?= ucfirst($job['job_type']) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($job['experience_level'])): ?>
+                    <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                        <span class="text-xs text-gray-500">Experience</span>
+                        <span class="text-xs font-semibold text-gray-700"><?= ucfirst($job['experience_level']) ?></span>
+                    </div>
+                    <?php endif; ?>
                     <div class="flex items-center justify-between py-2">
                         <span class="text-xs text-gray-500">Skills Required</span>
                         <span class="text-xs font-bold text-gray-900"><?= count($jobSkills) ?></span>
@@ -366,21 +412,21 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             <?php if (!empty($relatedJobs)): ?>
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.25s">
                     <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <i class="fas fa-layer-group text-cyan-500 text-xs"></i> Related Jobs
+                        <i data-lucide="layers" class="text-cyan-500 text-xs"></i> Related Jobs
                     </h3>
                     <div class="space-y-3">
                         <?php foreach ($relatedJobs as $rj): ?>
-                            <a href="job_detail.php?id=<?= $rj['id'] ?>" class="block p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all group">
-                                <h4 class="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-1">
+                            <a href="job_detail.php?id=<?= $rj['id'] ?>" class="block p-3 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all group">
+                                <h4 class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1 mb-1">
                                     <?= sanitize_string($rj['title']) ?>
                                 </h4>
                                 <div class="flex items-center gap-3 text-[11px] text-gray-400">
                                     <span class="flex items-center gap-1">
-                                        <i class="fas fa-dollar-sign text-emerald-500"></i>
+                                        <i data-lucide="dollar-sign" class="text-emerald-500"></i>
                                         <span class="font-semibold text-gray-600"><?= format_currency($rj['budget']) ?></span>
                                     </span>
                                     <span class="flex items-center gap-1">
-                                        <i class="fas fa-clock text-blue-400"></i>
+                                        <i data-lucide="clock" class="text-indigo-400"></i>
                                         <?= time_ago($rj['created_at']) ?>
                                     </span>
                                 </div>
@@ -398,13 +444,13 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             <?php endif; ?>
 
             <!-- Back link -->
-            <a href="browse_jobs.php" class="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 rounded-xl text-sm font-semibold transition-all">
-                <i class="fas fa-arrow-left text-xs"></i> Back to Browse Jobs
+            <a href="browse_jobs.php" class="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-sm font-semibold transition-all">
+                <i data-lucide="arrow-left" class="text-xs"></i> Back to Browse Jobs
             </a>
 
         </div>
     </div>
 
 </div>
-<script src="/finalproject/shared/dark-toggle.js"></script>
+<script src="/jobhub/shared/dark-toggle.js"></script>
 <?php require_once __DIR__ . '/../components/freelancer_footer.php'; ?>

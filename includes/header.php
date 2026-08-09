@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE)
     session_start();
 require_once __DIR__ . '/../config/db.php';
 
-$_base = '/finalproject';
+$_base = '/jobhub';
 $_user_id = $_SESSION['user_id'] ?? null;
 $_user_role = $_SESSION['user_role'] ?? null;
 $_user_name = $_SESSION['user_name'] ?? '';
@@ -24,7 +24,8 @@ $_page_title = $page_title ?? 'JobHub';
     <title><?= sanitize_string($_page_title) ?> – JobHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="/jobhub/assets/css/theme.css">
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <script>
     tailwind.config={
         theme:{extend:{fontFamily:{inter:['Inter','sans-serif']},colors:{primary:{DEFAULT:'#2563eb',dark:'#1d4ed8',light:'#3b82f6'},accent:{DEFAULT:'#0ea5e9',dark:'#0284c7'},surface:{DEFAULT:'#f8fafc',card:'#ffffff',border:'#e2e8f0'}}}}
@@ -43,3 +44,15 @@ $_page_title = $page_title ?? 'JobHub';
     <?php if (isset($extra_head)) echo $extra_head; ?>
 </head>
 <body>
+<script>
+function fixIcons() {
+    lucide.createIcons();
+    document.querySelectorAll('svg[data-lucide]').forEach(function(svg) {
+        svg.removeAttribute('width');svg.removeAttribute('height');
+        svg.style.removeProperty('width');svg.style.removeProperty('height');
+        var p = svg.parentElement;
+        if (p && p.tagName === 'I') { var fs = window.getComputedStyle(p).fontSize; svg.style.width = fs; svg.style.height = fs; }
+    });
+}
+fixIcons();
+</script>

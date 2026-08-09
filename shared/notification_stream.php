@@ -7,7 +7,7 @@
  * Usage: connect with an EventSource that passes no user_id parameter;
  *        the session user_id is used automatically.
  *
- * GET /finalproject/shared/notification_stream.php
+ * GET /jobhub/shared/notification_stream.php
  */
 
 header('Content-Type: text/event-stream');
@@ -30,6 +30,10 @@ require_once __DIR__ . '/notifications.php';
 
 $userId = (int) $_SESSION['user_id'];
 $notificationService = new PlatformNotificationService($conn);
+
+// ── Release session lock ────────────────────────────────────────────────────
+define('SESSION_CLOSED', true);
+session_write_close();
 
 $lastId = 0;
 $heartbeatInterval = 15;

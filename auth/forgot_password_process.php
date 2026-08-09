@@ -52,7 +52,7 @@ if ($user) {
     $_SESSION['reset_email']      = $user['email'];
 
     // In a production system, you'd send an email here:
-    // $reset_link = '/finalproject/auth/reset_password.php?token=' . $token;
+    // $reset_link = '/jobhub/auth/reset_password.php?token=' . $token;
     // mail($user['email'], 'Password Reset', "Click here: $reset_link");
 
     // For demo purposes, store the plain token in session for the redirect

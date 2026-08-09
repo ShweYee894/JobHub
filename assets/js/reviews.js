@@ -1,4 +1,4 @@
-/**
+﻿/**
  * reviews.js
  * Interactive star rating component, AJAX submission, and UI feedback.
  * Used by client/reviews.php and freelancer/reviews.php.
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const formData = new FormData(form);
-            const response = await fetch('/finalproject/api/reviews_api.php?action=submit', {
+            const response = await fetch('/jobhub/api/reviews_api.php?action=submit', {
                 method: 'POST',
                 body: formData,
                 credentials: 'same-origin'

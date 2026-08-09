@@ -3,6 +3,19 @@ require_once __DIR__ . '/../auth/auth.php';
 require_role('client');
 require_once __DIR__ . '/../config/db.php';
 
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'client') {
+    header('Location: ../auth/login.php');
+    exit();
+}
+
+$userId = $_SESSION['user_id'];
+
+$stmt = $conn->prepare('SELECT name, profile_image FROM users WHERE id = ?');
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
 $currentPage = 'proposals';
 $userId = $_SESSION['user_id'];
 
@@ -81,6 +94,7 @@ $proposalColors = [
     'pending' => 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800',
     'accepted' => 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800',
     'rejected' => 'bg-red-50 text-red-500 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
+    'withdrawn' => 'bg-gray-100 text-gray-500 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
 ];
 
 function buildQueryString(array $overrides = []): string
@@ -103,7 +117,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <div class=" mb-6">
         <form method="GET" class="flex flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
-                <i class="fas fa-briefcase absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <i data-lucide="briefcase" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 <select name="job" class="appearance-none w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-10 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:border-blue-400">
                     <option value="0">All Jobs</option>
                     <?php foreach ($clientJobs as $cj): ?>
@@ -112,43 +126,43 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
             </div>
             <div class="relative">
-                <i class="fas fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <i data-lucide="filter" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 <select name="status" class="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-10 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:border-blue-400">
                     <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>All Status</option>
                     <option value="pending" <?= $statusFilter === 'pending' ? 'selected' : '' ?>>Pending</option>
                     <option value="accepted" <?= $statusFilter === 'accepted' ? 'selected' : '' ?>>Accepted</option>
                     <option value="rejected" <?= $statusFilter === 'rejected' ? 'selected' : '' ?>>Rejected</option>
                 </select>
-                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
             </div>
             <div class="relative">
-                <i class="fas fa-sort absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <i data-lucide="arrow-up-down" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 <select name="sort" class="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-10 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:border-blue-400">
                     <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Newest First</option>
                     <option value="oldest" <?= $sort === 'oldest' ? 'selected' : '' ?>>Oldest First</option>
                     <option value="amount_high" <?= $sort === 'amount_high' ? 'selected' : '' ?>>Amount: High to Low</option>
                     <option value="amount_low" <?= $sort === 'amount_low' ? 'selected' : '' ?>>Amount: Low to High</option>
                 </select>
-                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
             </div>
             <button type="submit" class="btn-grad px-6 py-2.5 text-white text-sm font-semibold rounded-xl flex items-center gap-2 justify-center">
-                <i class="fas fa-search text-xs"></i> Filter
+                <i data-lucide="search" class="w-4 h-4"></i> Filter
             </button>
             <?php if ($jobFilter > 0 || $statusFilter !== 'all' || $sort !== 'newest'): ?>
                 <a href="proposals.php" class="px-4 py-2.5 border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 rounded-xl text-sm font-medium transition-all flex items-center gap-2 justify-center dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:border-gray-500">
-                    <i class="fas fa-times text-xs"></i> Clear
+                    <i data-lucide="x" class="w-4 h-4"></i> Clear
                 </a>
             <?php endif; ?>
         </form>
     </div>
 
     <?php if ($proposals->num_rows > 0): ?>
-        <div class="space-y-4">
+        <div class=" grid grid-cols-2 gap-4">
             <?php while ($p = $proposals->fetch_assoc()): ?>
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all fade-in dark:bg-gray-800 dark:border-gray-700">
+                <div class="bg-slate-50 rounded-2xl border border-gray-100 shadow-sm hover:shadow-sm transition-all fade-in dark:bg-gray-800 dark:border-gray-700">
                     <div class="p-6">
                         <div class="flex flex-col lg:flex-row lg:items-start gap-4">
                             <div class="flex-shrink-0">
@@ -176,15 +190,15 @@ require_once __DIR__ . '/../includes/client_topbar.php';
 
                                 <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400 mb-3 dark:text-gray-500">
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-dollar-sign text-emerald-500"></i>
+                                        <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-500"></i>
                                         Bid: <span class="font-semibold text-gray-700 dark:text-gray-200"><?= format_currency((float) $p['amount']) ?></span>
                                     </span>
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-tag text-blue-400"></i>
+                                        <i data-lucide="tag" class="w-4 h-4 text-blue-400"></i>
                                         Job budget: <?= format_currency((float) $p['job_budget']) ?>
                                     </span>
                                     <span class="flex items-center gap-1.5">
-                                        <i class="fas fa-calendar text-gray-400"></i>
+                                        <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
                                         <?= time_ago($p['created_at']) ?>
                                     </span>
                                 </div>
@@ -197,12 +211,12 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                             <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:flex-col lg:items-stretch lg:min-w-[140px]">
                                 <a href="proposal_detail.php?id=<?= (int) $p['id'] ?>"
                                     class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-xl transition-all dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400">
-                                    <i class="fas fa-eye text-[10px]"></i> View Details
+                                    <i data-lucide="eye" class="w-4 h-4"></i> View Details
                                 </a>
                                 <?php if ($p['status'] === 'pending'): ?>
                                     <a href="proposal_detail.php?id=<?= (int) $p['id'] ?>"
                                         class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-xs font-semibold rounded-xl transition-all dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 dark:text-emerald-400">
-                                        <i class="fas fa-check text-[10px]"></i> Review
+                                         <i data-lucide="check" class="w-4 h-4"></i> Review
                                     </a>
                                 <?php endif; ?>
                             </div>
@@ -220,7 +234,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <div class="flex items-center gap-1">
                     <?php if ($pagination['has_prev']): ?>
                         <a href="?<?= buildQueryString(['page' => $pagination['current_page'] - 1]) ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
-                            <i class="fas fa-chevron-left text-xs"></i>
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
                         </a>
                     <?php endif; ?>
                     <?php $conn->close(); ?>
@@ -233,7 +247,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <?php endfor; ?>
                     <?php if ($pagination['has_next']): ?>
                         <a href="?<?= buildQueryString(['page' => $pagination['current_page'] + 1]) ?>" class="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
-                            <i class="fas fa-chevron-right text-xs"></i>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -244,7 +258,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700">
             <div class="text-center py-16 px-6">
                 <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mx-auto mb-6 border border-blue-100 dark:from-blue-900/20 dark:to-cyan-900/20 dark:border-blue-800">
-                    <i class="fas fa-file-alt text-4xl text-blue-300 dark:text-blue-500"></i>
+                    <i data-lucide="file-text" class="w-10 h-10 text-blue-300 dark:text-blue-500"></i>
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 mb-2 dark:text-white">No proposals found</h3>
                 <p class="text-sm text-gray-400 mb-6 max-w-md mx-auto dark:text-gray-500">
@@ -256,11 +270,11 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 </p>
                 <?php if ($jobFilter > 0 || $statusFilter !== 'all'): ?>
                     <a href="proposals.php" class="btn-grad inline-flex items-center gap-2 text-white font-bold px-6 py-3 rounded-xl text-sm">
-                        <i class="fas fa-times text-xs"></i> Clear Filters
+                        <i data-lucide="x" class="w-4 h-4"></i> Clear Filters
                     </a>
                 <?php else: ?>
                     <a href="post_job.php" class="btn-grad inline-flex items-center gap-2 text-white font-bold px-6 py-3 rounded-xl text-sm">
-                        <i class="fas fa-plus text-xs"></i> Post a Job
+                        <i data-lucide="plus" class="w-4 h-4"></i> Post a Job
                     </a>
                 <?php endif; ?>
             </div>

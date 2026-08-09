@@ -73,9 +73,9 @@ require_once __DIR__ . '/../includes/client_topbar.php';
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
     <div class="max-w-lg mx-auto">
         <!-- Balance Card -->
-        <div class="dh-card p-6 text-center mb-6">
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-wallet text-2xl text-white"></i>
+        <div class="bg-white/60 border border-gray-200 rounded-2xl p-4 text-center mb-6">
+            <div class="w-10 h-10 rounded-[10px] bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
             </div>
             <p class="text-sm text-gray-400 dark:text-slate-500 m-0">Current Balance</p>
             <p class="text-3xl font-black text-gray-900 dark:text-white m-0 mt-1" id="currentBalanceDisplay">
@@ -119,13 +119,13 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         <div class="space-y-2">
                             <label class="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 cursor-pointer">
                                 <input type="radio" name="payment_method" value="demo_wallet" checked class="accent-blue-600">
-                                <i class="fas fa-wallet text-blue-500"></i>
+                                <i data-lucide="wallet" class="w-4 h-4 text-blue-500"></i>
                                 <span class="text-sm font-semibold text-gray-900 dark:text-white">Demo Wallet</span>
                                 <span class="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md dark:bg-emerald-900/20 dark:text-emerald-400">Available</span>
                             </label>
                             <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-600 opacity-50">
                                 <input type="radio" disabled class="accent-gray-400">
-                                <i class="fab fa-stripe text-gray-400"></i>
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
                                 <span class="text-sm font-semibold text-gray-500 dark:text-slate-400">Stripe</span>
                                 <span class="ml-auto text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md dark:bg-slate-700 dark:text-slate-500">Coming Soon</span>
                             </div>
@@ -138,7 +138,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         Cancel
                     </a>
                     <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 text-white text-sm font-bold shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all">
-                        <i class="fas fa-plus mr-1"></i> Top Up
+                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Top Up
                     </button>
                 </div>
             </form>

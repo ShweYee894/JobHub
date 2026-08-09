@@ -100,7 +100,7 @@ function render_wallet_stat_card(string $label, float $value, string $icon, stri
     <div class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in dark:bg-slate-800 dark:border-slate-700" style="animation-delay:<?= $delay ?>s">
         <div class="flex items-center justify-between mb-3">
             <div class="w-11 h-11 rounded-xl <?= $badgeColor ?> flex items-center justify-center">
-                <i class="fas <?= $icon ?>"></i>
+                <i data-lucide="<?= $icon ?>" class="w-5 h-5"></i>
             </div>
             <span class="text-[10px] font-semibold uppercase tracking-wider <?= wallet_direction_class('credit') ?>"><?= htmlspecialchars($label) ?></span>
         </div>
@@ -122,7 +122,7 @@ function render_wallet_history_item(array $item): void
     ?>
     <div class="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors">
         <div class="w-10 h-10 rounded-xl <?= $iconColor ?> flex items-center justify-center shrink-0">
-            <i class="fas <?= $item['icon'] ?> text-sm"></i>
+            <i data-lucide="<?= $item['icon'] ?>" class="w-4 h-4"></i>
         </div>
         <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-gray-900 dark:text-white m-0"><?= htmlspecialchars($item['label']) ?></p>

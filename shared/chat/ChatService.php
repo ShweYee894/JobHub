@@ -6,8 +6,7 @@
 require_once __DIR__ . '/ChatValidator.php';
 require_once __DIR__ . '/MessageService.php';
 require_once __DIR__ . '/ConversationService.php';
-require_once __DIR__ . '/TypingService.php';
-require_once __DIR__ . '/NotificationService.php';
+require_once __DIR__ . '/../notifications.php';
 
 class ChatService
 {
@@ -15,7 +14,6 @@ class ChatService
     private $validator;
     private $messageService;
     private $conversationService;
-    private $typingService;
     private $notificationService;
 
     public function __construct($conn)
@@ -24,8 +22,7 @@ class ChatService
         $this->validator = new ChatValidator($conn);
         $this->messageService = new MessageService($conn);
         $this->conversationService = new ConversationService($conn);
-        $this->typingService = new TypingService($conn);
-        $this->notificationService = new NotificationService($conn);
+        $this->notificationService = new PlatformNotificationService($conn);
     }
 
     /**
@@ -165,32 +162,6 @@ class ChatService
     }
 
     /**
-     * Set typing indicator.
-     */
-    public function setTyping(int $roomId, int $userId, bool $isTyping): bool
-    {
-        try {
-            return $this->typingService->setTyping($roomId, $userId, $isTyping);
-        } catch (Exception $e) {
-            error_log("ChatService::setTyping error: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Get typing status for a room.
-     */
-    public function getTypingStatus(int $roomId, int $excludeUserId): array
-    {
-        try {
-            return $this->typingService->getTypingStatus($roomId, $excludeUserId);
-        } catch (Exception $e) {
-            error_log("ChatService::getTypingStatus error: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
      * Get new messages since a given ID (for polling).
      */
     public function getNewMessages(int $roomId, int $lastMessageId): array
@@ -204,7 +175,7 @@ class ChatService
     }
 
     /**
-     * Get unread notification count.
+     * Get unread notification count (uses main notifications table).
      */
     public function getNotificationCount(int $userId): int
     {
@@ -278,17 +249,13 @@ class ChatService
             $senderName = $sender['name'] ?? 'Someone';
             $notificationMessage = "$senderName sent a message in \"{$room['title']}\"";
 
-            $this->notificationService->createNotification(
+            $chatLink = "/jobhub/client/messages.php?room={$roomId}";
+            $this->notificationService->create(
                 $recipientId,
                 'new_message',
+                'New Message',
                 $notificationMessage,
-                [
-                    'room_id' => $roomId,
-                    'sender_id' => $senderId,
-                    'sender_name' => $senderName,
-                    'job_title' => $room['title'],
-                    'preview' => $truncatedMessage,
-                ]
+                $chatLink
             );
         } catch (Exception $e) {
             error_log("ChatService::createMessageNotification error: " . $e->getMessage());

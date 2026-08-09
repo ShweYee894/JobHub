@@ -15,7 +15,7 @@ $jobId = sanitize_int($_GET['job_id'] ?? $_POST['job_id'] ?? 0);
 
 if ($jobId <= 0) {
     set_flash('error', 'Invalid job reference.');
-    redirect('/finalproject/freelancer/browse_jobs.php');
+    redirect('/jobhub/freelancer/browse_jobs.php');
 }
 
 $stmt = $conn->prepare('SELECT id, title, description, budget, status, created_at FROM jobs WHERE id = ?');
@@ -26,7 +26,7 @@ $stmt->close();
 
 if (!$job || $job['status'] !== 'open') {
     set_flash('error', 'This job is no longer available for proposals.');
-    redirect('/finalproject/freelancer/browse_jobs.php');
+    redirect('/jobhub/freelancer/browse_jobs.php');
 }
 
 $stmt = $conn->prepare('SELECT id FROM proposals WHERE job_id = ? AND freelancer_id = ?');
@@ -37,7 +37,7 @@ $stmt->close();
 
 if ($existing) {
     set_flash('warning', 'You have already submitted a proposal for this job.');
-    redirect('/finalproject/freelancer/proposal_detail.php?id=' . $existing['id']);
+    redirect('/jobhub/freelancer/proposal_detail.php?id=' . $existing['id']);
 }
 
 $errors = [];
@@ -79,8 +79,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $newProposalId = $ins->insert_id;
                     $conn->commit();
                     $ins->close();
+
+                    // Notify the job owner about the new proposal
+                    require_once __DIR__ . '/../shared/notification_helper.php';
+                    $stmtOwner = $conn->prepare('SELECT client_id FROM jobs WHERE id = ?');
+                    $stmtOwner->bind_param('i', $jobId);
+                    $stmtOwner->execute();
+                    $owner = $stmtOwner->get_result()->fetch_assoc();
+                    $stmtOwner->close();
+                    if ($owner) {
+                        notifyNewProposal($owner['client_id'], $job['title'], $jobId);
+                    }
+
                     set_flash('success', 'Your proposal has been submitted successfully!');
-                    redirect('/finalproject/freelancer/proposal_detail.php?id=' . $newProposalId);
+                    redirect('/jobhub/freelancer/proposal_detail.php?id=' . $newProposalId);
                 } else {
                     throw new Exception('Failed to submit proposal.');
                 }
@@ -114,14 +126,14 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             <div class="rounded-2xl p-4 bg-red-50 border border-red-200 mb-6 fade-in">
                 <div class="flex items-start gap-3">
                     <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-exclamation-circle text-red-500 text-lg"></i>
+                        <i data-lucide="circle-alert" class="text-red-500 text-lg"></i>
                     </div>
                     <div>
                         <p class="font-bold text-red-700 text-sm">Please fix the following errors:</p>
                         <ul class="mt-2 space-y-1">
                             <?php foreach ($errors as $err): ?>
                             <li class="text-red-600/80 text-xs flex items-center gap-1.5">
-                                <i class="fas fa-times-circle text-[10px]"></i> <?= sanitize_string($err) ?>
+                                <i data-lucide="circle-x" class="text-[10px]"></i> <?= sanitize_string($err) ?>
                             </li>
                             <?php endforeach; ?>
                         </ul>
@@ -136,11 +148,11 @@ require_once __DIR__ . '/../components/freelancer_header.php';
 
                     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in">
                         <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                                <i class="fas fa-briefcase text-blue-500 text-sm"></i>
+                            <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                                <i data-lucide="briefcase" class="text-indigo-500 text-sm"></i>
                             </div>
                             <div>
-                                <h2 class="text-base font-bold text-gray-900"><?= sanitize_string($job['title']) ?></h2>
+                                <h2 class="text-base font-bold text-gray-900"><?= decode_over_encoded($job['title']) ?></h2>
                                 <p class="text-xs text-gray-400">Job Budget: <span class="font-semibold text-gray-600"><?= format_currency((float)$job['budget']) ?></span></p>
                             </div>
                         </div>
@@ -151,7 +163,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
 
                     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.1s">
                         <h3 class="text-base font-bold text-gray-900 mb-5 flex items-center gap-2">
-                            <i class="fas fa-paper-plane text-blue-500 text-sm"></i> Your Proposal
+                            <i data-lucide="send" class="text-indigo-500 text-sm"></i> Your Proposal
                         </h3>
                         <form method="POST" class="space-y-5">
                             <?= csrf_field() ?>
@@ -161,7 +173,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Bid Amount ($) <span class="text-red-500">*</span></label>
                                 <div class="relative">
                                     <div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-100">
-                                        <i class="fas fa-dollar-sign text-emerald-600 text-xs"></i>
+                                        <i data-lucide="dollar-sign" class="text-emerald-600 text-xs"></i>
                                     </div>
                                     <input type="number" name="amount" step="0.01" min="0.01" required
                                         value="<?= sanitize_string($amount) ?>"
@@ -180,8 +192,8 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                             </div>
 
                             <div class="flex gap-3 pt-2">
-                                <button type="submit" class="flex-1 btn-grad py-3.5 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
-                                    <i class="fas fa-paper-plane text-xs"></i> Submit Proposal
+                                <button type="submit" class="flex-1 btn-grad py-3.5 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
+                                    <i data-lucide="send" class="text-xs"></i> Submit Proposal
                                 </button>
                                 <a href="browse_jobs.php" class="px-6 py-3.5 border border-gray-200 text-gray-600 hover:border-gray-300 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2">
                                     Cancel
@@ -194,7 +206,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                 <div class="w-full xl:w-80 flex-shrink-0 space-y-5">
                     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.15s">
                         <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <i class="fas fa-receipt text-violet-500 text-xs"></i> Job Summary
+                            <i data-lucide="receipt" class="text-violet-500 text-xs"></i> Job Summary
                         </h3>
                         <div class="space-y-3">
                             <div class="flex items-center justify-between py-2 border-b border-gray-50">
@@ -216,30 +228,30 @@ require_once __DIR__ . '/../components/freelancer_header.php';
 
                     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.2s">
                         <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <i class="fas fa-lightbulb text-amber-500 text-xs"></i> Tips for a Winning Proposal
+                            <i data-lucide="lightbulb" class="text-amber-500 text-xs"></i> Tips for a Winning Proposal
                         </h3>
                         <ul class="space-y-3">
                             <li class="flex items-start gap-2.5 text-xs text-gray-600">
-                                <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-[10px]"></i>
+                                <i data-lucide="circle-check" class="text-emerald-500 mt-0.5 text-[10px]"></i>
                                 <span>Address the client's specific needs</span>
                             </li>
                             <li class="flex items-start gap-2.5 text-xs text-gray-600">
-                                <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-[10px]"></i>
+                                <i data-lucide="circle-check" class="text-emerald-500 mt-0.5 text-[10px]"></i>
                                 <span>Showcase relevant past work</span>
                             </li>
                             <li class="flex items-start gap-2.5 text-xs text-gray-600">
-                                <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-[10px]"></i>
+                                <i data-lucide="circle-check" class="text-emerald-500 mt-0.5 text-[10px]"></i>
                                 <span>Provide a clear timeline</span>
                             </li>
                             <li class="flex items-start gap-2.5 text-xs text-gray-600">
-                                <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-[10px]"></i>
+                                <i data-lucide="circle-check" class="text-emerald-500 mt-0.5 text-[10px]"></i>
                                 <span>Be competitive but fair with pricing</span>
                             </li>
                         </ul>
                     </div>
 
-                    <a href="browse_jobs.php" class="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 rounded-xl text-sm font-semibold transition-all">
-                        <i class="fas fa-arrow-left text-xs"></i> Back to Browse Jobs
+                    <a href="browse_jobs.php" class="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-sm font-semibold transition-all">
+                        <i data-lucide="arrow-left" class="text-xs"></i> Back to Browse Jobs
                     </a>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * logout.php
  * Securely destroys the session, clears remember-me cookie, and redirects.
@@ -20,11 +21,11 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['remember_token'])) {
 // ── Clear remember-me cookie ───────────────────────────────────────────
 if (isset($_COOKIE['fh_remember'])) {
     $params = [
-        'expires'  => time() - 3600,
-        'path'     => '/',
-        'domain'   => '',
-        'secure'   => !empty($_SERVER['HTTPS']),
-        'httponly'  => true,
+        'expires' => time() - 3600,
+        'path' => '/',
+        'domain' => '',
+        'secure' => !empty($_SERVER['HTTPS']),
+        'httponly' => true,
         'samesite' => 'Lax',
     ];
     setcookie('fh_remember', '', $params);
@@ -54,5 +55,5 @@ session_destroy();
 session_start();
 set_flash('success', 'You have been logged out successfully.');
 
-header('Location: login.php');
+header('Location: ../index.php');
 exit;

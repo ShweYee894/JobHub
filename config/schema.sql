@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `status` ENUM('active', 'flagged', 'suspended') DEFAULT 'active',
     `fraud_score` INT DEFAULT 0, 
     `wallet_balance` DECIMAL(10, 2) DEFAULT 2000.00,
+    `wallet_status` ENUM('active', 'frozen') NOT NULL DEFAULT 'active',
     `remember_token` VARCHAR(255) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -30,8 +31,11 @@ CREATE TABLE freelancers (
     skills_vector JSON DEFAULT NULL,
     hourly_rate DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     portfolio_url VARCHAR(255) NULL,
+    social_links JSON DEFAULT NULL,
     resume_file VARCHAR(255) NULL,
     years_of_experience INT DEFAULT 0,
+    total_earnings DECIMAL(10, 2) DEFAULT 0.00,
+    completed_jobs INT DEFAULT 0,
     availability ENUM('Available', 'Busy', 'Unavailable') DEFAULT 'Available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -53,6 +57,7 @@ CREATE TABLE clients (
     industry VARCHAR(100) NULL,
     company_size ENUM('Startup','Small','Medium','Large'),
     total_spent DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    total_jobs INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
@@ -80,6 +85,7 @@ CREATE TABLE IF NOT EXISTS `freelancer_skills` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `freelancer_id` INT UNSIGNED NOT NULL,
     `skill_id` INT UNSIGNED NOT NULL,
+    UNIQUE KEY `uniq_freelancer_skill` (`freelancer_id`, `skill_id`),
     FOREIGN KEY (`freelancer_id`) REFERENCES `freelancers` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -102,6 +108,8 @@ CREATE TABLE IF NOT EXISTS `jobs` (
     `status` ENUM('open', 'in_progress', 'completed', 'disputed', 'cancelled') DEFAULT 'open',
     `embedding_vector` JSON DEFAULT NULL,
     `proposal_count` INT DEFAULT 0,
+    `is_featured` TINYINT(1) NOT NULL DEFAULT 0,
+    `is_archived` TINYINT(1) NOT NULL DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
@@ -120,6 +128,7 @@ CREATE TABLE IF NOT EXISTS `job_skills` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `job_id` INT UNSIGNED NOT NULL,
     `skill_id` INT UNSIGNED NOT NULL,
+    UNIQUE KEY `uniq_job_skill` (`job_id`, `skill_id`),
     FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -133,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `proposals` (
     `freelancer_id` INT UNSIGNED NOT NULL,
     `proposal_text` TEXT NOT NULL,
     `amount` DECIMAL(10, 2) NOT NULL,
-    `status` ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
+    `status` ENUM('pending', 'accepted', 'rejected', 'withdrawn') DEFAULT 'pending',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE,
@@ -154,12 +163,16 @@ CREATE TABLE IF NOT EXISTS `contracts` (
     `contract_type` ENUM('fixed', 'hourly') DEFAULT 'fixed',
     `total_budget` DECIMAL(10,2) DEFAULT 0.00,
     `status` ENUM('active', 'completed', 'disputed', 'terminated') DEFAULT 'active',
+    `dispute_status` ENUM('none', 'open', 'resolved') DEFAULT 'none',
+    `cancellation_reason` TEXT NULL,
+    `cancelled_by` INT UNSIGNED NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`proposal_id`) REFERENCES `proposals` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`client_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`freelancer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+    FOREIGN KEY (`freelancer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`cancelled_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -168,7 +181,8 @@ CREATE TABLE IF NOT EXISTS `chat_rooms` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `contract_id` INT UNSIGNED NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE
+    FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE,
+    UNIQUE KEY `unique_room_per_contract` (`contract_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -195,10 +209,17 @@ CREATE TABLE IF NOT EXISTS `milestones` (
     `contract_id` INT UNSIGNED NOT NULL,
     `title` VARCHAR(255) NOT NULL,
     `amount` DECIMAL(10, 2) NOT NULL,
+    `sort_order` INT DEFAULT 0,
+    `due_date` DATE DEFAULT NULL,
     `status` ENUM('pending', 'funded_in_escrow', 'submitted', 'released', 'disputed') DEFAULT 'pending',
+    `submission_github_url` VARCHAR(500) DEFAULT NULL,
+    `submission_file` VARCHAR(255) DEFAULT NULL,
+    `submission_note` TEXT DEFAULT NULL,
+    `submission_date` DATETIME DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE
+    FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE,
+    INDEX `idx_milestone_contract` (`contract_id`, `sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -210,13 +231,19 @@ CREATE TABLE IF NOT EXISTS `payments` (
     `payer_id` INT UNSIGNED NOT NULL,
     `payee_id` INT UNSIGNED NOT NULL,
     `total_amount` DECIMAL(10, 2) NOT NULL,
-    `platform_fee` DECIMAL(10, 2) DEFAULT 0.00, -- 10%
-    `freelancer_net` DECIMAL(10, 2) DEFAULT 0.00, -- 90%
+    `platform_fee` DECIMAL(10, 2) DEFAULT 0.00,
+    `freelancer_net` DECIMAL(10, 2) DEFAULT 0.00,
+    `payment_method` VARCHAR(50) DEFAULT 'wallet',
+    `refund_amount` DECIMAL(10, 2) DEFAULT NULL,
+    `refund_reason` TEXT DEFAULT NULL,
+    `refunded_at` DATETIME DEFAULT NULL,
     `status` ENUM('pending', 'processing', 'completed', 'failed', 'refunded') DEFAULT 'pending',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`milestone_id`) REFERENCES `milestones` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`payer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`payee_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+    FOREIGN KEY (`payee_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    INDEX `idx_payments_milestone` (`milestone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -229,10 +256,11 @@ CREATE TABLE IF NOT EXISTS `reviews` (
     `reviewee_id` INT UNSIGNED NOT NULL,
     `rating` TINYINT UNSIGNED NOT NULL CHECK (`rating` BETWEEN 1 AND 5),
     `comment` TEXT DEFAULT NULL,
+    `is_hidden` TINYINT(1) DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (contract_id) REFERENCES contracts (id) ON DELETE CASCADE,
-    FOREIGN KEY (reviewer_id) REFERENCES users (id),
-    FOREIGN KEY (reviewee_id) REFERENCES users (id),
+    FOREIGN KEY (reviewer_id) REFERENCES users (id) ON DELETE SET NULL,
+    FOREIGN KEY (reviewee_id) REFERENCES users (id) ON DELETE SET NULL,
     UNIQUE KEY `uniq_review_per_reviewer` (`contract_id`, `reviewer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -249,20 +277,6 @@ CREATE TABLE IF NOT EXISTS `reviews` (
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
         INDEX idx_action_user (user_id, action_type)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- 16. TYPING INDICATORS TABLE
-
-CREATE TABLE IF NOT EXISTS `typing_indicators` (
-    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `room_id` INT UNSIGNED NOT NULL,
-    `user_id` INT UNSIGNED NOT NULL,
-    `is_typing` TINYINT(1) DEFAULT 0,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY `unique_room_user` (`room_id`, `user_id`),
-    FOREIGN KEY (`room_id`) REFERENCES `chat_rooms`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- ============================================================================
@@ -301,8 +315,9 @@ CREATE TABLE IF NOT EXISTS `dispute_tickets` (
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`milestone_id`) REFERENCES `milestones` (`id`) ON DELETE SET NULL,
-    FOREIGN KEY (`raised_by`) REFERENCES `users` (`id`),
-    FOREIGN KEY (`against`) REFERENCES `users` (`id`),
+    FOREIGN KEY (`raised_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+    FOREIGN KEY (`against`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+    FOREIGN KEY (`resolved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
     INDEX `idx_dispute_status` (`status`),
     INDEX `idx_dispute_contract` (`contract_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -324,23 +339,7 @@ CREATE TABLE IF NOT EXISTS `platform_fee_rules` (
 INSERT INTO `platform_fee_rules` (`fee_percent`, `min_fee`, `max_fee`, `effective_from`, `is_active`)
 VALUES (10.00, 5.00, 500.00, '2025-01-01', 1);
 
--- 20. FRAUD ALERTS TABLE
-CREATE TABLE IF NOT EXISTS `fraud_alerts` (
-    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT UNSIGNED NOT NULL,
-    `rule_name` VARCHAR(100) NOT NULL,
-    `alert_level` ENUM('low', 'medium', 'high', 'critical') NOT NULL,
-    `description` TEXT NOT NULL,
-    `score_impact` INT NOT NULL,
-    `status` ENUM('open', 'investigating', 'resolved', 'dismissed') DEFAULT 'open',
-    `resolved_by` INT UNSIGNED NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-    INDEX `idx_fraud_alert_user` (`user_id`, `status`),
-    INDEX `idx_fraud_alert_level` (`alert_level`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 21. NOTIFICATIONS TABLE
+-- 21. NOTIFICATIONS TABLE (unified: platform + chat notifications)
 CREATE TABLE IF NOT EXISTS `notifications` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
@@ -351,7 +350,9 @@ CREATE TABLE IF NOT EXISTS `notifications` (
     `is_read` TINYINT(1) DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-    INDEX `idx_user_read` (`user_id`, `is_read`)
+    INDEX `idx_user_read` (`user_id`, `is_read`),
+    INDEX `idx_user_type` (`user_id`, `type`),
+    INDEX `idx_user_created` (`user_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

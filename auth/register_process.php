@@ -196,7 +196,7 @@ try {
     $conn->rollback();
     error_log('[JobHub] Registration error: ' . $e->getMessage());
 
-    $_SESSION['errors'] = ['Database error: ' . $e->getMessage()];
+    $_SESSION['errors'] = ['An error occurred during registration. Please try again.'];
     header('Location: register.php');
     exit;
 }

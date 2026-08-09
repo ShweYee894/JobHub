@@ -49,13 +49,21 @@ $adminName = $_navUserRow['name'] ?? 'Admin';
 $conn->close();
 
 $navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'users', 'label' => 'Users', 'url' => 'users.php', 'icon' => 'fa-users'],
-    ['key' => 'jobs', 'label' => 'Jobs', 'url' => 'jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'payments', 'label' => 'Payments', 'url' => 'payments.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'fraud', 'label' => 'Fraud', 'url' => 'fraud_detection.php', 'icon' => 'fa-shield-halved'],
-    ['key' => 'matching', 'label' => 'AI Matching', 'url' => 'ai_matching.php', 'icon' => 'fa-brain'],
-    ['key' => 'settings', 'label' => 'Settings', 'url' => 'settings.php', 'icon' => 'fa-cog'],
+    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'layout-grid'],
+    ['key' => 'users', 'label' => 'Users', 'url' => 'users.php', 'icon' => 'users'],
+    ['key' => 'clients', 'label' => 'Clients', 'url' => 'clients.php', 'icon' => 'user'],
+    ['key' => 'jobs', 'label' => 'Jobs', 'url' => 'jobs.php', 'icon' => 'briefcase'],
+    ['key' => 'payments', 'label' => 'Payments', 'url' => 'payments.php', 'icon' => 'credit-card'],
+    ['key' => 'wallets', 'label' => 'Wallets', 'url' => 'wallets.php', 'icon' => 'wallet'],
+    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'file-text'],
+    ['key' => 'milestones', 'label' => 'Milestones', 'url' => 'milestones.php', 'icon' => 'list-checks'],
+    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'star'],
+    ['key' => 'disputes', 'label' => 'Disputes', 'url' => 'disputes.php', 'icon' => 'hammer'],
+    ['key' => 'fraud', 'label' => 'Fraud', 'url' => 'fraud_detection.php', 'icon' => 'shield'],
+    ['key' => 'notifications', 'label' => 'Notifications', 'url' => 'notifications.php', 'icon' => 'bell'],
+    ['key' => 'matching', 'label' => 'AI Matching', 'url' => 'ai_matching.php', 'icon' => 'brain'],
+    ['key' => 'analytics', 'label' => 'Analytics', 'url' => 'analytics.php', 'icon' => 'pie-chart'],
+    ['key' => 'settings', 'label' => 'Settings', 'url' => 'settings.php', 'icon' => 'settings'],
 ];
 $pageTitle = 'AI Matching Dashboard';
 $pageSubtitle = 'Manage embeddings and match scores';
@@ -73,103 +81,118 @@ require_once __DIR__ . '/../components/layout_start.php';
 
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
                     <div class="flex items-center justify-between mb-3">
-                        <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
-                            <i class="fas fa-briefcase text-blue-500"></i>
+                        <div class="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                            <i data-lucide="briefcase" class="text-blue-500 dark:text-blue-400"></i>
                         </div>
                     </div>
-                    <p class="text-2xl font-black text-gray-900"><?= $stats['total_jobs'] ?></p>
-                    <p class="text-xs text-gray-400 mt-1">Total Jobs</p>
+                    <p class="text-2xl font-black text-gray-900 dark:text-white"><?= $stats['total_jobs'] ?></p>
+                    <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Total Jobs</p>
                 </div>
-                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
                     <div class="flex items-center justify-between mb-3">
-                        <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
-                            <i class="fas fa-vector-square text-emerald-500"></i>
+                        <div class="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                            <i data-lucide="square" class="text-emerald-500 dark:text-emerald-400"></i>
                         </div>
                     </div>
-                    <p class="text-2xl font-black text-gray-900"><?= $stats['jobs_with_embedding'] ?></p>
-                    <p class="text-xs text-gray-400 mt-1">Jobs with Embeddings</p>
+                    <p class="text-2xl font-black text-gray-900 dark:text-white"><?= $stats['jobs_with_embedding'] ?></p>
+                    <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Jobs with Embeddings</p>
                 </div>
-                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
                     <div class="flex items-center justify-between mb-3">
-                        <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
-                            <i class="fas fa-users text-violet-500"></i>
+                        <div class="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center">
+                            <i data-lucide="users" class="text-violet-500 dark:text-violet-400"></i>
                         </div>
                     </div>
-                    <p class="text-2xl font-black text-gray-900"><?= $stats['total_freelancers'] ?></p>
-                    <p class="text-xs text-gray-400 mt-1">Total Freelancers</p>
+                    <p class="text-2xl font-black text-gray-900 dark:text-white"><?= $stats['total_freelancers'] ?></p>
+                    <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Total Freelancers</p>
                 </div>
-                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
                     <div class="flex items-center justify-between mb-3">
-                        <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
-                            <i class="fas fa-check-double text-amber-500"></i>
+                        <div class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                            <i data-lucide="check-check" class="text-amber-500 dark:text-amber-400"></i>
                         </div>
                     </div>
-                    <p class="text-2xl font-black text-gray-900"><?= $stats['freelancers_with_vector'] ?></p>
-                    <p class="text-xs text-gray-400 mt-1">Freelancers with Vectors</p>
+                    <p class="text-2xl font-black text-gray-900 dark:text-white"><?= $stats['freelancers_with_vector'] ?></p>
+                    <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Freelancers with Vectors</p>
                 </div>
-                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
                     <div class="flex items-center justify-between mb-3">
-                        <div class="w-11 h-11 rounded-xl bg-cyan-50 flex items-center justify-center">
-                            <i class="fas fa-percentage text-cyan-500"></i>
+                        <div class="w-11 h-11 rounded-xl bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center">
+                            <i data-lucide="percent" class="text-cyan-500 dark:text-cyan-400"></i>
                         </div>
                     </div>
-                    <p class="text-2xl font-black text-gray-900">
+                    <p class="text-2xl font-black text-gray-900 dark:text-white">
                         <?= $stats['total_jobs'] > 0 ? round(($stats['jobs_with_embedding'] / $stats['total_jobs']) * 100) : 0 ?>%
                     </p>
-                    <p class="text-xs text-gray-400 mt-1">Embedding Coverage</p>
+                    <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Embedding Coverage</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-100 dark:border-slate-700 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                            <i data-lucide="brain" class="text-purple-500 dark:text-purple-400"></i>
+                        </div>
+                    </div>
+                    <?php
+                    $denseJobsQ = $conn->query("SELECT COUNT(*) AS cnt FROM jobs WHERE JSON_EXTRACT(embedding_vector, '$.dense_vector') IS NOT NULL");
+                    $denseFlQ = $conn->query("SELECT COUNT(*) AS cnt FROM freelancers WHERE JSON_EXTRACT(skills_vector, '$.dense_vector') IS NOT NULL");
+                    $denseTotal = (int) $denseJobsQ->fetch_assoc()['cnt'] + (int) $denseFlQ->fetch_assoc()['cnt'];
+                    $densePct = $stats['total_jobs'] + $stats['total_freelancers'] > 0 ? round(($denseTotal / ($stats['total_jobs'] + $stats['total_freelancers'])) * 100) : 0;
+                    ?>
+                    <p class="text-2xl font-black text-gray-900 dark:text-white"><?= $densePct ?>%</p>
+                    <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Dense Vectors (Cosine Similarity)</p>
                 </div>
             </div>
 
             <!-- Generate All Embeddings -->
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h2 class="text-lg font-bold text-gray-900">Batch Generate Embeddings</h2>
-                        <p class="text-sm text-gray-400">Generate embedding vectors for all jobs and freelancers that don't have one yet.</p>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Batch Generate Embeddings</h2>
+                        <p class="text-sm text-gray-400 dark:text-slate-500">Generate embedding vectors for all jobs and freelancers that don't have one yet.</p>
                     </div>
                     <form action="generate_embeddings.php" method="POST">
                         <?= csrf_field() ?>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2">
-                            <i class="fas fa-cogs"></i> Generate All Embeddings
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                            <i data-lucide="settings"></i> Generate All Embeddings
                         </button>
                     </form>
                 </div>
             </div>
 
             <!-- Match Freelancers to Job -->
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h2 class="text-lg font-bold text-gray-900 mb-4">Match Top Freelancers to a Job</h2>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Match Top Freelancers to a Job</h2>
                 <div class="flex items-center gap-3 mb-5">
-                    <select id="jobSelect" class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    <select id="jobSelect" class="flex-1 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                         <option value="">Select a job...</option>
                         <?php while ($j = $jobs_result->fetch_assoc()): ?>
                             <option value="<?= $j['id'] ?>"><?= sanitize_string($j['title']) ?> (#<?= $j['id'] ?>)</option>
                         <?php endwhile; ?>
                     </select>
-                    <button onclick="matchFreelancers()" id="matchFreelancersBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2 whitespace-nowrap">
-                        <i class="fas fa-search"></i> Match
+                    <button onclick="matchFreelancers()" id="matchFreelancersBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2 whitespace-nowrap shadow-lg shadow-blue-500/20">
+                        <i data-lucide="search"></i> Match
                     </button>
                 </div>
                 <div id="freelancerResults" class="hidden">
                     <div id="freelancerResultsLoading" class="hidden text-center py-8">
-                        <i class="fas fa-spinner fa-spin text-2xl text-blue-500 mb-2"></i>
-                        <p class="text-sm text-gray-400">Calculating matches...</p>
+                        <i data-lucide="loader" class="animate-spin text-2xl text-blue-500 mb-2"></i>
+                        <p class="text-sm text-gray-400 dark:text-slate-500">Calculating matches...</p>
                     </div>
                     <div id="freelancerResultsContent" class="hidden overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="border-b border-gray-100">
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">#</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Freelancer</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Skills</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Rate</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Skill Match</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Rate Fit</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Experience</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Availability</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Total</th>
+                                <tr class="border-b border-gray-100 dark:border-slate-700">
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">#</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Freelancer</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Skills</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Rate</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Skill Match</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Rate Fit</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Experience</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Availability</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Total</th>
                                 </tr>
                             </thead>
                             <tbody id="freelancerTableBody"></tbody>
@@ -179,37 +202,37 @@ require_once __DIR__ . '/../components/layout_start.php';
             </div>
 
             <!-- Match Jobs to Freelancer -->
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h2 class="text-lg font-bold text-gray-900 mb-4">Match Top Jobs for a Freelancer</h2>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Match Top Jobs for a Freelancer</h2>
                 <div class="flex items-center gap-3 mb-5">
-                    <select id="freelancerSelect" class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    <select id="freelancerSelect" class="flex-1 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                         <option value="">Select a freelancer...</option>
                         <?php while ($f = $freelancers_result->fetch_assoc()): ?>
                             <option value="<?= $f['id'] ?>"><?= sanitize_string($f['name']) ?> (#<?= $f['id'] ?>)</option>
                         <?php endwhile; ?>
                     </select>
-                    <button onclick="matchJobs()" id="matchJobsBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2 whitespace-nowrap">
-                        <i class="fas fa-search"></i> Match
+                    <button onclick="matchJobs()" id="matchJobsBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2 whitespace-nowrap shadow-lg shadow-blue-500/20">
+                        <i data-lucide="search"></i> Match
                     </button>
                 </div>
                 <div id="jobResults" class="hidden">
                     <div id="jobResultsLoading" class="hidden text-center py-8">
-                        <i class="fas fa-spinner fa-spin text-2xl text-blue-500 mb-2"></i>
-                        <p class="text-sm text-gray-400">Calculating matches...</p>
+                        <i data-lucide="loader" class="animate-spin text-2xl text-blue-500 mb-2"></i>
+                        <p class="text-sm text-gray-400 dark:text-slate-500">Calculating matches...</p>
                     </div>
                     <div id="jobResultsContent" class="hidden overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="border-b border-gray-100">
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">#</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Job Title</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Client</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Budget</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Skills</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Skill Match</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Budget Fit</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Recency</th>
-                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">Total</th>
+                                <tr class="border-b border-gray-100 dark:border-slate-700">
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">#</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Job Title</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Client</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Budget</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Skills</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Skill Match</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Budget Fit</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Recency</th>
+                                    <th class="text-left py-3 px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase">Total</th>
                                 </tr>
                             </thead>
                             <tbody id="jobTableBody"></tbody>
@@ -233,7 +256,7 @@ function matchFreelancers() {
     loadingDiv.classList.remove('hidden');
     contentDiv.classList.add('hidden');
 
-    fetch('/finalproject/api/ai_matching.php?action=match_freelancers&job_id=' + jobId)
+    fetch('/jobhub/api/ai_matching.php?action=match_freelancers&job_id=' + jobId)
         .then(r => r.json())
         .then(data => {
             loadingDiv.classList.add('hidden');
@@ -255,7 +278,7 @@ function matchFreelancers() {
                         <td class="py-3 px-3 font-bold text-gray-400">${i+1}</td>
                         <td class="py-3 px-3">
                             <div class="flex items-center gap-3">
-                                <img src="/finalproject/assets/upload/profiles/${m.profile_image || 'profile.png'}" class="w-8 h-8 rounded-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=2563eb&color=fff'">
+                                <img src="/jobhub/assets/upload/profiles/${m.profile_image || 'profile.png'}" class="w-8 h-8 rounded-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=2563eb&color=fff'">
                                 <div>
                                     <p class="font-medium text-gray-900">${escapeHtml(m.name)}</p>
                                     <p class="text-xs text-gray-400">${escapeHtml(m.title || '')}</p>
@@ -299,7 +322,7 @@ function matchJobs() {
     loadingDiv.classList.remove('hidden');
     contentDiv.classList.add('hidden');
 
-    fetch('/finalproject/api/ai_matching.php?action=match_jobs&freelancer_id=' + freelancerId)
+    fetch('/jobhub/api/ai_matching.php?action=match_jobs&freelancer_id=' + freelancerId)
         .then(r => r.json())
         .then(data => {
             loadingDiv.classList.add('hidden');
@@ -319,7 +342,7 @@ function matchJobs() {
                     <tr class="border-b border-50 hover:bg-gray-50 transition-colors">
                         <td class="py-3 px-3 font-bold text-gray-400">${i+1}</td>
                         <td class="py-3 px-3">
-                            <a href="/finalproject/client/job_detail.php?id=${m.job_id}" class="font-medium text-gray-900 hover:text-blue-600 transition-colors">${escapeHtml(m.title)}</a>
+                            <a href="/jobhub/client/job_detail.php?id=${m.job_id}" class="font-medium text-gray-900 hover:text-blue-600 transition-colors">${escapeHtml(m.title)}</a>
                         </td>
                         <td class="py-3 px-3 text-gray-600">${escapeHtml(m.client_name)}</td>
                         <td class="py-3 px-3 text-gray-600">$${Number(m.budget).toFixed(2)}</td>

@@ -40,7 +40,7 @@ $stmtSubmitted = $conn->prepare('
     JOIN contracts c ON r.contract_id = c.id
     JOIN jobs j ON c.job_id = j.id
     JOIN users u ON r.reviewee_id = u.id
-    WHERE r.reviewer_id = ?
+    WHERE r.reviewer_id = ? AND COALESCE(r.is_hidden, 0) = 0
     ORDER BY r.created_at DESC
 ');
 $stmtSubmitted->bind_param('i', $userId);
@@ -67,7 +67,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <div class="p-6 pb-0">
             <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
                 <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                    <i class="fas fa-pen text-amber-500 text-sm"></i>
+                    <i data-lucide="pencil" class="text-amber-500 w-5 h-5"></i>
                 </div>
                 Pending Reviews
             </h2>
@@ -84,22 +84,22 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                             <h3 class="text-sm font-bold text-gray-900 mb-1"><?= sanitize_string($pc['job_title']) ?></h3>
                             <div class="flex flex-wrap items-center gap-3 text-xs text-gray-400">
                                 <span class="flex items-center gap-1.5">
-                                    <i class="fas fa-user text-blue-400"></i>
+                                    <i data-lucide="user" class="w-4 h-4 text-blue-400"></i>
                                     <?= sanitize_string($pc['freelancer_name']) ?>
                                 </span>
                                 <span class="flex items-center gap-1.5">
-                                    <i class="fas fa-dollar-sign text-emerald-500"></i>
+                                    <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-500"></i>
                                     <?= format_currency((float) $pc['total_budget']) ?>
                                 </span>
                                 <span class="flex items-center gap-1.5">
-                                    <i class="fas fa-calendar text-gray-400"></i>
+                                    <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
                                     <?= date('M d, Y', strtotime($pc['created_at'])) ?>
                                 </span>
                             </div>
                         </div>
                         <button onclick="openReviewModal(<?= (int) $pc['id'] ?>, <?= (int) $pc['freelancer_user_id'] ?>, '<?= sanitize_string(addslashes($pc['freelancer_name'])) ?>', '<?= sanitize_string(addslashes($pc['job_title'])) ?>')"
                                 class="btn-grad inline-flex items-center gap-2 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/25 flex-shrink-0">
-                            <i class="fas fa-star text-[10px]"></i> Leave Review
+                            <i data-lucide="star" class="w-3 h-3"></i> Leave Review
                         </button>
                     </div>
                 </div>
@@ -108,7 +108,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <?php else: ?>
             <div class="text-center py-8">
                 <div class="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-check-double text-xl text-gray-300"></i>
+                    <i data-lucide="check-check" class="w-5 h-5 text-gray-300"></i>
                 </div>
                 <p class="text-gray-500 text-sm mb-1">No pending reviews</p>
                 <p class="text-gray-400 text-xs">All completed contracts have been reviewed.</p>
@@ -122,7 +122,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <div class="p-6 pb-0">
             <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
                 <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <i class="fas fa-star text-blue-500 text-sm"></i>
+                    <i data-lucide="star" class="text-blue-500 w-5 h-5"></i>
                 </div>
                 My Submitted Reviews
             </h2>
@@ -147,7 +147,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                             </div>
                             <div class="flex items-center gap-0.5 mb-2">
                                 <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <i class="fas fa-star text-xs text-yellow-500 <?= $i <= $sr['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
+                                <i data-lucide="star" class="w-3 h-3 text-yellow-500 <?= $i <= $sr['rating'] ? 'star-filled' : 'star-empty' ?>"></i>
                                 <?php endfor; ?>
                                 <span class="text-xs font-semibold text-gray-600 ml-1"><?= $sr['rating'] ?>/5</span>
                             </div>
@@ -162,7 +162,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <?php else: ?>
             <div class="text-center py-8">
                 <div class="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-star text-xl text-gray-300"></i>
+                    <i data-lucide="star" class="w-5 h-5 text-gray-300"></i>
                 </div>
                 <p class="text-gray-500 text-sm">No reviews submitted yet</p>
                 <p class="text-gray-400 text-xs mt-1">Complete a contract to leave your first review</p>
@@ -178,7 +178,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
             <div class="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-5 text-white">
                 <button onclick="closeReviewModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors">
-                    <i class="fas fa-times text-sm"></i>
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
                 <h3 class="text-lg font-bold">Leave a Review</h3>
                 <p class="text-sm text-white/80 mt-1" id="modalJobTitle"></p>
@@ -203,7 +203,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                                 onclick="setRating(<?= $i ?>)"
                                 onmouseover="hoverRating(<?= $i ?>)"
                                 onmouseout="resetHover()">
-                            <i class="fas fa-star"></i>
+                            <i data-lucide="star"></i>
                         </button>
                         <?php endfor; ?>
                     </div>
@@ -223,9 +223,9 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <?php $conn->close(); ?>
                 <button type="submit" id="submitReviewBtn"
                         class="w-full btn-grad text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                    <i class="fas fa-paper-plane text-xs"></i>
+                    <i data-lucide="send" class="w-4 h-4"></i>
                     <span id="submitBtnText">Submit Review</span>
-                    <i class="fas fa-spinner fa-spin text-xs hidden" id="submitSpinner"></i>
+                    <i data-lucide="loader" class="animate-spin w-4 h-4 hidden" id="submitSpinner"></i>
                 </button>
             </form>
         </div>
@@ -238,7 +238,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <div class="absolute inset-0 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center">
             <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-check text-2xl text-emerald-500"></i>
+                <i data-lucide="check" class="w-5 h-5 text-emerald-500"></i>
             </div>
             <h3 class="text-lg font-bold text-gray-900 mb-2">Review Submitted!</h3>
             <p class="text-sm text-gray-500 mb-6">Thank you for your feedback. It helps our community.</p>
@@ -249,7 +249,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     </div>
 </div>
 </main>
-<script src="/finalproject/assets/js/reviews.js"></script>
+<script src="/jobhub/assets/js/reviews.js"></script>
 <script>
 function openReviewModal(contractId, revieweeId, revieweeName, jobTitle) {
     document.getElementById('modalContractId').value = contractId;

@@ -6,6 +6,19 @@
  */
 
 /**
+ * Get the current platform fee percent from platform_fee_rules.
+ */
+function get_platform_fee_percent(): float
+{
+    global $conn;
+    $r = $conn->query("SELECT fee_percent FROM platform_fee_rules WHERE is_active = 1 ORDER BY effective_from DESC LIMIT 1");
+    if ($r && $row = $r->fetch_assoc()) {
+        return (float) $row['fee_percent'];
+    }
+    return 10.0;
+}
+
+/**
  * Get the current wallet balance for a user.
  */
 function get_wallet_balance(mysqli $conn, int $userId): float
@@ -259,6 +272,9 @@ function release_payment_to_freelancer(mysqli $conn, int $milestoneId): array
         $stmt->execute();
         $stmt->close();
 
+        // Increment freelancers.total_earnings
+        increment_freelancer_earnings($conn, $freelancerId, $freelancerNet);
+
         // Log wallet transaction for freelancer
         $stmt = $conn->prepare("
             INSERT INTO wallet_transactions (user_id, type, amount, balance_after, reference_id, reference_type, description, created_at)
@@ -490,43 +506,43 @@ function get_wallet_history(mysqli $conn, int $userId, int $limit = 20, int $off
         switch ($type) {
             case 'deposit':
                 $label = 'Wallet Top Up';
-                $icon = 'fa-plus-circle';
+                $icon = 'plus-circle';
                 $color = 'emerald';
                 $direction = 'credit';
                 break;
             case 'escrow_hold':
                 $label = 'Escrow Funding';
-                $icon = 'fa-shield-halved';
+                $icon = 'shield';
                 $color = 'amber';
                 $direction = 'debit';
                 break;
             case 'escrow_release':
                 $label = 'Payment Released';
-                $icon = 'fa-paper-plane';
+                $icon = 'send';
                 $color = 'blue';
                 $direction = 'credit';
                 break;
             case 'refund':
                 $label = 'Refund';
-                $icon = 'fa-undo';
+                $icon = 'undo';
                 $color = 'purple';
                 $direction = 'credit';
                 break;
             case 'credit':
                 $label = 'Payment Received';
-                $icon = 'fa-check-circle';
+                $icon = 'check-circle';
                 $color = 'emerald';
                 $direction = 'credit';
                 break;
             case 'withdrawal':
                 $label = 'Withdrawal';
-                $icon = 'fa-arrow-up';
+                $icon = 'arrow-up';
                 $color = 'red';
                 $direction = 'debit';
                 break;
             default:
                 $label = ucfirst(str_replace('_', ' ', $type));
-                $icon = 'fa-circle';
+                $icon = 'circle';
                 $color = 'gray';
                 $direction = 'neutral';
         }
@@ -559,4 +575,40 @@ function get_wallet_history(mysqli $conn, int $userId, int $limit = 20, int $off
         'history' => $history,
         'total'   => $total,
     ];
+}
+
+/**
+ * Increment freelancers.total_earnings when payment is released/completed.
+ * Should be called inside an existing transaction.
+ */
+function increment_freelancer_earnings(mysqli $conn, int $freelancerId, float $amount): void
+{
+    $stmt = $conn->prepare('UPDATE freelancers SET total_earnings = total_earnings + ? WHERE user_id = ?');
+    $stmt->bind_param('di', $amount, $freelancerId);
+    $stmt->execute();
+    $stmt->close();
+}
+
+/**
+ * Increment freelancers.completed_jobs when contract status changes to completed.
+ * Should be called inside an existing transaction.
+ */
+function increment_freelancer_completed_jobs(mysqli $conn, int $freelancerId): void
+{
+    $stmt = $conn->prepare('UPDATE freelancers SET completed_jobs = completed_jobs + 1 WHERE user_id = ?');
+    $stmt->bind_param('i', $freelancerId);
+    $stmt->execute();
+    $stmt->close();
+}
+
+/**
+ * Increment clients.total_jobs when a new job is posted.
+ * Should be called inside an existing transaction.
+ */
+function increment_client_total_jobs(mysqli $conn, int $clientId): void
+{
+    $stmt = $conn->prepare('UPDATE clients SET total_jobs = total_jobs + 1 WHERE client_id = ?');
+    $stmt->bind_param('i', $clientId);
+    $stmt->execute();
+    $stmt->close();
 }

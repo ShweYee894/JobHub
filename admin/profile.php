@@ -175,6 +175,8 @@ if (!$user) {
 }
 
 // ── Profile Completion ───────────────────────────────────────────────
+$profileData = $user;
+
 $completionFields = [
     'name' => !empty($profileData['name']),
     'email' => !empty($profileData['email']),
@@ -185,18 +187,26 @@ $completedCount = count(array_filter($completionFields));
 $totalCount = count($completionFields);
 $completionPercent = $totalCount > 0 ? round(($completedCount / $totalCount) * 100) : 0;
 
-$profileData = $user;
-
 $conn->close();
 
 $navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'fa-th-large'],
-    ['key' => 'users', 'label' => 'Users', 'url' => 'users.php', 'icon' => 'fa-users'],
-    ['key' => 'jobs', 'label' => 'Jobs', 'url' => 'jobs.php', 'icon' => 'fa-briefcase'],
-    ['key' => 'payments', 'label' => 'Payments', 'url' => 'payments.php', 'icon' => 'fa-credit-card'],
-    ['key' => 'fraud', 'label' => 'Fraud', 'url' => 'fraud_detection.php', 'icon' => 'fa-shield-halved'],
-    ['key' => 'matching', 'label' => 'AI Matching', 'url' => 'ai_matching.php', 'icon' => 'fa-brain'],
-    ['key' => 'settings', 'label' => 'Settings', 'url' => 'settings.php', 'icon' => 'fa-cog'],
+    ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'layout-grid'],
+    ['key' => 'users', 'label' => 'Users', 'url' => 'users.php', 'icon' => 'users'],
+    ['key' => 'clients', 'label' => 'Clients', 'url' => 'clients.php', 'icon' => 'user'],
+    ['key' => 'jobs', 'label' => 'Jobs', 'url' => 'jobs.php', 'icon' => 'briefcase'],
+    ['key' => 'categories', 'label' => 'Categories', 'url' => 'categories.php', 'icon' => 'folder-open'],
+    ['key' => 'skills', 'label' => 'Skills', 'url' => 'skills.php', 'icon' => 'settings'],
+    ['key' => 'payments', 'label' => 'Payments', 'url' => 'payments.php', 'icon' => 'credit-card'],
+    ['key' => 'wallets', 'label' => 'Wallets', 'url' => 'wallets.php', 'icon' => 'wallet'],
+    ['key' => 'contracts', 'label' => 'Contracts', 'url' => 'contracts.php', 'icon' => 'file-text'],
+    ['key' => 'milestones', 'label' => 'Milestones', 'url' => 'milestones.php', 'icon' => 'list-checks'],
+    ['key' => 'reviews', 'label' => 'Reviews', 'url' => 'reviews.php', 'icon' => 'star'],
+    ['key' => 'disputes', 'label' => 'Disputes', 'url' => 'disputes.php', 'icon' => 'hammer'],
+    ['key' => 'fraud', 'label' => 'Fraud', 'url' => 'fraud_detection.php', 'icon' => 'shield'],
+    ['key' => 'notifications', 'label' => 'Notifications', 'url' => 'notifications.php', 'icon' => 'bell'],
+    ['key' => 'ai_monitor', 'label' => 'AI Monitor', 'url' => 'ai_monitor.php', 'icon' => 'brain'],
+    ['key' => 'analytics', 'label' => 'Analytics', 'url' => 'analytics.php', 'icon' => 'pie-chart'],
+    ['key' => 'settings', 'label' => 'Settings', 'url' => 'settings.php', 'icon' => 'settings'],
 ];
 $pageTitle = 'Admin Profile';
 $pageSubtitle = 'Manage your account settings';
@@ -214,35 +224,104 @@ require_once __DIR__ . '/../components/layout_start.php';
     .pw-bar{transition:width .3s ease,background-color .3s ease}
     </style>
 
-
-
                 <?php display_flash('success'); ?>
                 <?php display_flash('error'); ?>
 
-                <!-- ═══ PROFILE HEADER CARD ═══════════════════════════════ -->
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden fade-in">
-                    <div class="h-28 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 relative"></div>
-                    <div class="px-6 pb-6 relative">
-                        <div class="flex flex-col sm:flex-row items-end sm:items-end gap-4 -mt-12">
-                            <img id="headerAvatar"
-                                 src="<?= sanitize_string(get_profile_image($profileData['profile_image'])) ?>"
-                                 class="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg flex-shrink-0">
-                            <div class="flex-1 pb-1">
-                                <h2 class="text-xl font-bold text-gray-900"><?= sanitize_string($profileData['name']) ?></h2>
-                                <p class="text-sm text-gray-500 flex items-center gap-2">
-                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold border bg-purple-50 text-purple-600 border-purple-200">Admin</span>
-                                    <span class="text-gray-300">|</span>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- ═══ LEFT SIDEBAR: Photo + Completion + Account ═══ -->
+                    <div class="space-y-6">
+
+                        <!-- Avatar Card -->
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden fade-in">
+                            <div class="h-24 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 relative"></div>
+                            <div class="px-6 pb-6 relative flex flex-col items-center -mt-12">
+                                <div class="relative">
+                                    <img id="sidebarAvatar"
+                                         src="<?= sanitize_string(get_profile_image($profileData['profile_image'])) ?>"
+                                         class="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg">
+                                    <label for="sidebarImageInput"
+                                           class="absolute bottom-1 right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white shadow cursor-pointer hover:bg-blue-700 transition-colors"
+                                           title="Change photo">
+                                        <i data-lucide="camera" class="text-[10px]"></i>
+                                    </label>
+                                </div>
+                                <h2 class="text-lg font-bold text-gray-900 mt-3 text-center"><?= sanitize_string($profileData['name']) ?></h2>
+                                <p class="text-xs text-gray-500 mb-3"><?= sanitize_string($profileData['email']) ?></p>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border bg-purple-50 text-purple-600 border-purple-200">
+                                    <i data-lucide="shield"></i> Admin
+                                </span>
+                                <div class="flex items-center gap-1.5 mt-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100"></span>
+                                    <span class="text-[11px] text-gray-500 font-medium">Active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Completion -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.05s">
+                            <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+                                    <i data-lucide="trending-up" class="text-emerald-500 text-xs"></i>
+                                </div>
+                                Profile Completion
+                            </h3>
+                            <div class="relative mb-3">
+                                <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full transition-all duration-500 <?= $completionPercent >= 75 ? 'bg-gradient-to-r from-emerald-500 to-green-400' : ($completionPercent >= 50 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-red-500 to-orange-400') ?>"
+                                         style="width: <?= $completionPercent ?>%"></div>
+                                </div>
+                            </div>
+                            <p class="text-center text-xl font-black <?= $completionPercent >= 75 ? 'text-emerald-600' : ($completionPercent >= 50 ? 'text-amber-600' : 'text-red-600') ?>"><?= $completionPercent ?>%</p>
+                            <div class="mt-3 space-y-2">
+                                <?php foreach ($completionFields as $field => $done): ?>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <i data-lucide="<?= $done ? 'circle-check' : 'circle' ?>" class="<?= $done ? 'text-emerald-500' : 'text-gray-300' ?> text-[10px]"></i>
+                                    <span class="<?= $done ? 'text-gray-700' : 'text-gray-400' ?>"><?= ucfirst(str_replace('_', ' ', $field)) ?></span>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
+                        <!-- Account Details -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm fade-in" style="animation-delay:.1s">
+                            <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center">
+                                    <i data-lucide="info" class="text-rose-500 text-xs"></i>
+                                </div>
+                                Account Details
+                            </h3>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">User ID</span>
+                                    <span class="font-semibold text-gray-900">#<?= (int) $profileData['id'] ?></span>
+                                </div>
+                                <div class="border-t border-gray-100"></div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Role</span>
+                                    <span class="font-semibold text-gray-900">Admin</span>
+                                </div>
+                                <div class="border-t border-gray-100"></div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Status</span>
                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold border bg-emerald-50 text-emerald-600 border-emerald-200"><?= sanitize_string(ucfirst($profileData['status'])) ?></span>
-                                </p>
+                                </div>
+                                <div class="border-t border-gray-100"></div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Joined</span>
+                                    <span class="font-semibold text-gray-900"><?= date('M j, Y', strtotime($profileData['created_at'])) ?></span>
+                                </div>
+                                <div class="border-t border-gray-100"></div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Last Active</span>
+                                    <span class="font-semibold text-gray-900"><?= time_ago($profileData['updated_at']) ?></span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-1 2xl:grid-cols-3 gap-6">
-
-                    <!-- ═══ LEFT: PROFILE EDIT ══════════════════════════════ -->
-                    <div class="2xl:col-span-2 space-y-6">
+                    <!-- ═══ RIGHT: Forms ═══════════════════════════════════ -->
+                    <div class="lg:col-span-2 space-y-6">
 
                         <!-- Profile Information -->
                         <form action="profile.php" method="POST" enctype="multipart/form-data" id="profileForm" class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm fade-in" style="animation-delay:.05s">
@@ -251,50 +330,36 @@ require_once __DIR__ . '/../components/layout_start.php';
 
                             <h2 class="text-base font-bold text-gray-900 mb-5 flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                                    <i class="fas fa-user text-blue-500 text-sm"></i>
+                                    <i data-lucide="user" class="text-blue-500 text-sm"></i>
                                 </div>
                                 Profile Information
                             </h2>
 
-                            <div class="flex flex-col sm:flex-row items-start gap-6">
-                                <div class="flex flex-col items-center">
-                                    <img id="avatarPreview"
-                                         src="<?= sanitize_string(get_profile_image($profileData['profile_image'])) ?>"
-                                         class="w-28 h-28 rounded-full object-cover mb-3 border-4 border-gray-100 shadow-sm">
-                                    <label class="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
-                                        <i class="fas fa-camera mr-1"></i> Change Photo
-                                        <input type="file" name="profile_image" id="profileImageInput"
-                                               accept="image/jpeg,image/png,image/webp" class="hidden">
-                                    </label>
-                                    <p class="text-[10px] text-gray-400 mt-1">JPG, PNG, WebP. Max 2MB.</p>
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Full Name <span class="text-red-500">*</span></label>
+                                    <input type="text" name="name" required maxlength="100"
+                                           value="<?= sanitize_string($profileData['name']) ?>"
+                                           class="fld w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm">
                                 </div>
-
-                                <div class="flex-1 grid sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Full Name <span class="text-red-500">*</span></label>
-                                        <input type="text" name="name" required maxlength="100"
-                                               value="<?= sanitize_string($profileData['name']) ?>"
-                                               class="fld w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Email</label>
-                                         <input type="email" value="<?= sanitize_string($profileData['email']) ?>" readonly
-                                               class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-500 text-sm cursor-not-allowed">
-                                    </div>
-                                    <div class="sm:col-span-2">
-                                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Phone</label>
-                                        <input type="tel" name="phone" maxlength="20"
-                                               value="<?= sanitize_string($profileData['phone'] ?? '') ?>"
-                                               placeholder="+1 (555) 123-4567"
-                                               class="fld w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 placeholder-gray-400 text-sm">
-                                    </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Email</label>
+                                    <input type="email" value="<?= sanitize_string($profileData['email']) ?>" readonly
+                                           class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-500 text-sm cursor-not-allowed">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Phone</label>
+                                    <input type="tel" name="phone" maxlength="20"
+                                           value="<?= sanitize_string($profileData['phone'] ?? '') ?>"
+                                           placeholder="+1 (555) 123-4567"
+                                           class="fld w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 placeholder-gray-400 text-sm">
                                 </div>
                             </div>
 
                             <div class="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-gray-100">
                                 <button type="submit" id="profileSubmitBtn"
                                         class="btn-grad px-6 py-2.5 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-500/25 flex items-center gap-2">
-                                    <i class="fas fa-save"></i> Save Changes
+                                    <i data-lucide="save"></i> Save Changes
                                 </button>
                             </div>
                         </form>
@@ -306,7 +371,7 @@ require_once __DIR__ . '/../components/layout_start.php';
 
                             <h2 class="text-base font-bold text-gray-900 mb-5 flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                                    <i class="fas fa-lock text-amber-500 text-sm"></i>
+                                    <i data-lucide="lock" class="text-amber-500 text-sm"></i>
                                 </div>
                                 Change Password
                             </h2>
@@ -320,7 +385,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                                placeholder="Enter current password">
                                         <button type="button" onclick="togglePwVisibility('currentPassword', this)"
                                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                            <i class="fas fa-eye text-sm"></i>
+                                            <i data-lucide="eye" class="text-sm"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -332,10 +397,9 @@ require_once __DIR__ . '/../components/layout_start.php';
                                                placeholder="Enter new password">
                                         <button type="button" onclick="togglePwVisibility('newPassword', this)"
                                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                            <i class="fas fa-eye text-sm"></i>
+                                            <i data-lucide="eye" class="text-sm"></i>
                                         </button>
                                     </div>
-                                    <!-- Strength Indicator -->
                                     <div class="mt-2">
                                         <div class="flex gap-1.5 mb-1">
                                             <div id="str1" class="h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden"><div class="pw-bar h-full w-0 rounded-full"></div></div>
@@ -354,7 +418,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                                placeholder="Confirm new password">
                                         <button type="button" onclick="togglePwVisibility('confirmPassword', this)"
                                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                            <i class="fas fa-eye text-sm"></i>
+                                            <i data-lucide="eye" class="text-sm"></i>
                                         </button>
                                     </div>
                                     <p id="pwMatch" class="text-[11px] mt-1 font-medium hidden"></p>
@@ -364,122 +428,24 @@ require_once __DIR__ . '/../components/layout_start.php';
                             <div class="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-gray-100">
                                 <button type="submit" id="pwSubmitBtn"
                                         class="btn-grad px-6 py-2.5 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-500/25 flex items-center gap-2">
-                                    <i class="fas fa-key"></i> Update Password
+                                    <i data-lucide="key"></i> Update Password
                                 </button>
                             </div>
                         </form>
                     </div>
-
-                    <!-- ═══ RIGHT: SIDEBAR INFO ═════════════════════════════ -->
-                    <div class="space-y-6">
-
-                        <!-- Profile Completion -->
-                        <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm fade-in" style="animation-delay:.15s">
-                            <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                                    <i class="fas fa-chart-line text-emerald-500 text-sm"></i>
-                                </div>
-                                Profile Completion
-                            </h3>
-
-                            <div class="relative mb-3">
-                                <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                                    <div class="h-full rounded-full transition-all duration-500 <?= $completionPercent >= 75 ? 'bg-gradient-to-r from-emerald-500 to-green-400' : ($completionPercent >= 50 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-red-500 to-orange-400') ?>"
-                                         style="width: <?= $completionPercent ?>%"></div>
-                                </div>
-                            </div>
-                            <p class="text-center text-2xl font-black <?= $completionPercent >= 75 ? 'text-emerald-600' : ($completionPercent >= 50 ? 'text-amber-600' : 'text-red-600') ?>"><?= $completionPercent ?>%</p>
-
-                            <div class="mt-4 space-y-2">
-                                <?php foreach ($completionFields as $field => $done): ?>
-                                <div class="flex items-center gap-2 text-xs">
-                                    <i class="fas <?= $done ? 'fa-check-circle text-emerald-500' : 'fa-circle text-gray-300' ?> text-[10px]"></i>
-                                    <span class="<?= $done ? 'text-gray-700' : 'text-gray-400' ?>"><?= ucfirst(str_replace('_', ' ', $field)) ?></span>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Activity Information -->
-                        <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm fade-in" style="animation-delay:.2s">
-                            <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
-                                    <i class="fas fa-clock text-violet-500 text-sm"></i>
-                                </div>
-                                Activity Information
-                            </h3>
-
-                            <div class="space-y-4">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <i class="fas fa-calendar-plus text-blue-500 text-xs"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Created</p>
-                                         <p class="text-sm font-semibold text-gray-900"><?= date('M j, Y', strtotime($profileData['created_at'])) ?></p>
-                                         <p class="text-[11px] text-gray-400"><?= time_ago($profileData['created_at']) ?></p>
-                                    </div>
-                                </div>
-
-                                <div class="border-t border-gray-100"></div>
-
-                                <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center flex-shrink-0">
-                                        <i class="fas fa-sync-alt text-cyan-500 text-xs"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Last Updated</p>
-                                         <p class="text-sm font-semibold text-gray-900"><?= date('M j, Y', strtotime($profileData['updated_at'])) ?></p>
-                                         <p class="text-[11px] text-gray-400"><?= time_ago($profileData['updated_at']) ?></p>
-                                    </div>
-                                </div>
-
-                                <div class="border-t border-gray-100"></div>
-
-                                <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-                                        <i class="fas fa-shield-alt text-amber-500 text-xs"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Account Type</p>
-                                        <p class="text-sm font-semibold text-gray-900">Platform Administrator</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Quick Stats -->
-                        <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm fade-in" style="animation-delay:.25s">
-                            <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
-                                    <i class="fas fa-info-circle text-rose-500 text-sm"></i>
-                                </div>
-                                Account Details
-                            </h3>
-
-                            <div class="space-y-3 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">User ID</span>
-                                     <span class="font-semibold text-gray-900">#<?= (int) $profileData['id'] ?></span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Role</span>
-                                    <span class="font-semibold text-gray-900">Admin</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Status</span>
-                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold border bg-emerald-50 text-emerald-600 border-emerald-200"><?= sanitize_string(ucfirst($profileData['status'])) ?></span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
                 </div>
 
+                <!-- Hidden file input for sidebar avatar -->
+                <form method="POST" class="hidden" id="sidebarAvatarForm">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="profile_update">
+                    <input type="file" id="sidebarImageInput" name="profile_image" accept="image/jpeg,image/png,image/webp"
+                           onchange="this.form.submit()">
+                </form>
 
     <script>
     // ── Profile Image Preview ──────────────────────────────────────
-    document.getElementById('profileImageInput').addEventListener('change', function(e) {
+    document.getElementById('sidebarImageInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
         if (file.size > 2 * 1024 * 1024) {
@@ -494,8 +460,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         }
         const reader = new FileReader();
         reader.onload = function(ev) {
-            document.getElementById('avatarPreview').src = ev.target.result;
-            document.getElementById('headerAvatar').src = ev.target.result;
+            document.getElementById('sidebarAvatar').src = ev.target.result;
         };
         reader.readAsDataURL(file);
     });
@@ -506,10 +471,10 @@ require_once __DIR__ . '/../components/layout_start.php';
         const icon = btn.querySelector('i');
         if (input.type === 'password') {
             input.type = 'text';
-            icon.classList.replace('fa-eye', 'fa-eye-slash');
+            icon.classList.replace('eye', 'eye-off');
         } else {
             input.type = 'password';
-            icon.classList.replace('fa-eye-slash', 'fa-eye');
+            icon.classList.replace('eye-off', 'eye');
         }
     }
 
@@ -579,7 +544,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             return;
         }
         const btn = document.getElementById('profileSubmitBtn');
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        btn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Saving...';
         btn.disabled = true;
     });
 
@@ -611,7 +576,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         }
 
         const btn = document.getElementById('pwSubmitBtn');
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        btn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Updating...';
         btn.disabled = true;
     });
     </script>
