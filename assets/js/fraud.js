@@ -166,7 +166,9 @@ function updateSuspiciousTable(users) {
             </tr>`;
     }).join('');
     lucide.createIcons();
-} ─────────────────────
+}
+
+// ── View User Activity (Risk Drawer) ─────────────────────
 async function viewUserActivity(userId) {
     const backdrop = document.getElementById('riskDrawerBackdrop');
     const drawer   = document.getElementById('riskDrawer');
@@ -206,7 +208,7 @@ async function viewUserActivity(userId) {
         skeleton.innerHTML = `
             <div class="text-center py-10">
                 <div class="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-3">
-                    <i data-lucide="triangle-alert" class="text-red-500"></i>
+                    <i data-lucide="alert-triangle" class="text-red-500"></i>
                 </div>
                 <p class="text-sm font-semibold text-gray-700 dark:text-slate-300">Failed to load risk data</p>
                 <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Please try again or check your connection.</p>
@@ -283,7 +285,7 @@ function populateDrawer(scoreData, logData, userId) {
     if (reasons.length > 0) {
         riskContainer.innerHTML = reasons.map(r => {
             const isHigh = /\+\d{2,}/.test(r) || r.toLowerCase().includes('auto-flagged');
-            const icon = isHigh ? 'triangle-alert text-amber-500' : 'info text-blue-500';
+            const icon = isHigh ? 'alert-triangle text-amber-500' : 'info text-blue-500';
             const bg = isHigh ? 'bg-amber-50/50 dark:bg-amber-900/10' : 'bg-blue-50/50 dark:bg-blue-900/10';
             return `
                 <div class="risk-factor-item flex items-start gap-2.5 px-3 py-2.5 ${bg}">
@@ -499,8 +501,8 @@ function showToast(message, type = 'info') {
     };
     const icons = {
         success: 'circle-check',
-        error: 'circle-alert',
-        warning: 'triangle-alert',
+        error: 'alert-circle',
+        warning: 'alert-triangle',
         info: 'info'
     };
     toast.className = `fixed top-4 right-4 z-50 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg flex items-center gap-2 ${colors[type] || colors.info} fade-in`;

@@ -51,9 +51,10 @@ if ($user) {
     $_SESSION['reset_expires']    = time() + (60 * 60); // 1 hour expiry
     $_SESSION['reset_email']      = $user['email'];
 
-    // In a production system, you'd send an email here:
-    // $reset_link = '/jobhub/auth/reset_password.php?token=' . $token;
-    // mail($user['email'], 'Password Reset', "Click here: $reset_link");
+    // Send password reset email
+    $reset_link = '/jobhub/auth/reset_password.php?token=' . $token;
+    require_once __DIR__ . '/../shared/notification_helper.php';
+    notifyPasswordReset($user['email'], $user['name'], $reset_link);
 
     // For demo purposes, store the plain token in session for the redirect
     $_SESSION['reset_token_plain'] = $token;

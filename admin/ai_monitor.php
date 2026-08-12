@@ -197,7 +197,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         html.dark .ai-label { color: #64748b; }
 
         .ai-metric-value {
-            font-size: 36px;
+            font-size: 24px;
             font-weight: 800;
             letter-spacing: -0.02em;
             line-height: 1.1;
@@ -226,9 +226,9 @@ require_once __DIR__ . '/../components/layout_start.php';
         .ai-progress-fill.amber { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
 
         .ai-icon-box {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -361,7 +361,7 @@ require_once __DIR__ . '/../components/layout_start.php';
         <!-- ═══ HEADER ════════════════════════════════════════════════════════════ -->
         <div class="flex items-center justify-between mb-6 flex-wrap gap-4 px-1">
             <div class="flex items-center gap-4">
-                <div class="ai-icon-box" style="background: linear-gradient(135deg, #EEF2FF, #E0E7FF);">
+                <div class="ai-icon-box">
                     <i data-lucide="brain" class="text-indigo-600" style="width:20px;height:20px;"></i>
                 </div>
                 <div>
@@ -387,57 +387,57 @@ require_once __DIR__ . '/../components/layout_start.php';
         </div>
 
         <!-- ═══ TOP KPI CARDS (4-Column) ═════════════════════════════════════════ -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
 
             <!-- Card 1: Index Coverage -->
-            <div class="ai-card p-6">
-                <div class="flex items-start justify-between mb-4">
+            <div class="ai-card p-4">
+                <div class="flex items-center justify-between mb-2">
                     <span class="ai-label">Index Coverage</span>
-                    <div class="ai-icon-box" style="background:#EFF6FF;">
+                    <div class="ai-icon-box">
                         <i data-lucide="brain" class="text-blue-600" style="width:16px;height:16px;"></i>
                     </div>
                 </div>
                 <p class="ai-metric-value"><?= $overallCoverage ?>%</p>
-                <div class="ai-progress-track mt-3">
+                <div class="ai-progress-track mt-2">
                     <div class="ai-progress-fill blue" style="width:<?= $overallCoverage ?>%"></div>
                 </div>
-                <p class="text-xs text-gray-400 dark:text-slate-500 mt-2 m-0"><?= $totalIndexed ?> / <?= number_format($totalJobs + $totalFreelancers) ?> vectors</p>
+                <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1.5 m-0"><?= $totalIndexed ?> / <?= number_format($totalJobs + $totalFreelancers) ?> vectors</p>
             </div>
 
             <!-- Card 2: Total Indexed -->
-            <div class="ai-card p-6">
-                <div class="flex items-start justify-between mb-4">
+            <div class="ai-card p-4">
+                <div class="flex items-center justify-between mb-2">
                     <span class="ai-label">Total Indexed</span>
-                    <div class="ai-icon-box" style="background:#F5F3FF;">
+                    <div class="ai-icon-box">
                         <i data-lucide="boxes" class="text-violet-600" style="width:16px;height:16px;"></i>
                     </div>
                 </div>
                 <p class="ai-metric-value"><?= number_format($totalIndexed) ?></p>
-                <p class="text-xs text-gray-400 dark:text-slate-500 mt-2 m-0"><?= $embeddedJobs ?> jobs · <?= $embeddedFreelancers ?> freelancers</p>
+                <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1.5 m-0"><?= $embeddedJobs ?> jobs · <?= $embeddedFreelancers ?> freelancers</p>
             </div>
 
             <!-- Card 3: Queue Pending -->
-            <div class="ai-card p-6">
-                <div class="flex items-start justify-between mb-4">
+            <div class="ai-card p-4">
+                <div class="flex items-center justify-between mb-2">
                     <span class="ai-label">Queue Pending</span>
-                    <div class="ai-icon-box" style="<?= $queueCount > 0 ? 'background:#FEF3C7;' : 'background:#ECFDF5;' ?>">
+                    <div class="ai-icon-box">
                         <i data-lucide="layers" class="<?= $queueCount > 0 ? 'text-amber-600' : 'text-emerald-600' ?>" style="width:16px;height:16px;"></i>
                     </div>
                 </div>
                 <p class="ai-metric-value <?= $queueCount > 0 ? 'text-amber-600 dark:text-amber-400' : '' ?>"><?= number_format($queueCount) ?></p>
-                <p class="text-xs text-gray-400 dark:text-slate-500 mt-2 m-0"><?= $queueCount > 0 ? 'Awaiting generation' : 'All caught up' ?></p>
+                <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1.5 m-0"><?= $queueCount > 0 ? 'Awaiting generation' : 'All caught up' ?></p>
             </div>
 
             <!-- Card 4: Match Acceptance -->
-            <div class="ai-card p-6">
-                <div class="flex items-start justify-between mb-4">
+            <div class="ai-card p-4">
+                <div class="flex items-center justify-between mb-2">
                     <span class="ai-label">Match Acceptance</span>
-                    <div class="ai-icon-box" style="background:#FDF2F8;">
+                    <div class="ai-icon-box">
                         <i data-lucide="handshake" class="text-pink-600" style="width:16px;height:16px;"></i>
                     </div>
                 </div>
                 <p class="ai-metric-value"><?= $proposalAcceptRate ?>%</p>
-                <p class="text-xs text-gray-400 dark:text-slate-500 mt-2 m-0"><?= number_format($proposalStats['total_proposals']) ?> proposals · <?= number_format($proposalStats['total_contracts']) ?> contracts</p>
+                <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1.5 m-0"><?= number_format($proposalStats['total_proposals']) ?> proposals · <?= number_format($proposalStats['total_contracts']) ?> contracts</p>
             </div>
         </div>
 
@@ -451,7 +451,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <div class="ai-card">
                     <div class="ai-card-header flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="ai-icon-box" style="background:#EFF6FF;">
+                            <div class="ai-icon-box">
                                 <i data-lucide="bar-chart-3" class="text-blue-600" style="width:16px;height:16px;"></i>
                             </div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white m-0">Vector Index Coverage</h3>
@@ -464,7 +464,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <div class="flex items-center gap-2.5">
-                                    <div class="ai-icon-box" style="background:#ECFDF5;width:32px;height:32px;border-radius:10px;">
+                                    <div class="ai-icon-box" style="width:32px;height:32px;border-radius:10px;">
                                         <i data-lucide="briefcase" class="text-emerald-600" style="width:14px;height:14px;"></i>
                                     </div>
                                     <div>
@@ -488,7 +488,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <div class="flex items-center gap-2.5">
-                                    <div class="ai-icon-box" style="background:#EEF2FF;width:32px;height:32px;border-radius:10px;">
+                                    <div class="ai-icon-box" style="width:32px;height:32px;border-radius:10px;">
                                         <i data-lucide="user" class="text-indigo-600" style="width:14px;height:14px;"></i>
                                     </div>
                                     <div>
@@ -537,7 +537,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <div class="ai-card">
                     <div class="ai-card-header flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="ai-icon-box" style="background:#F5F3FF;">
+                            <div class="ai-icon-box">
                                 <i data-lucide="zap" class="text-violet-600" style="width:16px;height:16px;"></i>
                             </div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white m-0">Engine Actions</h3>
@@ -551,7 +551,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                         <!-- Pending Queue Mini-Cards -->
                         <div class="grid grid-cols-2 gap-3">
                             <div class="p-4 rounded-xl flex items-center gap-3" style="background:#ECFDF5;">
-                                <div class="ai-icon-box" style="background:#D1FAE5;width:36px;height:36px;border-radius:10px;">
+                                <div class="ai-icon-box" style="width:36px;height:36px;border-radius:10px;">
                                     <i data-lucide="briefcase" class="text-emerald-600" style="width:16px;height:16px;"></i>
                                 </div>
                                 <div>
@@ -560,7 +560,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                 </div>
                             </div>
                             <div class="p-4 rounded-xl flex items-center gap-3" style="background:#EEF2FF;">
-                                <div class="ai-icon-box" style="background:#C7D2FE;width:36px;height:36px;border-radius:10px;">
+                                <div class="ai-icon-box" style="width:36px;height:36px;border-radius:10px;">
                                     <i data-lucide="user" class="text-indigo-600" style="width:16px;height:16px;"></i>
                                 </div>
                                 <div>
@@ -598,12 +598,12 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <div class="ai-card">
                     <div class="ai-card-header flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="ai-icon-box" style="background:#ECFEFF;">
+                            <div class="ai-icon-box">
                                 <i data-lucide="clipboard-list" class="text-cyan-600" style="width:16px;height:16px;"></i>
                             </div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white m-0">Activity Timeline</h3>
                         </div>
-                        <button onclick="refreshVectorLog()" class="ai-icon-box" style="background:#F8FAFC;width:32px;height:32px;border-radius:8px;cursor:pointer;border:1px solid #E2E8F0;">
+                        <button onclick="refreshVectorLog()" class="ai-icon-box" style="width:32px;height:32px;border-radius:8px;cursor:pointer;border:1px solid #E2E8F0;">
                             <i data-lucide="refresh-cw" class="text-gray-400" style="width:14px;height:14px;"></i>
                         </button>
                     </div>
@@ -717,7 +717,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <div class="ai-card">
                     <div class="ai-card-header">
                         <div class="flex items-center gap-3 mb-1">
-                            <div class="ai-icon-box" style="background:#F5F3FF;">
+                            <div class="ai-icon-box">
                                 <i data-lucide="sparkles" class="text-violet-600" style="width:16px;height:16px;"></i>
                             </div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white m-0">Cosine Similarity</h3>
@@ -755,7 +755,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                         <!-- Backend Info -->
                         <div class="p-4 rounded-xl" style="background:#F8FAFC;">
                             <div class="flex items-center gap-3">
-                                <div class="ai-icon-box" style="background:#E0E7FF;width:36px;height:36px;border-radius:10px;">
+                                <div class="ai-icon-box" style="width:36px;height:36px;border-radius:10px;">
                                     <i data-lucide="cpu" class="text-indigo-600" style="width:16px;height:16px;"></i>
                                 </div>
                                 <div>
@@ -787,7 +787,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <div class="ai-card">
                     <div class="ai-card-header">
                         <div class="flex items-center gap-3">
-                            <div class="ai-icon-box" style="background:#FDF2F8;">
+                            <div class="ai-icon-box">
                                 <i data-lucide="target" class="text-pink-600" style="width:16px;height:16px;"></i>
                             </div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white m-0">Matching Performance</h3>
@@ -820,7 +820,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <?php if ($totalMissing === 0): ?>
                 <div class="ai-card p-5">
                     <div class="flex items-center gap-3">
-                        <div class="ai-icon-box" style="background:#D1FAE5;width:36px;height:36px;border-radius:10px;">
+                        <div class="ai-icon-box" style="width:36px;height:36px;border-radius:10px;">
                             <i data-lucide="check-circle-2" class="text-emerald-600" style="width:18px;height:18px;"></i>
                         </div>
                         <div>
@@ -832,7 +832,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                 <?php else: ?>
                 <div class="ai-card p-5" style="border-left:4px solid #f59e0b;">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="ai-icon-box" style="background:#FEF3C7;width:36px;height:36px;border-radius:10px;">
+                        <div class="ai-icon-box" style="width:36px;height:36px;border-radius:10px;">
                             <i data-lucide="alert-triangle" class="text-amber-600" style="width:18px;height:18px;"></i>
                         </div>
                         <div>

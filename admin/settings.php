@@ -237,6 +237,7 @@ $navItems = [
     ['key' => 'disputes', 'label' => 'Disputes', 'url' => 'disputes.php', 'icon' => 'hammer'],
     ['key' => 'fraud', 'label' => 'Fraud', 'url' => 'fraud_detection.php', 'icon' => 'shield'],
     ['key' => 'notifications', 'label' => 'Notifications', 'url' => 'notifications.php', 'icon' => 'bell'],
+    ['key' => 'email_logs', 'label' => 'Email Logs', 'url' => 'email_logs.php', 'icon' => 'mail'],
     ['key' => 'ai_monitor', 'label' => 'AI Monitor', 'url' => 'ai_monitor.php', 'icon' => 'brain'],
     ['key' => 'analytics', 'label' => 'Analytics', 'url' => 'analytics.php', 'icon' => 'pie-chart'],
     ['key' => 'settings', 'label' => 'Settings', 'url' => 'settings.php', 'icon' => 'settings'],
@@ -1018,6 +1019,27 @@ require_once __DIR__ . '/../components/layout_start.php';
                                     <option value="none" <?= $settings['smtp_encryption'] === 'none' ? 'selected' : '' ?>>None</option>
                                 </select>
                             </div>
+                            <!-- Test Email -->
+                            <div class="flex items-center gap-3 p-3.5 bg-gray-50 dark:bg-slate-700/50 rounded-xl mt-2">
+                                <div class="flex-1">
+                                    <p class="text-[13px] font-semibold text-gray-900 dark:text-white">Send Test Email</p>
+                                    <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">Verify your SMTP configuration works.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="email" id="testEmailInput" placeholder="test@example.com"
+                                           class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm w-56">
+                                    <button type="button" onclick="sendTestEmail()" id="testEmailBtn"
+                                            class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors whitespace-nowrap">
+                                        Send Test
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Email Logs Link -->
+                            <div class="mt-3">
+                                <a href="email_logs.php" class="inline-flex items-center gap-1.5 text-[12px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                                    <i data-lucide="scroll-text" class="w-3.5 h-3.5"></i> View Email Logs
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1188,6 +1210,41 @@ require_once __DIR__ . '/../components/layout_start.php';
             };
             reader.readAsDataURL(input.files[0]);
         }
+    }
+
+    // ── Send Test Email (AJAX) ────────────────────────────────────────
+    function sendTestEmail() {
+        var email = document.getElementById('testEmailInput').value.trim();
+        if (!email) {
+            alert('Please enter a valid email address.');
+            return;
+        }
+        var btn = document.getElementById('testEmailBtn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+        var formData = new FormData();
+        formData.append('test_email', email);
+        formData.append('action', 'test_email');
+        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'test_email.php', true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.onload = function() {
+            btn.disabled = false;
+            btn.textContent = 'Send Test';
+            try {
+                var resp = JSON.parse(xhr.responseText);
+                alert(resp.success ? 'Test email sent successfully to ' + email + '. Check your inbox.' : 'Failed: ' + resp.message);
+            } catch(e) {
+                alert('Test email sent to ' + email + '. Check your inbox.');
+            }
+        };
+        xhr.onerror = function() {
+            btn.disabled = false;
+            btn.textContent = 'Send Test';
+            alert('Failed to send test email. Check SMTP settings.');
+        };
+        xhr.send(formData);
     }
 
     // ── Drag-and-Drop Visual Feedback ────────────────────────────────

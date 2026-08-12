@@ -13,9 +13,23 @@
 $_fhTitle = $pageTitle ?? 'Dashboard';
 $_fhActive = $activePage ?? 'home';
 $_fhUser = $user ?? ['name' => 'Freelancer', 'profile_image' => ''];
+$_fhHasImage = !empty($_fhUser['profile_image']) && file_exists(__DIR__ . '/../assets/upload/profiles/' . basename($_fhUser['profile_image']));
 $_fhAvatar = get_profile_image($_fhUser['profile_image'] ?? null);
 $_fhUnread = $unreadCount ?? 0;
+$_fhNotifUnread = 0;
+if (isset($conn) && $conn instanceof mysqli && isset($_SESSION['user_id'])) {
+    $_fhNStmt = $conn->prepare('SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND is_read = 0');
+    $_fhNStmt->bind_param('i', $_SESSION['user_id']);
+    $_fhNStmt->execute();
+    $_fhNotifUnread = (int) ($_fhNStmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+    $_fhNStmt->close();
+}
 $_fhName = $_fhUser['name'] ?? 'Freelancer';
+$_fhInitials = strtoupper(mb_substr($_fhName, 0, 1));
+if (str_contains($_fhName, ' ')) {
+    $_fhParts = explode(' ', $_fhName);
+    $_fhInitials = strtoupper(mb_substr($_fhParts[0], 0, 1) . mb_substr(end($_fhParts), 0, 1));
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -458,7 +472,7 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
 
                     <!-- Deliver Work Dropdown -->
                     <div class="relative" id="deliverWorkDropdown">
-                        <button onclick="toggleDropdown('deliverWorkDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_fhActive, ['contracts', 'contract_detail', 'milestones', 'submitted_work', 'contract_history']) ? 'text-[#4338CA] bg-indigo-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' ?> transition-all">
+                        <button onclick="toggleDropdown('deliverWorkDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_fhActive, ['contracts', 'contract_detail', 'milestones', 'submitted_work', 'contract_history', 'disputes']) ? 'text-[#4338CA] bg-indigo-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' ?> transition-all">
                             Deliver Work <i data-lucide="chevron-down" class="w-4 h-4 ml-0.5"></i>
                         </button>
                         <div class="dropdown-menu">
@@ -466,6 +480,7 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
                             <!-- <a href="contract_detail.php" class="dropdown-item"><i data-lucide="list-checks" class="text-base"></i> My Milestones</a> -->
                             <a href="contracts.php?status=completed" class="dropdown-item"><i data-lucide="send" class="text-base"></i> Submitted Work</a>
                             <a href="contracts.php?view=history" class="dropdown-item"><i data-lucide="history" class="text-base"></i> Contract History</a>
+                            <a href="disputes.php" class="dropdown-item <?= $_fhActive === 'disputes' ? 'text-[#4338CA] bg-indigo-50' : '' ?>"><i data-lucide="shield" class="text-base"></i> Disputes</a>
                         </div>
                     </div>
 
@@ -511,9 +526,9 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
                 </div>
 
                 <!-- Notifications -->
-                <a href="../shared/notifications_page.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <a href="notifications.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all">
                     <i data-lucide="bell" class="text-base hidden sm:inline"></i>
-                    <?php if ($_fhUnread > 0): ?>
+                    <?php if ($_fhNotifUnread > 0): ?>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     <?php endif; ?>
                 </a>
@@ -531,7 +546,13 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
                 <!-- Profile Avatar -->
                 <div class="relative hidden lg:block" id="profileDropdown">
                     <button onclick="toggleDropdown('profileDropdown')" class="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-gray-100 transition-all">
-                        <img src="<?= htmlspecialchars($_fhAvatar) ?>" class="w-9 h-9 rounded-xl object-cover border-2 border-gray-100" alt="Avatar">
+                        <?php if ($_fhHasImage): ?>
+                            <img src="<?= htmlspecialchars($_fhAvatar) ?>" class="w-9 h-9 rounded-xl object-cover border-2 border-gray-100" alt="Avatar">
+                        <?php else: ?>
+                            <div class="w-9 h-9 rounded-xl bg-[#E8EDFF] flex items-center justify-center border-2 border-gray-100">
+                                <span class="text-[#4338CA] font-bold text-xs"><?= htmlspecialchars($_fhInitials) ?></span>
+                            </div>
+                        <?php endif; ?>
                         <!-- <p class="text-sm font-semibold text-gray-900 hidden sm:block max-w-[100px] truncate"><?= htmlspecialchars($_fhName) ?></p> -->
                         <div>
                             <p class="text-sm font-bold text-gray-900"><?= htmlspecialchars($_fhName) ?></p>
@@ -578,6 +599,7 @@ $_fhName = $_fhUser['name'] ?? 'Freelancer';
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-2 mt-4">Deliver Work</p>
             <a href="contracts.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_fhActive === 'contracts' ? 'bg-indigo-50 text-[#4338CA]' : 'text-gray-600 hover:bg-gray-50' ?>"><i data-lucide="file-text" class="text-xl"></i> Active Contracts</a>
+            <a href="disputes.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_fhActive === 'disputes' ? 'bg-indigo-50 text-[#4338CA]' : 'text-gray-600 hover:bg-gray-50' ?>"><i data-lucide="shield" class="text-xl"></i> Disputes</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 mb-2 mt-4">Finances</p>
             <a href="earnings.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_fhActive === 'earnings' ? 'bg-indigo-50 text-[#4338CA]' : 'text-gray-600 hover:bg-gray-50' ?>"><i data-lucide="wallet" class="text-xl"></i> Earnings</a>

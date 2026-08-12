@@ -35,6 +35,12 @@ $dStmt->execute();
 $latestDispute = $dStmt->get_result()->fetch_assoc();
 $dStmt->close();
 
+$oStmt = $conn->prepare('SELECT d.*, u.name AS resolved_by_name, m.title AS milestone_title, m.amount AS milestone_amount FROM dispute_tickets d LEFT JOIN users u ON d.resolved_by = u.id LEFT JOIN milestones m ON d.milestone_id = m.id WHERE d.contract_id = ? AND d.status IN ("open","investigating","escalated") ORDER BY d.created_at DESC LIMIT 1');
+$oStmt->bind_param('i', $contractId);
+$oStmt->execute();
+$activeDispute = $oStmt->get_result()->fetch_assoc();
+$oStmt->close();
+
 $wStmt = $conn->prepare('SELECT wallet_balance FROM users WHERE id = ?');
 $wStmt->bind_param('i', $userId);
 $wStmt->execute();
@@ -62,8 +68,8 @@ require_once __DIR__ . '/../includes/client_topbar.php';
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">  
     <div class="bg-white dark:bg-slate-800 border border-[#E4EBE4] dark:border-slate-700 rounded-lg shadow-sm overflow-hidden fade-in">
         <div class="p-6">
-            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
-                <div class="flex-1">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+                <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap items-center gap-2 mb-2">
                         <a href="contracts.php" class="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200 transition-colors" title="Back to Contracts"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white"><?= sanitize_string($contract['job_title']) ?></h2>
@@ -74,6 +80,16 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         <span class="flex items-center gap-1.5"><i data-lucide="user" class="w-4 h-4 text-blue-400"></i><?= sanitize_string($contract['freelancer_name']) ?></span>
                         <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>Started <?= date('M d, Y', strtotime($contract['created_at'])) ?></span>
                     </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
+                    <a href="contract_print.php?id=<?= $contractId ?>" class="inline-flex items-center gap-2 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-semibold rounded-xl transition-colors">
+                        <i data-lucide="file-text" class="text-[10px]"></i> Official Contract
+                    </a>
+                    <?php if ($contract['status'] === 'active' || $contract['status'] === 'disputed'): ?>
+                    <button onclick="openDisputeModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-colors border border-gray-200 dark:border-slate-600">
+                        <i data-lucide="hammer" class="text-[10px] text-gray-400"></i> File Dispute
+                    </button>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="border-t border-gray-100 dark:border-slate-700"></div>
@@ -94,14 +110,6 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <p class="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Your Wallet</p>
                     <p class="text-sm font-bold text-blue-600 dark:text-blue-400 mt-1 text-left"><?= format_currency($walletBalance) ?></p>
                 </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-3 mt-4">
-                <a href="contract_print.php?id=<?= $contractId ?>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#3a5a40] to-[#588157] hover:from-[#2e4a33] hover:to-[#4a7049] text-white text-xs font-semibold rounded-xl shadow-lg shadow-green-500/25 transition-all">
-                    <i data-lucide="file-text" class="w-4 h-4"></i> Official Contract
-                </a>
-                <?php if ($contract['status'] === 'active' || $contract['status'] === 'disputed'): ?>
-                <button onclick="openDisputeModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold rounded-lg transition-all border border-red-200"><i data-lucide="triangle-alert" class="w-4 h-4"></i> File Dispute</button>
-                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -134,6 +142,157 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         <i data-lucide="shield" class="w-4 h-4"></i> Admin Decision
                     </p>
                     <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed"><?= nl2br(sanitize_string($latestDispute['resolution'])) ?></p>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+    <?php if ($activeDispute && $activeDispute['evidence_request_target'] == $userId && !$activeDispute['evidence_request_fulfilled']): ?>
+    <div class="relative bg-white dark:bg-slate-800 rounded-2xl border border-amber-200 dark:border-amber-800 shadow-sm overflow-hidden fade-in" style="animation-delay:.05s">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-amber-400"></div>
+        <div class="p-6 sm:p-8 pl-7 sm:pl-9">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                    <i data-lucide="shield-alert" class="w-5 h-5 text-amber-600 dark:text-amber-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white">Evidence Requested by Admin</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400">Please upload the requested evidence below</p>
+                </div>
+            </div>
+            <?php if (!empty($activeDispute['evidence_request_note'])): ?>
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-5">
+                <p class="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-1">Admin's Request:</p>
+                <p class="text-sm text-amber-800 dark:text-amber-200"><?= nl2br(htmlspecialchars($activeDispute['evidence_request_note'])) ?></p>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($activeDispute['milestone_id'])): ?>
+            <div class="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-slate-700/30 rounded-xl border border-gray-100 dark:border-slate-600/50 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="list-checks" class="w-4 h-4 text-indigo-500"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Related Milestone</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate"><?= htmlspecialchars($activeDispute['milestone_title'] ?? 'Milestone #' . $activeDispute['milestone_id']) ?></p>
+                    <p class="text-xs text-indigo-600 dark:text-indigo-400 font-bold"><?= format_currency((float) ($activeDispute['milestone_amount'] ?? 0)) ?></p>
+                </div>
+            </div>
+            <?php endif; ?>
+            <form id="evidenceResponseForm" onsubmit="return submitEvidenceResponse(event)">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="respond_request">
+                <input type="hidden" name="dispute_id" value="<?= (int) $activeDispute['id'] ?>">
+                <div id="evidenceDropzone" class="border-2 border-dashed border-gray-200 dark:border-slate-600 rounded-xl p-6 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors">
+                    <input type="file" name="evidence_files[]" id="evidenceFileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.zip,.rar" class="hidden">
+                    <i data-lucide="upload-cloud" class="w-7 h-7 text-gray-300 dark:text-slate-500 mx-auto mb-1.5"></i>
+                    <p class="text-xs text-gray-500 dark:text-slate-400">Drop files here or <span class="text-amber-500 font-semibold">browse</span></p>
+                    <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1">Max 5 files, 10MB each (PDF, images, docs, ZIP)</p>
+                </div>
+                <div id="evidenceFileList" class="mt-2 space-y-1"></div>
+                <div class="mt-4 flex gap-3">
+                    <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-lg shadow-amber-500/25 transition-colors">Submit Evidence</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <?php elseif ($activeDispute && $activeDispute['evidence_request_fulfilled']): ?>
+    <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 fade-in" style="animation-delay:.05s">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-emerald-700 dark:text-emerald-300">Evidence Submitted</h3>
+                <p class="text-xs text-emerald-600 dark:text-emerald-400">Under review by the admin team</p>
+            </div>
+        </div>
+        <?php
+        $evidenceFiles = json_decode($activeDispute['evidence_files'] ?? '[]', true);
+        $myFiles = array_filter($evidenceFiles, fn($f) => ($f['uploaded_by'] ?? 0) == $userId);
+        if (!empty($myFiles)):
+        ?>
+        <div class="space-y-1">
+            <?php foreach ($myFiles as $f): ?>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-emerald-100 dark:border-emerald-900">
+                <i data-lucide="file" class="w-4 h-4 text-emerald-500 flex-shrink-0"></i>
+                <span class="text-xs font-medium text-gray-700 dark:text-slate-300 truncate flex-1"><?= htmlspecialchars($f['original_filename'] ?? 'Untitled') ?></span>
+                <span class="text-[10px] text-emerald-500 flex-shrink-0">Submitted</span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($activeDispute['milestone_id'])): ?>
+        <div class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-emerald-100 dark:border-emerald-900 mt-3">
+            <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="list-checks" class="w-4 h-4 text-indigo-500"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Related Milestone</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white truncate"><?= htmlspecialchars($activeDispute['milestone_title'] ?? 'Milestone #' . $activeDispute['milestone_id']) ?></p>
+                <p class="text-xs text-indigo-600 dark:text-indigo-400 font-bold"><?= format_currency((float) ($activeDispute['milestone_amount'] ?? 0)) ?></p>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php elseif ($activeDispute): ?>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm fade-in" style="animation-delay:.05s">
+        <div class="p-6 sm:p-8">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <i data-lucide="shield" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white">Dispute Under Review</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400">Status: <?= ucfirst(htmlspecialchars($activeDispute['status'])) ?></p>
+                </div>
+                <span class="ml-auto px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider
+                    <?php if ($activeDispute['status'] === 'open'): ?>bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300
+                    <?php elseif ($activeDispute['status'] === 'investigating'): ?>bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
+                    <?php else: ?>bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300<?php endif; ?>">
+                    <?= ucfirst(htmlspecialchars($activeDispute['status'])) ?>
+                </span>
+            </div>
+            <div class="bg-gray-50 dark:bg-slate-700/50 rounded-xl p-4 border border-gray-100 dark:border-slate-600">
+                <div class="mb-3">
+                    <p class="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                        <i data-lucide="help-circle" class="w-4 h-4"></i> Reason
+                    </p>
+                    <span class="inline-block px-3 py-1 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-gray-300">
+                        <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $activeDispute['reason']))) ?>
+                    </span>
+                </div>
+                <?php if (!empty($activeDispute['milestone_id'])): ?>
+                <div class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-600 mb-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="list-checks" class="w-4 h-4 text-indigo-500"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Related Milestone</p>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white truncate"><?= htmlspecialchars($activeDispute['milestone_title'] ?? 'Milestone #' . $activeDispute['milestone_id']) ?></p>
+                        <p class="text-xs text-indigo-600 dark:text-indigo-400 font-bold"><?= format_currency((float) ($activeDispute['milestone_amount'] ?? 0)) ?></p>
+                    </div>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($activeDispute['description'])): ?>
+                <div class="mt-3">
+                    <p class="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                        <i data-lucide="clipboard-list" class="w-4 h-4"></i> <?= $activeDispute['raised_by'] == $userId ? 'Your' : 'Freelancer' ?> Description
+                    </p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed"><?= nl2br(htmlspecialchars($activeDispute['description'])) ?></p>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($activeDispute['evidence_request_note'])): ?>
+                <div class="mt-4 pt-3 border-t border-gray-200 dark:border-slate-600">
+                    <p class="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                        <i data-lucide="file-search" class="w-4 h-4"></i> Evidence Request
+                    </p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed"><?= nl2br(htmlspecialchars($activeDispute['evidence_request_note'])) ?></p>
+                    <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1.5">
+                        <?php if ($activeDispute['evidence_request_fulfilled']): ?>Evidence submitted &check;
+                        <?php else: ?>Awaiting evidence from <?= htmlspecialchars($activeDispute['evidence_request_target'] == $userId ? 'you' : 'the other party') ?>
+                        <?php endif; ?>
+                    </p>
                 </div>
                 <?php endif; ?>
             </div>
@@ -398,9 +557,9 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                         <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Reason</label>
                         <select name="reason" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white">
                             <option value="">Select a reason...</option>
-                            <option value="non_delivery">Non-Delivery</option>
+                            <option value="non_delivery">Work Not Completed</option>
                             <option value="quality_issue">Quality Issue</option>
-                            <option value="scope_dispute">Scope Dispute</option>
+                            <option value="scope_dispute">Requirements Not Met</option>
                             <option value="payment_issue">Payment Issue</option>
                             <option value="other">Other</option>
                         </select>
@@ -408,6 +567,16 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Description</label>
                         <textarea name="description" required rows="4" minlength="20" maxlength="5000" placeholder="Provide a detailed description of the issue (min 20 characters)..." class="fld w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 dark:text-white resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">Evidence Files (optional)</label>
+                        <div id="disputeFileDropzone" class="border-2 border-dashed border-gray-200 dark:border-slate-600 rounded-xl p-5 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors cursor-pointer">
+                            <input type="file" name="evidence_files[]" id="disputeFileInput" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.zip,.rar" class="hidden">
+                            <i data-lucide="upload-cloud" class="w-7 h-7 text-gray-300 dark:text-slate-500 mx-auto mb-1.5"></i>
+                            <p class="text-xs text-gray-500 dark:text-slate-400">Drop files here or <span class="text-blue-500 font-semibold">browse</span></p>
+                            <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1">Max 5 files, 10MB each (PDF, images, docs, ZIP)</p>
+                        </div>
+                        <div id="disputeFileList" class="mt-2 space-y-1"></div>
                     </div>
                 </div>
                 <div class="px-6 pb-6 flex gap-3">
@@ -417,24 +586,6 @@ require_once __DIR__ . '/../includes/client_topbar.php';
             </form>
         </div>
     </div>
-</div>
-    <div id="disputeConfirmModal" class="fixed inset-0 z-50 hidden">
-        <div class="modal-overlay absolute inset-0 bg-black/40" onclick="closeDisputeConfirmModal()"></div>
-        <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10" style="transform:scale(.95) translateY(10px);transition:transform .25s ease">
-                <div class="p-6 text-center">
-                    <div class="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="flag" class="text-rose-500"></i>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-900 dark:text-white mb-2">Dispute Milestone</h3>
-                    <p class="text-sm text-gray-500 dark:text-slate-400">Are you sure you want to dispute this milestone? An admin will review.</p>
-                </div>
-                <div class="px-6 pb-6 flex gap-3">
-                    <button onclick="closeDisputeConfirmModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">Cancel</button>
-                    <button onclick="confirmDispute()" id="disputeConfirmBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold shadow-lg shadow-rose-500/25 transition-colors"><span id="disputeConfirmBtnText">Confirm Dispute</span></button>
-                </div>
-            </div>
-        </div>
     </div>
 </main>
 <script>
@@ -664,45 +815,11 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         return false
     }
 
-    var pendingDisputeMilestoneId = null;
-
     function disputeMilestone(id) {
-        pendingDisputeMilestoneId = id;
-        document.getElementById('disputeConfirmModal').classList.remove('hidden');
+        var select = document.querySelector('#disputeForm select[name="milestone_id"]');
+        if (select) select.value = id;
+        document.getElementById('disputeModal').classList.remove('hidden');
         lucide.createIcons();
-    }
-
-    function closeDisputeConfirmModal() {
-        document.getElementById('disputeConfirmModal').classList.add('hidden');
-        pendingDisputeMilestoneId = null;
-    }
-
-    async function confirmDispute() {
-        var id = pendingDisputeMilestoneId;
-        if (!id) return;
-        closeDisputeConfirmModal();
-        showLoading();
-        try {
-            var fd = new FormData();
-            fd.append('action', 'dispute');
-            fd.append('milestone_id', id);
-            fd.append('csrf_token', CSRF_TOKEN);
-            var r = await fetch(BASE_URL + '/api/milestones_api.php', {
-                method: 'POST',
-                body: fd
-            });
-            var j = await r.json();
-            hideLoading();
-            if (j.success) {
-                showToast('info', j.message);
-                reloadPage()
-            } else {
-                showToast('error', j.message)
-            }
-        } catch (err) {
-            hideLoading();
-            showToast('error', 'Network error.')
-        }
     }
 
     function openDisputeModal() {
@@ -710,6 +827,8 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     }
     function closeDisputeModal() {
         document.getElementById('disputeModal').classList.add('hidden');
+        var select = document.querySelector('#disputeForm select[name="milestone_id"]');
+        if (select) select.value = '';
     }
     async function submitDispute(e) {
         e.preventDefault();
@@ -733,5 +852,167 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         }
         return false;
     }
+
+    // ── Evidence Response Handling ──────────────────────────────────────
+    var evidenceSelectedFiles = [];
+    (function() {
+        var dropzone = document.getElementById('evidenceDropzone');
+        var input = document.getElementById('evidenceFileInput');
+        var list = document.getElementById('evidenceFileList');
+        var maxFiles = 5;
+        var maxSize = 10 * 1024 * 1024;
+        var allowedExts = ['pdf','doc','docx','txt','png','jpg','jpeg','gif','zip','rar'];
+
+        if (!dropzone || !input || !list) return;
+
+        dropzone.addEventListener('click', function() { input.click(); });
+        dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.classList.add('border-amber-400','bg-amber-50'); });
+        dropzone.addEventListener('dragleave', function(e) { e.preventDefault(); dropzone.classList.remove('border-amber-400','bg-amber-50'); });
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('border-amber-400','bg-amber-50');
+            handleEvidenceFiles(e.dataTransfer.files);
+        });
+        input.addEventListener('change', function() { handleEvidenceFiles(input.files); });
+
+        function handleEvidenceFiles(files) {
+            for (var i = 0; i < files.length && evidenceSelectedFiles.length < maxFiles; i++) {
+                var f = files[i];
+                var ext = f.name.split('.').pop().toLowerCase();
+                if (allowedExts.indexOf(ext) === -1) { showToast('error', 'File type not allowed: ' + f.name); continue; }
+                if (f.size > maxSize) { showToast('error', 'File too large (max 10MB): ' + f.name); continue; }
+                evidenceSelectedFiles.push(f);
+            }
+            renderEvidenceFileList();
+            input.value = '';
+        }
+
+        function renderEvidenceFileList() {
+            list.innerHTML = '';
+            for (var i = 0; i < evidenceSelectedFiles.length; i++) {
+                var f = evidenceSelectedFiles[i];
+                var ext = f.name.split('.').pop().toLowerCase();
+                var icon = 'file';
+                if (['png','jpg','jpeg','gif'].indexOf(ext) !== -1) icon = 'image';
+                else if (ext === 'pdf') icon = 'file-text';
+                else if (['zip','rar'].indexOf(ext) !== -1) icon = 'archive';
+                var size = f.size < 1024 ? f.size + ' B' : (f.size < 1048576 ? (f.size/1024).toFixed(1) + ' KB' : (f.size/1048576).toFixed(1) + ' MB');
+                var row = document.createElement('div');
+                row.className = 'flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600';
+                row.innerHTML = '<i data-lucide="' + icon + '" class="w-4 h-4 text-amber-500 flex-shrink-0"></i>' +
+                    '<span class="text-xs font-medium text-gray-700 dark:text-slate-300 truncate flex-1">' + escEvidenceHtml(f.name) + '</span>' +
+                    '<span class="text-[10px] text-gray-400 dark:text-slate-500 flex-shrink-0">' + size + '</span>' +
+                    '<button type="button" onclick="removeEvidenceFile(' + i + ')" class="text-gray-400 hover:text-red-500 flex-shrink-0"><i data-lucide="x" class="w-3 h-3"></i></button>';
+                list.appendChild(row);
+            }
+            lucide.createIcons();
+        }
+
+        window.removeEvidenceFile = function(idx) {
+            evidenceSelectedFiles.splice(idx, 1);
+            renderEvidenceFileList();
+        };
+
+        function escEvidenceHtml(s) {
+            var d = document.createElement('div');
+            d.appendChild(document.createTextNode(s));
+            return d.innerHTML;
+        }
+    })();
+
+    function submitEvidenceResponse(e) {
+        e.preventDefault();
+        if (evidenceSelectedFiles.length === 0) { showToast('error', 'Please select at least one file to upload.'); return false; }
+        showLoading();
+        var form = new FormData();
+        form.append('action', 'respond_request');
+        form.append('csrf_token', CSRF_TOKEN);
+        form.append('dispute_id', document.querySelector('#evidenceResponseForm input[name="dispute_id"]').value);
+        for (var i = 0; i < evidenceSelectedFiles.length; i++) { form.append('evidence_files[]', evidenceSelectedFiles[i]); }
+        fetch(BASE_URL + '/api/dispute_api.php', { method: 'POST', body: form })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) { showToast('success', 'Evidence submitted successfully.'); setTimeout(reloadPage, 1500); }
+            else { showToast('error', data.message || 'Failed to submit evidence.'); }
+        })
+        .catch(function() { hideLoading(); showToast('error', 'Network error. Please try again.'); });
+        return false;
+    }
+
+    // ── Dispute File Upload Handling ─────────────────────────────────
+    (function() {
+        var dropzone = document.getElementById('disputeFileDropzone');
+        var input = document.getElementById('disputeFileInput');
+        var list = document.getElementById('disputeFileList');
+        var maxFiles = 5;
+        var maxSize = 10 * 1024 * 1024;
+        var allowedExts = ['pdf','doc','docx','txt','png','jpg','jpeg','gif','zip','rar'];
+        var selectedFiles = [];
+
+        if (!dropzone || !input || !list) return;
+
+        dropzone.addEventListener('click', function() { input.click(); });
+        dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.classList.add('border-blue-400','bg-blue-50'); });
+        dropzone.addEventListener('dragleave', function(e) { e.preventDefault(); dropzone.classList.remove('border-blue-400','bg-blue-50'); });
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('border-blue-400','bg-blue-50');
+            handleFiles(e.dataTransfer.files);
+        });
+        input.addEventListener('change', function() { handleFiles(input.files); });
+
+        function handleFiles(files) {
+            for (var i = 0; i < files.length && selectedFiles.length < maxFiles; i++) {
+                var f = files[i];
+                var ext = f.name.split('.').pop().toLowerCase();
+                if (allowedExts.indexOf(ext) === -1) {
+                    showToast('error', 'File type not allowed: ' + f.name);
+                    continue;
+                }
+                if (f.size > maxSize) {
+                    showToast('error', 'File too large (max 10MB): ' + f.name);
+                    continue;
+                }
+                selectedFiles.push(f);
+            }
+            renderFileList();
+            input.value = '';
+        }
+
+        function renderFileList() {
+            list.innerHTML = '';
+            for (var i = 0; i < selectedFiles.length; i++) {
+                var f = selectedFiles[i];
+                var ext = f.name.split('.').pop().toLowerCase();
+                var icon = 'file';
+                if (['png','jpg','jpeg','gif'].indexOf(ext) !== -1) icon = 'image';
+                else if (ext === 'pdf') icon = 'file-text';
+                else if (['zip','rar'].indexOf(ext) !== -1) icon = 'archive';
+
+                var size = f.size < 1024 ? f.size + ' B' : (f.size < 1048576 ? (f.size/1024).toFixed(1) + ' KB' : (f.size/1048576).toFixed(1) + ' MB');
+
+                var row = document.createElement('div');
+                row.className = 'flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600';
+                row.innerHTML = '<i data-lucide="' + icon + '" class="w-4 h-4 text-blue-500 flex-shrink-0"></i>' +
+                    '<span class="text-xs font-medium text-gray-700 dark:text-slate-300 truncate flex-1">' + escHtml(f.name) + '</span>' +
+                    '<span class="text-[10px] text-gray-400 dark:text-slate-500 flex-shrink-0">' + size + '</span>' +
+                    '<button type="button" onclick="removeDisputeFile(' + i + ')" class="text-gray-400 hover:text-red-500 flex-shrink-0"><i data-lucide="x" class="w-3 h-3"></i></button>';
+                list.appendChild(row);
+            }
+            lucide.createIcons();
+        }
+
+        window.removeDisputeFile = function(idx) {
+            selectedFiles.splice(idx, 1);
+            renderFileList();
+        };
+
+        function escHtml(s) {
+            var d = document.createElement('div');
+            d.appendChild(document.createTextNode(s));
+            return d.innerHTML;
+        }
+    })();
 </script>
 <?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

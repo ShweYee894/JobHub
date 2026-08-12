@@ -154,11 +154,6 @@ $conn->close();
         border-radius: 50%;
     }
     .header-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; position: relative; z-index: 1; }
-    .logo-box {
-        width: 56px; height: 56px; background: #f5f3ff; border: 1px solid #e0e7ff;
-        border-radius: 14px; display: flex; align-items: center; justify-content: center;
-        font-size: 22px; color: #4338CA;
-    }
     .header-meta { text-align: right; font-size: 12px; line-height: 1.8; color: #6b7280; }
     .header-meta strong { color: #111827; font-weight: 600; }
     .status-badge {
@@ -198,10 +193,11 @@ $conn->close();
     .party-label i { font-size: 11px; }
     .party-info { display: flex; align-items: center; gap: 14px; }
     .party-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #e0e7ff; flex-shrink: 0; }
-    .party-details { flex: 1; }
-    .party-name { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 3px; }
-    .party-meta { font-size: 12px; color: #6b7280; line-height: 1.7; }
-    .party-meta i { width: 14px; text-align: center; color: #9ca3af; margin-right: 4px; }
+    .party-details { flex: 1; text-align: left; }
+    .party-name { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 3px; text-align: left; }
+    .party-meta { font-size: 12px; color: #6b7280; line-height: 1; display: flex; flex-direction: column; gap: 6px; }
+    .party-meta span { display: flex; align-items: center; gap: 6px; width: 100%; }
+    .party-meta i { width: 14px; text-align: center; color: #9ca3af; }
     .intro-text {
         font-size: 13px; color: #4b5563; line-height: 1.8;
         padding: 16px 20px; background: #fafafa;
@@ -359,7 +355,6 @@ $conn->close();
         <div class="contract-header">
             <div class="header-top">
                 <div class="logo-box">
-                    <i data-lucide="briefcase"></i>
                 </div>
                 <div class="header-meta">
                     <div><strong>Contract No:</strong> <?= $contractNumber ?></div>
@@ -396,10 +391,10 @@ $conn->close();
                         <div class="party-details">
                             <div class="party-name"><?= sanitize_string($contract['client_name']) ?></div>
                             <div class="party-meta">
-                                <i data-lucide="mail"></i> <?= sanitize_string($contract['client_email']) ?><br>
-                                <i data-lucide="phone"></i> <?= sanitize_string($contract['client_phone'] ?? 'N/A') ?>
+                                <span><i data-lucide="mail"></i> <?= sanitize_string($contract['client_email']) ?></span>
+                                <span><i data-lucide="phone"></i> <?= sanitize_string($contract['client_phone'] ?? 'N/A') ?></span>
                                 <?php if (!empty($contract['company_name'])): ?>
-                                <br><i data-lucide="building-2"></i> <?= sanitize_string($contract['company_name'] ?? 'N/A') ?>
+                                <span><i data-lucide="building-2"></i> <?= sanitize_string($contract['company_name'] ?? 'N/A') ?></span>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -412,10 +407,10 @@ $conn->close();
                         <div class="party-details">
                             <div class="party-name"><?= sanitize_string($contract['freelancer_name']) ?></div>
                             <div class="party-meta">
-                                <i data-lucide="mail"></i> <?= sanitize_string($contract['freelancer_email']) ?><br>
-                                <i data-lucide="phone"></i> <?= sanitize_string($contract['freelancer_phone'] ?? 'N/A') ?>
+                                <span><i data-lucide="mail"></i> <?= sanitize_string($contract['freelancer_email']) ?></span>
+                                <span><i data-lucide="phone"></i> <?= sanitize_string($contract['freelancer_phone'] ?? 'N/A') ?></span>
                                 <?php if (!empty($contract['freelancer_title'])): ?>
-                                <br><i data-lucide="id-badge"></i> <?= sanitize_string($contract['freelancer_title'] ?? 'N/A') ?>
+                                <span><i data-lucide="badge"></i> <?= sanitize_string($contract['freelancer_title'] ?? 'N/A') ?></span>
                                 <?php endif; ?>
                             </div>
                         </div>

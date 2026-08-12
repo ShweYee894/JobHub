@@ -152,7 +152,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             <a href="contracts.php" class="py-2 text-sm font-medium text-gray-700 flex justify-center items-center gap-2">
                 <i data-lucide="arrow-left" class="text-xs"></i> Back to Contracts
             </a>
-        <a href="contract_print.php?id=<?= $contractId ?>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-[#108A00] hover:bg-[#0d7500] dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors">
+        <a href="contract_print.php?id=<?= $contractId ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-[#108A00] hover:bg-[#0d7500] dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors">
             <i data-lucide="file-text"></i> Official Contract
         </a>
     </div>

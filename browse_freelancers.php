@@ -171,9 +171,15 @@ $baseUrl = buildBaseUrl();
 $conn->close();
 
 $_ixLoggedIn = isset($_SESSION['user_id']);
+$_ixHasImage = $_ixLoggedIn && !empty($_SESSION['profile_image']) && file_exists(__DIR__ . '/assets/upload/profiles/' . basename($_SESSION['profile_image']));
 $_ixAvatar = $_ixLoggedIn ? get_profile_image($_SESSION['profile_image'] ?? null) : '';
 $_ixName = $_ixLoggedIn ? ($_SESSION['user_name'] ?? 'User') : '';
 $_ixRole = $_ixLoggedIn ? ($_SESSION['user_role'] ?? '') : '';
+$_ixInitials = strtoupper(mb_substr($_ixName, 0, 1));
+if (str_contains($_ixName, ' ')) {
+  $_ixParts = explode(' ', $_ixName);
+  $_ixInitials = strtoupper(mb_substr($_ixParts[0], 0, 1) . mb_substr(end($_ixParts), 0, 1));
+}
 $_ixDash = match ($_ixRole) {
   'admin' => '/jobhub/admin/dashboard.php',
   'client' => '/jobhub/client/dashboard.php',
@@ -362,7 +368,13 @@ $_ixDash = match ($_ixRole) {
           <?php if ($_ixLoggedIn): ?>
           <div class="relative" id="navProfileDropdown">
             <button onclick="document.getElementById('navProfileDropdown').querySelector('.profile-popup').classList.toggle('show')" class="flex items-center gap-2.5 py-1 px-2 rounded hover:bg-gray-50 transition-all">
-              <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-8 h-8 rounded-full object-cover border border-gray-200" alt="Avatar">
+              <?php if ($_ixHasImage): ?>
+                <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-8 h-8 rounded-full object-cover border border-gray-200" alt="Avatar">
+              <?php else: ?>
+                <div class="w-8 h-8 rounded-full bg-[#E8EDFF] flex items-center justify-center border border-gray-200">
+                  <span class="text-[#4338CA] font-bold text-xs"><?= htmlspecialchars($_ixInitials) ?></span>
+                </div>
+              <?php endif; ?>
             </button>
             <div class="profile-popup">
               <div class="p-4 border-b border-gray-100">
@@ -404,7 +416,13 @@ $_ixDash = match ($_ixRole) {
         <hr class="border-gray-100 my-1" />
         <?php if ($_ixLoggedIn): ?>
         <a href="<?= $_ixDash ?>" class="flex items-center gap-3 hover:text-charcoal py-2 px-3 rounded hover:bg-gray-50 transition-colors">
-          <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-7 h-7 rounded-full object-cover border border-gray-200" alt="Avatar">
+          <?php if ($_ixHasImage): ?>
+            <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-7 h-7 rounded-full object-cover border border-gray-200" alt="Avatar">
+          <?php else: ?>
+            <div class="w-7 h-7 rounded-full bg-[#E8EDFF] flex items-center justify-center border border-gray-200">
+              <span class="text-[#4338CA] font-bold text-[10px]"><?= htmlspecialchars($_ixInitials) ?></span>
+            </div>
+          <?php endif; ?>
           <span class="font-semibold"><?= htmlspecialchars($_ixName) ?></span>
         </a>
         <a href="auth/logout.php" class="hover:text-red-500 py-2 px-3 rounded hover:bg-red-50 transition-colors text-red-500"><i data-lucide="log-out" class="w-4 h-4 mr-2"></i>Logout</a>
@@ -641,13 +659,28 @@ $_ixDash = match ($_ixRole) {
 
                     <?php if (!empty($freelancers)): ?>
                         <div class="space-y-3">
-                        <?php foreach ($freelancers as $index => $fl): ?>
-                            <div class="fl-listing fade-in" style="animation-delay:<?= 0.05 + ($index * 0.04) ?>s">
+                        <?php $_cardIdx = 0; foreach ($freelancers as $fl): ?>
+                            <?php
+                            $_flHasImage = !empty($fl['profile_image']) && file_exists(__DIR__ . '/assets/upload/profiles/' . basename($fl['profile_image']));
+                            $_flName = $fl['name'] ?? '';
+                            $_flInitials = strtoupper(mb_substr($_flName, 0, 1));
+                            if (str_contains($_flName, ' ')) {
+                                $_flParts = explode(' ', $_flName);
+                                $_flInitials = strtoupper(mb_substr($_flParts[0], 0, 1) . mb_substr(end($_flParts), 0, 1));
+                            }
+                            ?>
+                            <div class="fl-listing fade-in" style="animation-delay:<?= 0.05 + ($_cardIdx * 0.04) ?>s">
                                 <div class="flex flex-col sm:flex-row gap-5">
                                     <!-- Avatar -->
                                     <div class="flex-shrink-0">
                                         <div class="relative">
+                                            <?php if ($_flHasImage): ?>
                                             <img src="<?= get_profile_image($fl['profile_image']) ?>" alt="<?= sanitize_string($fl['name']) ?>" class="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md">
+                                            <?php else: ?>
+                                            <div class="w-16 h-16 rounded-2xl bg-[#E8EDFF] flex items-center justify-center border-2 border-white shadow-md">
+                                                <span class="text-[#4338CA] font-bold text-lg"><?= htmlspecialchars($_flInitials) ?></span>
+                                            </div>
+                                            <?php endif; ?>
                                             <?php if ($fl['availability'] === 'Available'): ?>
                                                 <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white"></span>
                                             <?php elseif ($fl['availability'] === 'Busy'): ?>
@@ -710,7 +743,7 @@ $_ixDash = match ($_ixRole) {
                                         <div class="flex flex-wrap gap-1.5 mb-4">
                                             <?php foreach (array_slice($fl['skills'], 0, 8) as $sk): ?>
                                                 <span class="skill-pill"><?= sanitize_string($sk['skill_name']) ?></span>
-                                            <?php endforeach; ?>
+                        <?php $_cardIdx++; endforeach; ?>
                                             <?php if (count($fl['skills']) > 8): ?>
                                                 <span class="skill-pill !bg-primary/5 !text-primary !border-primary/20">+<?= count($fl['skills']) - 8 ?> more</span>
                                             <?php endif; ?>

@@ -1,7 +1,7 @@
 {
     "platform_name": "JobHub",
-    "platform_email": "admin@freelancehub.com",
-    "support_email": "support@freelancehub.com",
+    "platform_email": "admin@jobhub.com",
+    "support_email": "support@jobhub.com",
     "platform_phone": "",
     "platform_address": "",
     "platform_logo": "",
@@ -36,9 +36,9 @@
     "ai_embedding_model": "text-embedding-ada-002",
     "ai_auto_match": 0,
     "ai_min_similarity": 80,
-    "smtp_host": "",
+    "smtp_host": "smtp.gmail.com",
     "smtp_port": 587,
-    "smtp_username": "",
-    "smtp_password": "",
+    "smtp_username": "shweyeewin462@gmail.com",
+    "smtp_password": "xkje oweu ihgm lnhx",
     "smtp_encryption": "tls"
 }

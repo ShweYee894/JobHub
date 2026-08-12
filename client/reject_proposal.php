@@ -21,7 +21,7 @@ if ($proposalId <= 0) {
 }
 
 $stmt = $conn->prepare('
-    SELECT p.id, p.status
+    SELECT p.id, p.status, p.freelancer_id, j.title AS job_title
     FROM proposals p
     JOIN jobs j ON p.job_id = j.id
     WHERE p.id = ? AND j.client_id = ?
@@ -48,6 +48,10 @@ $upd->close();
 
 if ($upd->affected_rows > 0) {
     set_flash('success', 'Proposal has been rejected.');
+
+    // Send proposal rejected email to freelancer
+    require_once __DIR__ . '/../shared/notification_helper.php';
+    notifyProposalRejected((int) $proposal['freelancer_id'], $proposal['job_title']);
 } else {
     set_flash('error', 'Unable to reject proposal. It may have already been processed.');
 }

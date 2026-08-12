@@ -1,0 +1,622 @@
+Build a complete Freelance Marketplace Platform similar to Upwork and Freelancer.com using:
+
+Frontend:
+
+HTML5
+Tailwind CSS
+JavaScript
+
+Backend:
+
+PHP 8+
+MySQLi (Procedural or OOP)
+
+Database:
+
+MySQL
+
+Authentication:
+
+password_hash()
+password_verify()
+Session Based Authentication
+
+Architecture:
+
+Modular MVC-like structure
+Reusable components
+Secure coding practices
+
+The system must be fully compatible with the following database schema:
+
+Users
+Clients
+Freelancers
+Skills
+Freelancer Skills
+Jobs
+Job Skills
+Proposals
+Contracts
+Chat Rooms
+Chat Messages
+Milestones
+Payments
+Reviews
+User Behavior Logs
+
+Requirements:
+
+Build every module completely.
+Use prepared statements everywhere.
+Implement role-based access control.
+Create a responsive modern UI using Tailwind CSS.
+Follow professional dashboard design.
+Include validation on both the frontend and backend.
+Prevent SQL Injection.
+Prevent XSS.
+Implement CSRF protection.
+Use transactions for critical operations.
+Add comments explaining important code.
+Generate production-ready code.
+
+Generate:
+
+Database queries
+PHP files
+HTML
+Tailwind CSS
+JavaScript
+Folder structure
+Routing flow
+Security implementation
+
+Ensure every feature matches the database schema exactly.
+
+-------------------------------------------------------------------------------------------
+Build the complete Authentication Module.
+
+Database Tables:
+
+* users
+* clients
+* freelancers
+
+Features:
+
+1. Registration
+
+   * Client Registration
+   * Freelancer Registration
+
+2. Login
+
+3. Logout
+
+4. Session Management
+
+5. Remember Me
+
+6. Password Reset
+
+7. Email Verification Ready
+
+8. Role-based Redirection
+
+Client:
+client/dashboard.php
+
+Freelancer:
+freelancer/dashboard.php
+
+Admin:
+admin/dashboard.php
+
+Requirements:
+
+* password_hash()
+* password_verify()
+* Prepared statements
+* Session fixation protection
+* CSRF token
+
+Generate:
+
+register.php
+login.php
+logout.php
+
+auth middleware
+
+security helper functions
+
+Tailwind UI
+
+-----------------------------------------------------------------------------------------
+
+Build the complete Client Dashboard.
+
+Tables:
+
+jobs
+proposals
+contracts
+payments
+
+Display:
+
+* Total Jobs
+* Open Jobs
+* In Progress Jobs
+* Completed Jobs
+* Active Contracts
+* Total Spending
+
+Dashboard Cards
+
+Recent Jobs
+
+Recent Proposals
+
+Recent Contracts
+
+Quick Actions
+
+Responsive Tailwind Design
+
+Generate a complete PHP + MySQLi implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build a professional Job Posting Module.
+
+Tables:
+
+jobs
+job_skills
+skills
+
+Fields:
+
+Job Title
+Description
+Budget
+Required Skills
+
+Requirements:
+
+* Skill search
+* Skill selection
+* Save to job_skills table
+* Form validation
+* Tailwind UI
+
+Generate:
+
+post-job.php
+
+save-job.php
+
+edit-job.php
+
+delete-job.php
+
+my-jobs.php
+
+Use transactions.
+
+Generate embedding_vector JSON field support.
+
+Store AI-ready job embeddings.
+
+-------------------------------------------------------------------------------------------
+
+Build the Freelancer Profile Module.
+
+Tables:
+
+users
+freelancers
+freelancer_skills
+skills
+
+Features:
+
+Profile Photo
+Professional Title
+Bio
+Hourly Rate
+Portfolio URL
+Resume Upload
+Experience
+Availability
+Skills
+
+Profile Completion Meter
+
+Public Profile Page
+
+Edit Profile Page
+
+Generate a complete implementation.
+
+-----------------------------------------------------------------------------------------
+
+Build Freelancer Job Discovery.
+
+Tables:
+
+jobs
+job_skills
+skills
+
+Features:
+
+Browse Jobs
+
+Search Jobs
+
+Filter:
+
+Budget
+Skill
+Status
+Date
+
+Implement FULLTEXT Search:
+
+MATCH(title,description)
+
+Pagination
+
+Job Details Page
+
+Modern Tailwind Cards
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Proposal Management.
+
+Tables:
+
+proposals
+jobs
+users
+
+Features:
+
+Submit Proposal
+
+Proposal Text
+
+Bid Amount
+
+Proposal History
+
+Proposal Status
+
+Prevent duplicate proposals using:
+
+UNIQUE(job_id, freelancer_id)
+
+Generate:
+
+submit-proposal.php
+
+proposal-list.php
+
+proposal-details.php
+
+Complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Client Proposal Review System.
+
+Tables:
+
+proposals
+jobs
+users
+contracts
+
+Features:
+
+View Proposals
+
+Accept Proposal
+
+Reject Proposal
+
+When accepted:
+
+1. Update proposal status
+2. Create contract
+3. Create chat room
+4. Update job status
+
+Use database transactions.
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Contract Management.
+
+Tables:
+
+contracts
+jobs
+users
+milestones
+
+Features:
+
+Create Contract
+
+Contract Details
+
+Contract Status
+
+Milestone Tracking
+
+Contract History
+
+Client View
+
+Freelancer View
+
+Generate complete PHP implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Real-Time Chat System.
+
+Tables:
+
+chat_rooms
+chat_messages
+
+Features:
+
+Send Message
+
+Receive Message
+
+Unread Counter
+
+Read Status
+
+Auto Refresh
+
+AJAX Messaging
+
+Tailwind Chat UI
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Milestone Management.
+
+Tables:
+
+milestones
+
+Features:
+
+Create Milestone
+
+Edit Milestone
+
+Submit Work
+
+Approve Work
+
+Release Payment
+
+Status Flow:
+
+pending
+funded_in_escrow
+submitted
+released
+disputed
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Escrow Payment System.
+
+Tables:
+
+payments
+milestones
+users
+
+Features:
+
+Fund Milestone
+
+Release Payment
+
+Wallet Update
+
+Platform Fee 10%
+
+Freelancer Net 90%
+
+Payment History
+
+Transaction Logs
+
+Use transactions.
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Review and Rating System.
+
+Tables:
+
+reviews
+contracts
+users
+
+Features:
+
+Submit Review
+
+1-5 Rating
+
+Comment
+
+Average Rating
+
+Review History
+
+Public Reviews
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Admin Dashboard.
+
+Tables:
+
+users
+jobs
+contracts
+payments
+reviews
+
+Features:
+
+Statistics
+
+Users Count
+
+Jobs Count
+
+Payments Count
+
+Revenue
+
+Fraud Alerts
+
+Recent Activities
+
+Professional Admin Design
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Admin User Management.
+
+Tables:
+
+users
+clients
+freelancers
+
+Features:
+
+Search Users
+
+View User Details
+
+Suspend User
+
+Activate User
+
+Delete User
+
+View Fraud Score
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build Fraud Detection Module.
+
+Tables:
+
+user_behavior_logs
+users
+
+Features:
+
+Track User Actions
+
+Track IP Address
+
+Fraud Score Calculation
+
+Auto Flag Users
+
+Suspicious Activity Dashboard
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Build AI Job Matching Module.
+
+Tables:
+
+jobs
+freelancers
+
+Fields:
+
+jobs.embedding_vector
+
+freelancers.skills_vector
+
+Features:
+
+Generate Embeddings
+
+Store JSON Vectors
+
+Calculate Similarity
+
+Recommend Freelancers
+
+Recommend Jobs
+
+Ranking System
+
+Generate complete implementation.
+
+-------------------------------------------------------------------------------------------
+
+Review the entire Freelancer Marketplace Platform project.
+
+Verify:
+
+* Database consistency
+* Foreign keys
+* Security
+* Authentication
+* Authorization
+* CRUD operations
+* Transactions
+* Tailwind UI consistency
+* Error handling
+* Session management
+* File uploads
+* Search
+* AI Matching
+* Fraud Detection
+
+Refactor and optimize the entire project.
+
+Generate production-ready code and deployment checklist.
+

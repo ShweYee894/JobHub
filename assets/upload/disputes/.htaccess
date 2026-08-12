@@ -1,0 +1,9 @@
+# Block PHP execution in uploads directory
+<FilesMatch "\.php$">
+    Deny from all
+</FilesMatch>
+
+# Block .htaccess itself
+<Files ".htaccess">
+    Deny from all
+</FilesMatch>

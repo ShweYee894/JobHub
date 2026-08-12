@@ -1,0 +1,14 @@
+{
+    "name": "jobhub/platform",
+    "description": "JobHub Freelancer Marketplace",
+    "type": "project",
+    "authors": [
+        {
+            "name": "ShweYee894",
+            "email": "shweyeewin462@gmail.com"
+        }
+    ],
+    "require": {
+        "phpmailer/phpmailer": "^7.1"
+    }
+}

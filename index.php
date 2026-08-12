@@ -129,15 +129,63 @@ if (!empty($_topFreelancers)) {
 }
 
 $_ixLoggedIn = isset($_SESSION['user_id']);
+$_ixHasImage = $_ixLoggedIn && !empty($_SESSION['profile_image']) && file_exists(__DIR__ . '/assets/upload/profiles/' . basename($_SESSION['profile_image']));
 $_ixAvatar = $_ixLoggedIn ? get_profile_image($_SESSION['profile_image'] ?? null) : '';
 $_ixName = $_ixLoggedIn ? ($_SESSION['user_name'] ?? 'User') : '';
 $_ixRole = $_ixLoggedIn ? ($_SESSION['user_role'] ?? '') : '';
+$_ixInitials = strtoupper(mb_substr($_ixName, 0, 1));
+if (str_contains($_ixName, ' ')) {
+  $_ixParts = explode(' ', $_ixName);
+  $_ixInitials = strtoupper(mb_substr($_ixParts[0], 0, 1) . mb_substr(end($_ixParts), 0, 1));
+}
 $_ixDash = match ($_ixRole) {
   'admin' => 'admin/dashboard.php',
   'client' => 'client/dashboard.php',
   'freelancer' => 'freelancer/home.php',
   default => 'index.php'
 };
+
+// ── Fetch real job counts per category ──────────────────────────────────
+$_catCounts = [];
+$_catCountResult = $conn->query(
+  "SELECT category, COUNT(*) AS job_count
+   FROM jobs
+   WHERE status = 'open' AND category IS NOT NULL AND category != ''
+   GROUP BY category
+   ORDER BY job_count DESC"
+);
+if ($_catCountResult) {
+  while ($_catRow = $_catCountResult->fetch_assoc()) {
+    $_catCounts[strtolower($_catRow['category'])] = (int) $_catRow['job_count'];
+  }
+}
+
+// ── Categories to display ──────────────────────────────────────────────
+$_displayCategories = [
+  ['label' => 'Web Development',   'icon' => 'code',        'match' => ['web', 'website', 'frontend', 'backend', 'fullstack', 'full stack', 'html', 'php', 'javascript']],
+  ['label' => 'Mobile Dev',        'icon' => 'smartphone',  'match' => ['mobile', 'android', 'ios', 'react native', 'flutter', 'app']],
+  ['label' => 'Graphic Design',    'icon' => 'palette',     'match' => ['graphic', 'design', 'ui', 'ux', 'figma', 'photoshop', 'illustrator']],
+  ['label' => 'AI / ML',           'icon' => 'brain',       'match' => ['ai', 'artificial intelligence', 'machine learning', 'ml', 'deep learning', 'neural']],
+  ['label' => 'Data Science',      'icon' => 'pie-chart',   'match' => ['data', 'analytics', 'visualization', 'tableau', 'power bi']],
+  ['label' => 'Cyber Security',    'icon' => 'shield',      'match' => ['security', 'cyber', 'penetration', 'vulnerability', 'audit']],
+  ['label' => 'DevOps & Cloud',    'icon' => 'cloud',       'match' => ['devops', 'cloud', 'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'ci/cd']],
+  ['label' => 'Database & SQL',    'icon' => 'database',    'match' => ['database', 'sql', 'mysql', 'postgresql', 'mongodb', 'redis']],
+  ['label' => 'Automation / RPA',  'icon' => 'bot',         'match' => ['automation', 'rpa', 'workflow', 'scripting', 'scraping']],
+  ['label' => 'Game Dev',          'icon' => 'gamepad-2',   'match' => ['game', 'unity', 'unreal', 'godot', 'gaming']],
+];
+
+function _countForCategory(array $cat, array $counts): int
+{
+  $total = 0;
+  foreach ($cat['match'] as $keyword) {
+    foreach ($counts as $dbCat => $count) {
+      if (strpos($dbCat, $keyword) !== false) {
+        $total += $count;
+      }
+    }
+  }
+  return $total;
+}
 
 // ── Fetch real reviews for testimonials ────────────────────────────────
 $_reviewsStmt = $conn->prepare(
@@ -162,6 +210,12 @@ $_reviewsStmt->close();
 $_ratingRow = $conn->query('SELECT ROUND(AVG(rating),1) AS avg_rating, COUNT(*) AS total_reviews FROM reviews')->fetch_assoc();
 $_avgRating = $_ratingRow['avg_rating'] ?? 0;
 $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
+
+// ── Trust bar stats ───────────────────────────────────────────────────
+$_verifiedPros = $conn->query("SELECT COUNT(*) AS cnt FROM users WHERE role = 'freelancer' AND status = 'active'")->fetch_assoc()['cnt'] ?? 0;
+$_completedProjects = $conn->query("SELECT COUNT(*) AS cnt FROM contracts WHERE status = 'completed'")->fetch_assoc()['cnt'] ?? 0;
+$_clientSatisfaction = $conn->query("SELECT ROUND(AVG(rating), 0) AS avg_rating FROM reviews")->fetch_assoc()['avg_rating'] ?? 0;
+$_satisfactionPct = min(100, (int) round(($_clientSatisfaction / 5) * 100));
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -328,7 +382,13 @@ $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
           <?php if ($_ixLoggedIn): ?>
           <div class="relative" id="navProfileDropdown">
             <button onclick="document.getElementById('navProfileDropdown').querySelector('.profile-popup').classList.toggle('show')" class="flex items-center gap-2.5 py-1 px-2 rounded hover:bg-gray-50 transition-all">
-              <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-8 h-8 rounded-full object-cover border border-gray-200" alt="Avatar">
+              <?php if ($_ixHasImage): ?>
+                <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-8 h-8 rounded-full object-cover border border-gray-200" alt="Avatar">
+              <?php else: ?>
+                <div class="w-8 h-8 rounded-full bg-[#E8EDFF] flex items-center justify-center border border-gray-200">
+                  <span class="text-[#4338CA] font-bold text-xs"><?= htmlspecialchars($_ixInitials) ?></span>
+                </div>
+              <?php endif; ?>
             </button>
             <div class="profile-popup">
               <div class="p-4 border-b border-gray-100">
@@ -370,7 +430,13 @@ $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
         <hr class="border-gray-100 my-1" />
         <?php if ($_ixLoggedIn): ?>
         <a href="<?= $_ixDash ?>" class="flex items-center gap-3 hover:text-charcoal py-2 px-3 rounded hover:bg-gray-50 transition-colors">
-          <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-7 h-7 rounded-full object-cover border border-gray-200" alt="Avatar">
+          <?php if ($_ixHasImage): ?>
+            <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-7 h-7 rounded-full object-cover border border-gray-200" alt="Avatar">
+          <?php else: ?>
+            <div class="w-7 h-7 rounded-full bg-[#E8EDFF] flex items-center justify-center border border-gray-200">
+              <span class="text-[#4338CA] font-bold text-[10px]"><?= htmlspecialchars($_ixInitials) ?></span>
+            </div>
+          <?php endif; ?>
           <span class="font-semibold"><?= htmlspecialchars($_ixName) ?></span>
         </a>
         <a href="auth/logout.php" class="hover:text-red-500 py-2 px-3 rounded hover:bg-red-50 transition-colors text-red-500"><i data-lucide="log-out" class="w-4 h-4 mr-2"></i>Logout</a>
@@ -501,17 +567,17 @@ $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
       <div class="flex flex-col md:flex-row items-center justify-center gap-10 md:gap-20">
         <div class="flex items-center gap-4">
           <div class="w-10 h-10 rounded flex items-center justify-center bg-gray-50 border border-gray-100"><i data-lucide="user-check" class="w-4 h-4 text-[#4338CA]"></i></div>
-          <div><p class="text-xl font-serif font-medium text-charcoal">5,000+</p><p class="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Verified Pros</p></div>
+          <div><p class="text-xl font-serif font-medium text-charcoal"><?= number_format($_verifiedPros) ?>+</p><p class="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Verified Pros</p></div>
         </div>
         <div class="hidden md:block w-px h-8 bg-gray-200"></div>
         <div class="flex items-center gap-4">
           <div class="w-10 h-10 rounded flex items-center justify-center bg-gray-50 border border-gray-100"><i data-lucide="folder-check" class="w-4 h-4 text-[#4338CA]"></i></div>
-          <div><p class="text-xl font-serif font-medium text-charcoal">12,000+</p><p class="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Projects Completed</p></div>
+          <div><p class="text-xl font-serif font-medium text-charcoal"><?= number_format($_completedProjects) ?>+</p><p class="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Projects Completed</p></div>
         </div>
         <div class="hidden md:block w-px h-8 bg-gray-200"></div>
         <div class="flex items-center gap-4">
           <div class="w-10 h-10 rounded flex items-center justify-center bg-gray-50 border border-gray-100"><i data-lucide="smile" class="w-4 h-4 text-[#4338CA]"></i></div>
-          <div><p class="text-xl font-serif font-medium text-charcoal">99%</p><p class="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Client Satisfaction</p></div>
+          <div><p class="text-xl font-serif font-medium text-charcoal"><?= $_satisfactionPct ?>%</p><p class="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Client Satisfaction</p></div>
         </div>
       </div>
     </div>
@@ -527,56 +593,14 @@ $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
       </div>
 
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="code" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">Web Development</h3>
-          <p class="text-gray-400 text-[11px]">1,240 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="smartphone" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">Mobile Dev</h3>
-          <p class="text-gray-400 text-[11px]">820 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="palette" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">Graphic Design</h3>
-          <p class="text-gray-400 text-[11px]">940 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="brain" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">AI / ML</h3>
-          <p class="text-gray-400 text-[11px]">560 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="pie-chart" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">Data Science</h3>
-          <p class="text-gray-400 text-[11px]">430 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="shield" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">Cyber Security</h3>
-          <p class="text-gray-400 text-[11px]">310 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="cloud" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">DevOps & Cloud</h3>
-          <p class="text-gray-400 text-[11px]">275 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="database" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">Database & SQL</h3>
-          <p class="text-gray-400 text-[11px]">380 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="bot" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">Automation / RPA</h3>
-          <p class="text-gray-400 text-[11px]">198 jobs</p>
-        </div>
-        <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="gamepad-2" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
-          <h3 class="font-bold text-gray-900 text-[13px] mb-0.5">Game Dev</h3>
-          <p class="text-gray-400 text-[11px]">150 jobs</p>
-        </div>
+        <?php foreach ($_displayCategories as $_cat): ?>
+          <?php $_catCount = _countForCategory($_cat, $_catCounts); ?>
+          <div class="cat-card bg-white rounded-2xl p-5 cursor-pointer text-center group border border-gray-100 shadow-sm">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100/80 border border-slate-200/50 mx-auto mb-3 group-hover:bg-indigo-50 group-hover:border-indigo-200/60 transition-colors"><i data-lucide="<?= $_cat['icon'] ?>" class="w-4 h-4 text-slate-600 group-hover:text-indigo-600 transition-colors"></i></div>
+            <h3 class="font-bold text-gray-900 text-[13px] mb-0.5"><?= $_cat['label'] ?></h3>
+            <p class="text-gray-400 text-[11px]"><?= number_format($_catCount) ?> jobs</p>
+          </div>
+        <?php endforeach; ?>
       </div>
     </div>
   </section>
@@ -611,16 +635,16 @@ $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
               </div>
 
               <!-- Title -->
-              <h3 class="text-lg font-bold text-slate-900 line-clamp-1 mb-2"><?php echo sanitize_string($_fj['title']); ?></h3>
+              <h3 class="text-lg font-bold text-slate-900 line-clamp-1 mb-2"><?php echo htmlspecialchars(decode_entities($_fj['title']), ENT_QUOTES, 'UTF-8'); ?></h3>
 
               <!-- Description -->
-              <p class="text-sm text-slate-500 line-clamp-2 mt-2 leading-relaxed font-normal"><?php echo sanitize_string(mb_strimwidth($_fj['description'], 0, 120, '...')); ?></p>
+              <p class="text-sm text-slate-500 line-clamp-2 mt-2 leading-relaxed font-normal"><?php echo htmlspecialchars(decode_entities(mb_strimwidth($_fj['description'], 0, 120, '...')), ENT_QUOTES, 'UTF-8'); ?></p>
 
               <!-- Skill Pills -->
               <?php if (!empty($_fj['skills'])): ?>
                 <div class="flex flex-wrap gap-2 my-5">
                   <?php foreach (array_slice($_fj['skills'], 0, 3) as $_sk): ?>
-                    <span class="text-xs font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200/80 px-3 py-1.5 rounded-lg border border-slate-200/50 transition-colors"><?php echo sanitize_string($_sk['skill_name']); ?></span>
+                    <span class="text-xs font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200/80 px-3 py-1.5 rounded-lg border border-slate-200/50 transition-colors"><?php echo htmlspecialchars(decode_entities($_sk['skill_name']), ENT_QUOTES, 'UTF-8'); ?></span>
                   <?php endforeach; ?>
                 </div>
               <?php endif; ?>
@@ -677,7 +701,13 @@ $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
           <?php
           foreach ($_topFreelancers as $_tf):
             $_isTopRated = $_tf['avg_rating'] >= 4.8 && $_tf['review_count'] >= 50;
+            $_hasProfileImage = !empty($_tf['profile_image']) && file_exists(__DIR__ . '/assets/upload/profiles/' . basename($_tf['profile_image']));
             $_profileImg = get_profile_image($_tf['profile_image']);
+            $_initials = strtoupper(mb_substr($_tf['name'], 0, 1));
+            if (str_contains($_tf['name'], ' ')) {
+              $_parts = explode(' ', $_tf['name']);
+              $_initials = strtoupper(mb_substr($_parts[0], 0, 1) . mb_substr(end($_parts), 0, 1));
+            }
             $_jobSuccess = min(100, (int) round($_tf['avg_rating'] * 20));
             $_circumference = 2 * M_PI * 14;
             $_offset = $_circumference - ($_jobSuccess / 100) * $_circumference;
@@ -689,11 +719,17 @@ $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
 
               <!-- Avatar + availability dot -->
               <div class="relative flex-shrink-0">
-                <img
-                  src="<?php echo $_profileImg; ?>"
-                  alt="<?php echo sanitize_string($_tf['name']); ?>"
-                  class="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow-sm"
-                />
+                <?php if ($_hasProfileImage): ?>
+                  <img
+                    src="<?php echo $_profileImg; ?>"
+                    alt="<?php echo sanitize_string($_tf['name']); ?>"
+                    class="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow-sm"
+                  />
+                <?php else: ?>
+                  <div class="w-14 h-14 rounded-full bg-[#E8EDFF] flex items-center justify-center ring-2 ring-white shadow-sm">
+                    <span class="text-[#4338CA] font-bold text-sm"><?php echo $_initials; ?></span>
+                  </div>
+                <?php endif; ?>
                 <?php if ($_tf['availability'] === 'Available'): ?>
                   <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white" title="Available"></span>
                 <?php elseif ($_tf['availability'] === 'Busy'): ?>
@@ -1253,7 +1289,7 @@ $_totalReviews = $_ratingRow['total_reviews'] ?? 0;
   </footer>
 
   <!-- Back to Top -->
-  <button id="back-top" class="fixed bottom-6 right-6 w-10 h-10 bg-charcoal text-white flex items-center justify-center hidden hover:bg-charcoal-light transition-all z-50" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="border-radius:4px">
+  <button id="back-top" class="fixed bottom-6 right-6 w-10 h-10 bg-indigo-600 text-white flex items-center justify-center hidden hover:bg-indigo-700 transition-all z-50" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="border-radius:4px">
     <i data-lucide="chevron-up" class="w-3 h-3"></i>
   </button>
 

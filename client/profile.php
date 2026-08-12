@@ -261,258 +261,270 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         </div>
     <?php endif; ?>
     <?php $conn->close(); ?>
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-    <!-- ═══ PROFILE HEADER ═════════════════════════════════════════════ -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden fade-in mb-6 dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.2s">
-        <div class="h-32 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400"></div>
-        <div class="px-6 pb-6">
-            <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12">
-                <div class="relative group">
+<main class="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
+    <!-- ═══ PROFILE SUMMARY CARD ═════════════════════════════════════ -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 fade-in dark:bg-slate-800 dark:border-slate-700" style="animation-delay:.2s">
+            <div class="flex flex-col sm:flex-row items-center gap-6">
+                <!-- Avatar -->
+                <div class="relative group flex-shrink-0">
                     <img id="profilePreview"
                          src="<?= get_profile_image($profileData['profile_image']) ?>"
-                         class="w-24 h-24 rounded-2xl border-4 border-white dark:border-gray-800 object-cover shadow-lg"
+                         class="w-24 h-24 rounded-full border-4 border-white dark:border-slate-800 object-cover shadow-lg"
                          alt="Profile">
-                    <label for="profileImageInput" class="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                        <i data-lucide="camera" class="text-white w-4 h-4"></i>
+                    <label for="profileImageInput" class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <i data-lucide="camera" class="text-white w-5 h-5"></i>
                     </label>
                 </div>
-                <div class="sm:flex-1 text-center sm:text-left sm:pb-1">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white"><?= sanitize_string($profileData['name']) ?></h2>
-                    <p class="text-sm text-gray-400 dark:text-gray-500"><?= sanitize_string($profileData['email']) ?></p>
+                <!-- Info -->
+                <div class="flex-1 text-center sm:text-left">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white"><?= sanitize_string($profileData['name']) ?></h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1"><?= sanitize_string($profileData['email']) ?></p>
+                    <div class="flex items-center justify-center sm:justify-start gap-2 mt-3">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-semibold border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800">
+                            <i data-lucide="crown" class="w-3 h-3"></i> Client
+                        </span>
+                        <a href="wallet.php" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-semibold border border-emerald-200 hover:bg-emerald-100 transition-colors dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/50">
+                            <i data-lucide="wallet" class="w-3 h-3"></i> <?= format_currency((float) $profileData['wallet_balance']) ?>
+                        </a>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 pb-1">
-                    <span class="px-3 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">
-                        <i data-lucide="crown" class="w-3 h-3 mr-1"></i>Client
-                    </span>
-                    <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-semibold border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
-                        <?= format_currency((float) $profileData['wallet_balance']) ?> wallet
-                    </span>
+                <!-- Stats -->
+                <div class="flex items-center gap-6 sm:gap-8">
+                    <div class="text-center">
+                        <p class="text-lg font-bold text-slate-900 dark:text-white"><?= $statsJobsPosted ?></p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Jobs Posted</p>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+                    <div class="text-center">
+                        <p class="text-lg font-bold text-slate-900 dark:text-white"><?= $statsContracts ?></p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Contracts</p>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+                    <div class="text-center">
+                        <p class="text-lg font-bold text-slate-900 dark:text-white"><?= $statsReviews ?></p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Reviews</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- ═══ TWO-COLUMN LAYOUT ══════════════════════════════════════════ -->
-    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-2 2xl:grid-cols-3 gap-6">
-        <?= csrf_field() ?>
-        <input type="hidden" name="action" value="update_profile">
+        <!-- ═══ FORM GRID ═══════════════════════════════════════════════ -->
+        <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 pb-12">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="update_profile">
 
-        <!-- ── Personal Information ─────────────────────────────────── -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.25s">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-                <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Personal Information
-                </h3>
-            </div>
-            <div class="p-6 space-y-5">
-                <input type="file" id="profileImageInput" name="profile_image" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" onchange="previewImage(this, 'profilePreview')">
+            <!-- ── Personal Information ──────────────────────────────── -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden fade-in dark:bg-slate-800 dark:border-slate-700" style="animation-delay:.25s">
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="user" class="w-4 h-4 text-indigo-500"></i> Personal Information
+                    </h3>
+                </div>
+                <div class="p-6 space-y-5">
+                    <input type="file" id="profileImageInput" name="profile_image" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" onchange="previewImage(this, 'profilePreview')">
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Full Name <span class="text-red-400">*</span></label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="user" class="w-4 h-4"></i></span>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Full Name <span class="text-red-400">*</span></label>
                         <input type="text" name="name" value="<?= sanitize_string($profileData['name']) ?>" required
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="mail" class="w-4 h-4"></i></span>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Email Address</label>
                         <input type="email" value="<?= sanitize_string($profileData['email']) ?>" readonly
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-sm text-slate-500 cursor-not-allowed dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400">
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Phone Number</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="phone" class="w-4 h-4"></i></span>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Phone Number</label>
                         <input type="tel" name="phone" value="<?= sanitize_string($profileData['phone'] ?? '') ?>"
                                placeholder="+1 (555) 000-0000"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Wallet Balance</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="wallet" class="w-4 h-4"></i></span>
-                        <input type="text" value="<?= format_currency((float) $profileData['wallet_balance']) ?>" readonly
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Company Information ──────────────────────────────────── -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm fade-in dark:bg-gray-800 dark:border-gray-700" style="animation-delay:.3s">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-                <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i data-lucide="building" class="w-4 h-4 text-cyan-500"></i> Company Information
-                </h3>
-            </div>
-            <div class="p-6 space-y-5">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Logo</label>
-                    <div class="flex items-center gap-4">
-                        <div class="relative group flex-shrink-0">
-                            <img id="logoPreview"
-                                 src="<?= get_profile_image($client['company_logo'] ?? null) ?>"
-                                 class="w-16 h-16 rounded-xl border border-gray-200 dark:border-gray-600 object-cover"
-                                 alt="Company Logo">
-                            <label for="logoInput" class="absolute inset-0 rounded-xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                <i data-lucide="camera" class="text-white w-4 h-4"></i>
-                            </label>
-                        </div>
-                        <div class="flex-1">
-                            <input type="file" id="logoInput" name="company_logo" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" onchange="previewImage(this, 'logoPreview')">
-                            <label for="logoInput" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-                                <i data-lucide="upload" class="w-4 h-4"></i> Choose Logo
-                            </label>
-                            <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">JPG, PNG, WebP. Max 2MB.</p>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Wallet Balance</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 dark:text-slate-500"><i data-lucide="wallet" class="w-4 h-4"></i></span>
+                            <input type="text" value="<?= format_currency((float) $profileData['wallet_balance']) ?>" readonly
+                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-sm text-slate-500 cursor-not-allowed dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400">
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Name</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="building" class="w-4 h-4"></i></span>
+            <!-- ── Company Information ───────────────────────────────── -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden fade-in dark:bg-slate-800 dark:border-slate-700" style="animation-delay:.3s">
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="building" class="w-4 h-4 text-cyan-500"></i> Company Information
+                    </h3>
+                </div>
+                <div class="p-6 space-y-5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Company Logo</label>
+                        <div class="flex items-center gap-4">
+                            <div class="relative group flex-shrink-0">
+                                <?php
+                                $companyLogoFile = $client['company_logo'] ?? null;
+                                $companyLogoPath = $companyLogoFile ? __DIR__ . '/../assets/upload/profiles/' . basename($companyLogoFile) : null;
+                                $companyLogoExists = $companyLogoPath && file_exists($companyLogoPath);
+                                ?>
+                                <?php if ($companyLogoExists): ?>
+                                    <img id="logoPreview"
+                                         src="/jobhub/assets/upload/profiles/<?= sanitize_string(basename($companyLogoFile)) ?>"
+                                         class="w-16 h-16 rounded-xl border border-slate-200 dark:border-slate-600 object-cover"
+                                         alt="Company Logo">
+                                <?php else: ?>
+                                    <div id="logoPreview" class="w-16 h-16 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 dark:text-slate-500"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex-1">
+                                <input type="file" id="logoInput" name="company_logo" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" onchange="previewImage(this, 'logoPreview')">
+                                <label for="logoInput" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600 hover:bg-slate-100 cursor-pointer transition-colors dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">
+                                    <i data-lucide="upload" class="w-4 h-4"></i> Choose Logo
+                                </label>
+                                <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">JPG, PNG, WebP. Max 2MB.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Company Name</label>
                         <input type="text" name="company_name" value="<?= sanitize_string($client['company_name'] ?? '') ?>"
                                placeholder="Your Company LLC"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Industry</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="factory" class="w-4 h-4"></i></span>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Industry</label>
                         <input type="text" name="industry" value="<?= sanitize_string($client['industry'] ?? '') ?>"
                                placeholder="e.g. Technology, Healthcare, Finance"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Website</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="globe" class="w-4 h-4"></i></span>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Company Website</label>
                         <input type="url" name="company_website" value="<?= sanitize_string($client['company_website'] ?? '') ?>"
                                placeholder="https://example.com"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Company Size</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="users" class="w-4 h-4"></i></span>
-                        <select name="company_size"
-                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all appearance-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
-                            <option value="">Select size</option>
-                            <option value="Startup" <?= ($client['company_size'] ?? '') === 'Startup' ? 'selected' : '' ?>>Startup (1-10)</option>
-                            <option value="Small" <?= ($client['company_size'] ?? '') === 'Small' ? 'selected' : '' ?>>Small (11-50)</option>
-                            <option value="Medium" <?= ($client['company_size'] ?? '') === 'Medium' ? 'selected' : '' ?>>Medium (51-200)</option>
-                            <option value="Large" <?= ($client['company_size'] ?? '') === 'Large' ? 'selected' : '' ?>>Large (200+)</option>
-                        </select>
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none dark:text-gray-500"><i data-lucide="chevron-down" class="w-4 h-4"></i></span>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Company Size</label>
+                        <div class="relative">
+                            <select name="company_size"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all appearance-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
+                                <option value="">Select size</option>
+                                <option value="Startup" <?= ($client['company_size'] ?? '') === 'Startup' ? 'selected' : '' ?>>Startup (1-10)</option>
+                                <option value="Small" <?= ($client['company_size'] ?? '') === 'Small' ? 'selected' : '' ?>>Small (11-50)</option>
+                                <option value="Medium" <?= ($client['company_size'] ?? '') === 'Medium' ? 'selected' : '' ?>>Medium (51-200)</option>
+                                <option value="Large" <?= ($client['company_size'] ?? '') === 'Large' ? 'selected' : '' ?>>Large (200+)</option>
+                            </select>
+                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 pointer-events-none dark:text-slate-500"><i data-lucide="chevron-down" class="w-4 h-4"></i></span>
+                        </div>
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Total Spending</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="dollar-sign" class="w-4 h-4"></i></span>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Total Spending</label>
                         <input type="text" value="<?= format_currency((float) ($client['total_spent'] ?? 0)) ?>" readonly
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-sm text-slate-500 cursor-not-allowed dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400">
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="xl:col-span-2 fade-in" style="animation-delay:.35s">
-            <div class=" p-6 flex flex-col sm:flex-row items-center justify-between gap-4 dark:bg-gray-800 dark:border-gray-700">
-                <p class="text-sm text-gray-400 dark:text-gray-500">
-                    <i data-lucide="circle-info" class="w-3 h-3 mr-1"></i> Changes will be reflected across the platform.
-                </p>
-                <button type="submit"
-                        class="btn-grad inline-flex items-center gap-2 text-white text-sm font-semibold px-8 py-3 rounded-xl shadow-lg shadow-blue-500/25">
-                    <i data-lucide="save" class="w-4 h-4"></i> Save Changes
-                </button>
-            </div>
-        </div>
-    </form>
-
-    <!-- ═══ CHANGE PASSWORD ══════════════════════════════════════════ -->
-    <form method="POST" class="fade-in" style="animation-delay:.4s">
-        <?= csrf_field() ?>
-        <input type="hidden" name="action" value="change_password">
-
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i data-lucide="lock" class="w-4 h-4 text-red-500"></i> Change Password
-                </h3>
-            </div>
-            <div class="p-6">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Current Password <span class="text-red-400">*</span></label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="key" class="w-4 h-4"></i></span>
-                            <input type="password" name="current_password" required autocomplete="current-password"
-                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
-                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-                                <i data-lucide="eye" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">New Password <span class="text-red-400">*</span></label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="lock" class="w-4 h-4"></i></span>
-                            <input type="password" name="new_password" required autocomplete="new-password"
-                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
-                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-                                <i data-lucide="eye" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Min 8 chars, upper, lower, number.</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Confirm Password <span class="text-red-400">*</span></label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500"><i data-lucide="lock" class="w-4 h-4"></i></span>
-                            <input type="password" name="confirm_password" required autocomplete="new-password"
-                                   class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:bg-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-800">
-                            <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-                                <i data-lucide="eye" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-5 flex justify-end">
+            <!-- ── Save Button (Full Width) ──────────────────────────── -->
+            <div class="lg:col-span-2 fade-in" style="animation-delay:.35s">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
+                    <p class="text-sm text-slate-400 dark:text-slate-500">
+                        <i data-lucide="circle-info" class="w-4 h-4 mr-1 inline-block"></i> Changes will be reflected across the platform.
+                    </p>
                     <button type="submit"
-                            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30">
-                        <i data-lucide="shield" class="w-4 h-4"></i> Update Password
+                            class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-8 py-3 rounded-xl shadow-lg shadow-indigo-500/25 transition-colors">
+                        <i data-lucide="save" class="w-4 h-4"></i> Save Changes
                     </button>
                 </div>
             </div>
-        </div>
-    </form>
+        </form>
+
+        <!-- ═══ CHANGE PASSWORD ═══════════════════════════════════════ -->
+        <form method="POST" class="fade-in pb-12" style="animation-delay:.4s">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="change_password">
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="lock" class="w-4 h-4 text-rose-500"></i> Change Password
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Current Password <span class="text-red-400">*</span></label>
+                            <div class="relative">
+                                <input type="password" name="current_password" required autocomplete="current-password"
+                                       class="w-full px-4 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
+                                <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">New Password <span class="text-red-400">*</span></label>
+                            <div class="relative">
+                                <input type="password" name="new_password" required autocomplete="new-password"
+                                       class="w-full px-4 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
+                                <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Min 8 chars, upper, lower, number.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Confirm Password <span class="text-red-400">*</span></label>
+                            <div class="relative">
+                                <input type="password" name="confirm_password" required autocomplete="new-password"
+                                       class="w-full px-4 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-900 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:focus:bg-slate-600 dark:focus:border-indigo-500 dark:focus:ring-indigo-800">
+                                <button type="button" onclick="togglePassword(this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end">
+                        <button type="submit"
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-rose-200 text-rose-600 text-sm font-semibold hover:bg-rose-50 transition-colors dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/30">
+                            <i data-lucide="shield" class="w-4 h-4"></i> Update Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 </main>
 <script>
 function previewImage(input, previewId) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            document.getElementById(previewId).src = e.target.result;
+            const el = document.getElementById(previewId);
+            if (el.tagName === 'DIV') {
+                const img = document.createElement('img');
+                img.id = previewId;
+                img.src = e.target.result;
+                img.className = el.className;
+                img.alt = el.getAttribute('alt') || 'Preview';
+                el.parentNode.replaceChild(img, el);
+            } else {
+                el.src = e.target.result;
+            }
         };
         reader.readAsDataURL(input.files[0]);
     }

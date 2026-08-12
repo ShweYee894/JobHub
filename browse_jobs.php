@@ -157,9 +157,15 @@ $baseUrl = buildBaseUrl();
 $conn->close();
 
 $_ixLoggedIn = isset($_SESSION['user_id']);
+$_ixHasImage = $_ixLoggedIn && !empty($_SESSION['profile_image']) && file_exists(__DIR__ . '/assets/upload/profiles/' . basename($_SESSION['profile_image']));
 $_ixAvatar = $_ixLoggedIn ? get_profile_image($_SESSION['profile_image'] ?? null) : '';
 $_ixName = $_ixLoggedIn ? ($_SESSION['user_name'] ?? 'User') : '';
 $_ixRole = $_ixLoggedIn ? ($_SESSION['user_role'] ?? '') : '';
+$_ixInitials = strtoupper(mb_substr($_ixName, 0, 1));
+if (str_contains($_ixName, ' ')) {
+  $_ixParts = explode(' ', $_ixName);
+  $_ixInitials = strtoupper(mb_substr($_ixParts[0], 0, 1) . mb_substr(end($_ixParts), 0, 1));
+}
 $_ixDash = match ($_ixRole) {
   'admin' => '/jobhub/admin/dashboard.php',
   'client' => '/jobhub/client/dashboard.php',
@@ -276,7 +282,13 @@ $_ixDash = match ($_ixRole) {
           <?php if ($_ixLoggedIn): ?>
           <div class="relative" id="navProfileDropdown">
             <button onclick="document.getElementById('navProfileDropdown').querySelector('.profile-popup').classList.toggle('show')" class="flex items-center gap-2.5 py-1 px-2 rounded hover:bg-gray-50 transition-all">
-              <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-8 h-8 rounded-full object-cover border border-gray-200" alt="Avatar">
+              <?php if ($_ixHasImage): ?>
+                <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-8 h-8 rounded-full object-cover border border-gray-200" alt="Avatar">
+              <?php else: ?>
+                <div class="w-8 h-8 rounded-full bg-[#E8EDFF] flex items-center justify-center border border-gray-200">
+                  <span class="text-[#4338CA] font-bold text-xs"><?= htmlspecialchars($_ixInitials) ?></span>
+                </div>
+              <?php endif; ?>
             </button>
             <div class="profile-popup">
               <div class="p-4 border-b border-gray-100">
@@ -318,7 +330,13 @@ $_ixDash = match ($_ixRole) {
         <hr class="border-gray-100 my-1" />
         <?php if ($_ixLoggedIn): ?>
         <a href="<?= $_ixDash ?>" class="flex items-center gap-3 hover:text-charcoal py-2 px-3 rounded hover:bg-gray-50 transition-colors">
-          <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-7 h-7 rounded-full object-cover border border-gray-200" alt="Avatar">
+          <?php if ($_ixHasImage): ?>
+            <img src="<?= htmlspecialchars($_ixAvatar) ?>" class="w-7 h-7 rounded-full object-cover border border-gray-200" alt="Avatar">
+          <?php else: ?>
+            <div class="w-7 h-7 rounded-full bg-[#E8EDFF] flex items-center justify-center border border-gray-200">
+              <span class="text-[#4338CA] font-bold text-[10px]"><?= htmlspecialchars($_ixInitials) ?></span>
+            </div>
+          <?php endif; ?>
           <span class="font-semibold"><?= htmlspecialchars($_ixName) ?></span>
         </a>
         <a href="/jobhub/auth/logout.php" class="hover:text-red-500 py-2 px-3 rounded hover:bg-red-50 transition-colors text-red-500"><i data-lucide="log-out" class="w-4 h-4 mr-2"></i>Logout</a>

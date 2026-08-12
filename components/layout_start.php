@@ -464,6 +464,9 @@ foreach ($_layoutNav as $_navItem)
         <header class="app-header">
             <!-- Left: hamburger + sidebar collapse + page title -->
             <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden header-icon-btn" title="Open menu">
+                    <i data-lucide="menu" class="w-4 h-4"></i>
+                </button>
                 <button onclick="toggleSidebarCollapse()" class="hidden lg:flex header-icon-btn" title="Toggle sidebar">
                     <i data-lucide="panel-left-close" class="w-4 h-4"></i>
                 </button>
@@ -486,7 +489,7 @@ foreach ($_layoutNav as $_navItem)
                 <?php endif; ?>
 
                 <!-- Notifications -->
-                <a href="../shared/notifications_page.php" class="header-icon-btn" title="Notifications">
+                <a href="notifications.php" class="header-icon-btn" title="Notifications">
                     <i data-lucide="bell" class="w-5 h-5"></i>
                     <?php if ($_layoutUnread > 0): ?>
                     <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-800"></span>

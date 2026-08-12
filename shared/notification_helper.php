@@ -166,6 +166,10 @@ function notifyMilestoneSubmitted(int $clientId, string $freelancerName, string 
         "{$freelancerName} has submitted the milestone: \"{$milestoneTitle}\" for your review.",
         '/jobhub/client/contracts.php'
     );
+
+    // Send email notification
+    $emailService = getEmailService();
+    $emailService->sendMilestoneSubmitted($clientId, $freelancerName, $milestoneTitle);
 }
 
 /**
@@ -228,12 +232,13 @@ function notifyReviewReceived(int $userId, string $reviewerName, int $rating): v
 /**
  * Notify users about a dispute being opened.
  */
-function notifyDisputeOpened(int $userId, string $disputerName, string $contractTitle, int $contractId): void
+function notifyDisputeOpened(int $userId, string $disputerName, string $contractTitle, int $contractId, int $milestoneId = 0): void
 {
     $role = getUserRole($userId);
+    $hash = $milestoneId > 0 ? "#milestone-{$milestoneId}" : '';
     $link = ($role === 'client')
-        ? "/jobhub/client/contract_detail.php?id={$contractId}"
-        : "/jobhub/freelancer/contract_detail.php?id={$contractId}";
+        ? "/jobhub/client/contract_detail.php?id={$contractId}{$hash}"
+        : "/jobhub/freelancer/contract_detail.php?id={$contractId}{$hash}";
 
     $ns = getNotificationService();
     $ns->create(
@@ -252,12 +257,13 @@ function notifyDisputeOpened(int $userId, string $disputerName, string $contract
 /**
  * Notify both parties about a dispute being resolved.
  */
-function notifyDisputeResolved(int $userId, string $adminName, string $contractTitle, int $contractId, string $resolution): void
+function notifyDisputeResolved(int $userId, string $adminName, string $contractTitle, int $contractId, string $resolution, int $milestoneId = 0): void
 {
     $role = getUserRole($userId);
+    $hash = $milestoneId > 0 ? "#milestone-{$milestoneId}" : '';
     $link = ($role === 'client')
-        ? "/jobhub/client/contract_detail.php?id={$contractId}"
-        : "/jobhub/freelancer/contract_detail.php?id={$contractId}";
+        ? "/jobhub/client/contract_detail.php?id={$contractId}{$hash}"
+        : "/jobhub/freelancer/contract_detail.php?id={$contractId}{$hash}";
 
     $ns = getNotificationService();
     $ns->create(
@@ -275,12 +281,13 @@ function notifyDisputeResolved(int $userId, string $adminName, string $contractT
 /**
  * Notify both parties about a dispute being dismissed.
  */
-function notifyDisputeDismissed(int $userId, string $adminName, string $contractTitle, int $contractId, string $reason): void
+function notifyDisputeDismissed(int $userId, string $adminName, string $contractTitle, int $contractId, string $reason, int $milestoneId = 0): void
 {
     $role = getUserRole($userId);
+    $hash = $milestoneId > 0 ? "#milestone-{$milestoneId}" : '';
     $link = ($role === 'client')
-        ? "/jobhub/client/contract_detail.php?id={$contractId}"
-        : "/jobhub/freelancer/contract_detail.php?id={$contractId}";
+        ? "/jobhub/client/contract_detail.php?id={$contractId}{$hash}"
+        : "/jobhub/freelancer/contract_detail.php?id={$contractId}{$hash}";
 
     $ns = getNotificationService();
     $ns->create(
@@ -293,6 +300,42 @@ function notifyDisputeDismissed(int $userId, string $adminName, string $contract
 
     $emailService = getEmailService();
     $emailService->sendDisputeDismissed($userId, $adminName, $contractTitle, $contractId, $reason);
+}
+
+/**
+ * Notify a party that admin has requested evidence.
+ */
+function notifyEvidenceRequested(int $userId, string $adminName, string $contractTitle, int $contractId, string $requestNote, int $milestoneId = 0): void
+{
+    $role = getUserRole($userId);
+    $hash = $milestoneId > 0 ? "#milestone-{$milestoneId}" : '';
+    $link = ($role === 'client')
+        ? "/jobhub/client/contract_detail.php?id={$contractId}{$hash}"
+        : "/jobhub/freelancer/contract_detail.php?id={$contractId}{$hash}";
+
+    $ns = getNotificationService();
+    $ns->create(
+        $userId,
+        'evidence_requested',
+        'Evidence Requested',
+        "{$adminName} has requested additional evidence for a dispute. Please respond promptly.",
+        $link
+    );
+}
+
+/**
+ * Notify admin that a party has submitted evidence.
+ */
+function notifyEvidenceSubmitted(int $adminId, string $uploaderName, string $contractTitle, int $disputeId): void
+{
+    $ns = getNotificationService();
+    $ns->create(
+        $adminId,
+        'evidence_submitted',
+        'Evidence Submitted',
+        "{$uploaderName} has uploaded evidence for a dispute on \"{$contractTitle}\".",
+        "/jobhub/admin/disputes.php"
+    );
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -362,6 +405,10 @@ function notifyMilestoneCreated(int $freelancerId, string $milestoneTitle, float
         "A new milestone \"{$milestoneTitle}\" ({$formatted}) has been added to your contract.",
         "/jobhub/freelancer/contract_detail.php?id={$contractId}"
     );
+
+    // Send email notification
+    $emailService = getEmailService();
+    $emailService->sendMilestoneCreated($freelancerId, $milestoneTitle, $amount, $contractId);
 }
 
 /**
@@ -378,6 +425,10 @@ function notifyRevisionRequested(int $freelancerId, string $milestoneTitle, stri
         "A revision has been requested for milestone \"{$milestoneTitle}\". Reason: {$notePreview}",
         "/jobhub/freelancer/contract_detail.php?id={$contractId}"
     );
+
+    // Send email notification
+    $emailService = getEmailService();
+    $emailService->sendRevisionRequested($freelancerId, $milestoneTitle, $revisionNote);
 }
 
 /**
@@ -439,4 +490,71 @@ function notifyMilestoneForceCompleted(int $freelancerId, string $milestoneTitle
         "Milestone \"{$milestoneTitle}\" has been marked as completed by an administrator.",
         "/jobhub/freelancer/contract_detail.php?id={$contractId}"
     );
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// AUTHENTICATION NOTIFICATION HELPERS (EMAIL ONLY)
+// ══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Send welcome email to newly registered user.
+ */
+function notifyWelcomeEmail(int $userId, string $name, string $role): void
+{
+    $emailService = getEmailService();
+    $emailService->sendWelcomeEmail($userId, $name, $role);
+}
+
+/**
+ * Send password reset email.
+ */
+function notifyPasswordReset(string $email, string $name, string $resetLink): void
+{
+    $emailService = getEmailService();
+    $emailService->sendPasswordResetEmail($email, $name, $resetLink);
+}
+
+/**
+ * Send password changed security alert.
+ */
+function notifyPasswordChanged(int $userId, string $name): void
+{
+    $emailService = getEmailService();
+    $emailService->sendPasswordChangedEmail($userId, $name);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PROPOSAL NOTIFICATION HELPERS (EMAIL)
+// ══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Notify freelancer that their proposal was rejected.
+ */
+function notifyProposalRejected(int $freelancerId, string $jobTitle): void
+{
+    $ns = getNotificationService();
+    $ns->create(
+        $freelancerId,
+        'proposal_rejected',
+        'Proposal Not Selected',
+        "Your proposal for \"{$jobTitle}\" was not selected.",
+        '/jobhub/freelancer/browse_jobs.php'
+    );
+
+    // Send email notification
+    $emailService = getEmailService();
+    $emailService->sendProposalRejected($freelancerId, $jobTitle);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PAYMENT NOTIFICATION HELPERS (EMAIL)
+// ══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Send withdrawal completed email.
+ */
+function notifyWithdrawalCompleted(int $userId, float $amount): void
+{
+    $emailService = getEmailService();
+    $emailService->sendWithdrawalCompleted($userId, $amount);
 }

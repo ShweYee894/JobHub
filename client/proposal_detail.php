@@ -7,6 +7,12 @@ $currentPage = 'proposals';
 $userId = $_SESSION['user_id'];
 $proposalId = sanitize_int($_GET['id'] ?? 0);
 
+$stmt = $conn->prepare('SELECT name, profile_image FROM users WHERE id = ?');
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
 if ($proposalId <= 0) {
     set_flash('error', 'Invalid proposal reference.');
     redirect('/jobhub/client/proposals.php');
@@ -95,83 +101,83 @@ require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
     <?php display_flash('success');
     display_flash('error'); ?>
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 min-h-screen">
     <div class="flex flex-col xl:flex-row gap-6">
 
         <div class="flex-1 min-w-0 space-y-6">
 
-            <div class="bg-slate-50 rounded-2xl border border-gray-100 shadow-sm p-6 fade-in">
-                <div class="flex flex-wrap items-center gap-2 mb-4">
-                    <h2 class="text-xl font-bold text-gray-900"><?= sanitize_string($proposal['job_title']) ?></h2>
-                    <span class="inline-block px-3 py-1 rounded-lg text-[11px] font-semibold <?= $statusColors[$proposal['job_status']] ?? '' ?>">
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 fade-in">
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <h2 class="text-xl font-bold text-slate-900 tracking-tight"><?= sanitize_string($proposal['job_title']) ?></h2>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ring-1 <?= match($proposal['job_status']) { 'open' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', 'in_progress' => 'bg-blue-50 text-blue-700 ring-blue-600/20', 'completed' => 'bg-purple-50 text-purple-700 ring-purple-600/20', 'cancelled' => 'bg-slate-100 text-slate-600 ring-slate-500/20', 'disputed' => 'bg-red-50 text-red-700 ring-red-600/20', default => 'bg-slate-100 text-slate-600 ring-slate-500/20' } ?>">
                         <?= ucfirst(str_replace('_', ' ', $proposal['job_status'])) ?>
                     </span>
                 </div>
-                <div class="  p-5 ">
-                    <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line line-clamp-6"><?= nl2br(sanitize_string($proposal['job_description'])) ?></p>
+                <div class="p-5 bg-slate-50/80 border border-slate-100 rounded-xl">
+                    <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line line-clamp-6"><?= nl2br(sanitize_string($proposal['job_description'])) ?></p>
                 </div>
             </div>
 
-            <div class="bg-slate-50 rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.1s">
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 fade-in" style="animation-delay:.1s">
                 <div class="flex items-center justify-between mb-5">
-                    <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                        <i data-lucide="send" class="w-4 h-4 text-blue-500"></i> Proposal Details
+                    <h3 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4 text-indigo-500"></i> Proposal Details
                     </h3>
-                    <span class="inline-block px-3 py-1 rounded-lg text-[11px] font-bold <?= $proposalColors[$proposal['status']] ?? '' ?>">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ring-1 <?= match($proposal['status']) { 'pending' => 'bg-amber-50 text-amber-700 ring-amber-600/20', 'accepted' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', 'rejected' => 'bg-red-50 text-red-700 ring-red-600/20', 'withdrawn' => 'bg-slate-100 text-slate-600 ring-slate-500/20', default => 'bg-slate-100 text-slate-600 ring-slate-500/20' } ?>">
                         <?= ucfirst(sanitize_string($proposal['status'])) ?>
                     </span>
                 </div>
 
                 <div class="space-y-4">
-                    <div class=" p-5">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Cover Letter</h4>
-                        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line"><?= nl2br(sanitize_string($proposal['proposal_text'])) ?></p>
+                    <div class="p-5 bg-slate-50/80 border border-slate-100 rounded-xl">
+                        <h4 class="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-3">Cover Letter</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line"><?= nl2br(sanitize_string($proposal['proposal_text'])) ?></p>
                     </div>
 
                     <div class="grid grid-cols-3 gap-4">
-                        <div class="bg-blue-200/60 rounded-xl p-4 border border-gray-100 text-center">
-                            <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Bid Amount</p>
-                            <p class="text-xl font-black text-blue-900"><?= format_currency((float) $proposal['amount']) ?></p>
+                        <div class="bg-slate-50/80 border border-slate-100 rounded-xl p-4 text-center">
+                            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Bid Amount</p>
+                            <p class="text-xl font-bold text-slate-900"><?= format_currency((float) $proposal['amount']) ?></p>
                         </div>
-                        <div class="bg-purple-200/60 rounded-xl p-4 border border-gray-100 text-center">
-                            <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Job Budget</p>
-                            <p class="text-xl font-black text-gray-900"><?= format_currency((float) $proposal['job_budget']) ?></p>
+                        <div class="bg-slate-50/80 border border-slate-100 rounded-xl p-4 text-center">
+                            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Job Budget</p>
+                            <p class="text-xl font-bold text-slate-900"><?= format_currency((float) $proposal['job_budget']) ?></p>
                         </div>
-                        <div class="bg-green-200/60 rounded-xl p-4 border border-gray-100 text-center">
-                            <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Difference</p>
+                        <div class="bg-slate-50/80 border border-slate-100 rounded-xl p-4 text-center">
+                            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Difference</p>
                             <?php $diff = (float) $proposal['job_budget'] - (float) $proposal['amount']; ?>
-                            <p class="text-xl font-black <?= $diff >= 0 ? 'text-emerald-600' : 'text-red-500' ?>">
+                            <p class="text-xl font-bold <?= $diff >= 0 ? 'text-emerald-600' : 'text-red-500' ?>">
                                 <?= $diff >= 0 ? '-' : '+' ?><?= format_currency(abs($diff)) ?>
                             </p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4 text-xs text-gray-400">
+                    <div class="flex items-center gap-4 text-xs text-slate-400 font-medium">
                         <span class="flex items-center gap-1.5">
-                            <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
+                            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
                             Submitted <?= date('M d, Y \a\t g:i A', strtotime($proposal['created_at'])) ?>
                         </span>
                         <span class="flex items-center gap-1.5">
-                            <i data-lucide="clock" class="w-4 h-4 text-gray-400"></i>
+                            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
                             <?= time_ago($proposal['created_at']) ?>
                         </span>
                     </div>
                 </div>
 
                 <?php if ($proposal['status'] === 'pending'): ?>
-                <div class="mt-6 pt-5 border-t border-gray-100">
+                <div class="mt-6 pt-5 border-t border-slate-100">
                     <div class="flex flex-wrap gap-3">
                         <form method="POST" action="accept_proposal.php" onsubmit="return confirm('Accept this proposal? This will hire the freelancer and reject all other pending proposals for this job.');">
                             <?= csrf_field() ?>
                             <input type="hidden" name="proposal_id" value="<?= (int) $proposal['id'] ?>">
-                            <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 btn-grad text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/25">
+                            <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
                                  <i data-lucide="check" class="w-4 h-4"></i> Accept Proposal
                             </button>
                         </form>
                         <form method="POST" action="reject_proposal.php" onsubmit="return confirm('Are you sure you want to reject this proposal?');">
                             <?= csrf_field() ?>
                             <input type="hidden" name="proposal_id" value="<?= (int) $proposal['id'] ?>">
-                            <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-red-50 hover:bg-red-100 text-red-500 text-sm font-bold rounded-xl transition-all border border-red-200">
+                            <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-red-50 text-red-600 text-sm font-semibold rounded-xl transition-all border border-slate-200 hover:border-red-300">
                                 <i data-lucide="x" class="w-4 h-4"></i> Reject Proposal
                             </button>
                         </form>
@@ -183,45 +189,45 @@ require_once __DIR__ . '/../includes/client_topbar.php';
         </div>
 
         <div class="w-full xl:w-96 flex-shrink-0 space-y-5">
-            <div class="bg-slate-50 rounded-2xl border border-gray-100 shadow-sm p-6 fade-in" style="animation-delay:.15s">
-                <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Freelancer Profile
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 fade-in" style="animation-delay:.15s">
+                <h3 class="text-lg font-bold text-slate-900 tracking-tight mb-4 flex items-center gap-2">
+                    <i data-lucide="user" class="w-4 h-4 text-indigo-500"></i> Freelancer Profile
                 </h3>
 
                 <div class="flex items-center gap-3 mb-5">
                     <?php
                     $fAvatar = !empty($proposal['freelancer_avatar'])
                         ? '../' . htmlspecialchars($proposal['freelancer_avatar'])
-                        : 'https://ui-avatars.com/api/?name=' . urlencode($proposal['freelancer_name']) . '&background=2563eb&color=fff&bold=true&size=80';
+                        : 'https://ui-avatars.com/api/?name=' . urlencode($proposal['freelancer_name']) . '&background=4338CA&color=fff&bold=true&size=80';
                     ?>
-                    <img src="<?= $fAvatar ?>" class="w-14 h-14 rounded-xl object-cover border-2 border-gray-100" alt="Freelancer">
+                    <img src="<?= $fAvatar ?>" class="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow-sm" alt="Freelancer">
                     <div>
-                        <p class="font-bold text-gray-900 text-sm"><?= sanitize_string($proposal['freelancer_name']) ?></p>
-                        <p class="text-[11px] text-gray-400"><?= sanitize_string($freelancerProfile['title'] ?? 'Freelancer') ?></p>
+                        <p class="font-bold text-slate-900 text-sm"><?= sanitize_string($proposal['freelancer_name']) ?></p>
+                        <p class="text-xs text-slate-400 font-medium"><?= sanitize_string($freelancerProfile['title'] ?? 'Freelancer') ?></p>
                         <?php if ($ratingData['avg_rating']): ?>
                         <div class="flex items-center gap-1 mt-1">
                             <div class="flex items-center gap-0.5">
                                 <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <i data-lucide="star" class="w-3 h-3 <?= $i <= round($ratingData['avg_rating']) ? 'text-amber-400' : 'text-gray-200' ?>"></i>
+                                <i data-lucide="star" class="w-3 h-3 <?= $i <= round($ratingData['avg_rating']) ? 'text-amber-400 fill-amber-400' : 'text-slate-200' ?>"></i>
                                 <?php endfor; ?>
                             </div>
-                            <span class="text-[10px] text-gray-400"><?= number_format($ratingData['avg_rating'], 1) ?> (<?= $ratingData['review_count'] ?>)</span>
+                            <span class="text-[10px] text-slate-400 font-medium"><?= number_format($ratingData['avg_rating'], 1) ?> (<?= $ratingData['review_count'] ?>)</span>
                         </div>
                         <?php endif; ?>
                     </div>
                 </div>
 
                 <div class="space-y-3 mb-5">
-                    <div class="flex items-center justify-between py-2 border-b border-gray-50">
-                        <span class="text-xs text-gray-500">Hourly Rate</span>
-                        <span class="text-sm font-bold text-gray-900"><?= format_currency((float) ($freelancerProfile['hourly_rate'] ?? 0)) ?>/hr</span>
+                    <div class="flex items-center justify-between py-2.5 border-b border-slate-100">
+                        <span class="text-xs text-slate-400 font-medium">Hourly Rate</span>
+                        <span class="text-sm font-bold text-slate-900"><?= format_currency((float) ($freelancerProfile['hourly_rate'] ?? 0)) ?>/hr</span>
                     </div>
-                    <div class="flex items-center justify-between py-2 border-b border-gray-50">
-                        <span class="text-xs text-gray-500">Experience</span>
-                        <span class="text-sm font-semibold text-gray-700"><?= (int) ($freelancerProfile['years_of_experience'] ?? 0) ?> years</span>
+                    <div class="flex items-center justify-between py-2.5 border-b border-slate-100">
+                        <span class="text-xs text-slate-400 font-medium">Experience</span>
+                        <span class="text-sm font-semibold text-slate-700"><?= (int) ($freelancerProfile['years_of_experience'] ?? 0) ?> years</span>
                     </div>
-                    <div class="flex items-center justify-between py-2">
-                        <span class="text-xs text-gray-500">Availability</span>
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-xs text-slate-400 font-medium">Availability</span>
                         <span class="text-xs font-semibold <?= ($freelancerProfile['availability'] ?? '') === 'Available' ? 'text-emerald-600' : 'text-amber-600' ?>">
                             <?= sanitize_string($freelancerProfile['availability'] ?? 'N/A') ?>
                         </span>
@@ -230,17 +236,17 @@ require_once __DIR__ . '/../includes/client_topbar.php';
 
                 <?php if (!empty($freelancerProfile['bio'])): ?>
                 <div class="mb-5">
-                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bio</h4>
-                    <p class="text-xs text-gray-600 leading-relaxed line-clamp-4"><?= sanitize_string($freelancerProfile['bio']) ?></p>
+                    <h4 class="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-2">Bio</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed line-clamp-4"><?= sanitize_string($freelancerProfile['bio']) ?></p>
                 </div>
                 <?php endif; ?>
 
                 <?php if (!empty($freelancerSkills)): ?>
                 <div>
-                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Skills</h4>
+                    <h4 class="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-2">Skills</h4>
                     <div class="flex flex-wrap gap-1.5">
                         <?php foreach ($freelancerSkills as $sk): ?>
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 text-[11px] font-medium rounded-lg border border-blue-100">
+                        <span class="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg border border-slate-200/60">
                             <?= sanitize_string($sk['skill_name']) ?>
                         </span>
                         <?php endforeach; ?>
@@ -249,35 +255,35 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                 <?php endif; ?>
             </div>
 
-            <div class=" bg-slate-50 rounded-2xl border border-gray-100 p-6 fade-in" style="animation-delay:.2s">
-                <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <i data-lucide="receipt" class="w-4 h-4 text-violet-500"></i> Quick Summary
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 fade-in" style="animation-delay:.2s">
+                <h3 class="text-lg font-bold text-slate-900 tracking-tight mb-4 flex items-center gap-2">
+                    <i data-lucide="receipt" class="w-4 h-4 text-indigo-500"></i> Quick Summary
                 </h3>
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100 bg-slate-50 px-2">
-                        <span class="text-xs text-gray-500">Bid Amount</span>
-                        <span class="text-sm font-bold text-gray-900"><?= format_currency((float) $proposal['amount']) ?></span>
+                    <div class="flex items-center justify-between py-2.5 border-b border-slate-100 px-1">
+                        <span class="text-xs text-slate-400 font-medium">Bid Amount</span>
+                        <span class="text-sm font-bold text-slate-900"><?= format_currency((float) $proposal['amount']) ?></span>
                     </div>
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100 bg-indigo-50 px-2">
-                        <span class="text-xs text-gray-500">Job Budget</span>
-                        <span class="text-sm font-bold text-gray-900"><?= format_currency((float) $proposal['job_budget']) ?></span>
+                    <div class="flex items-center justify-between py-2.5 border-b border-slate-100 px-1">
+                        <span class="text-xs text-slate-400 font-medium">Job Budget</span>
+                        <span class="text-sm font-bold text-slate-900"><?= format_currency((float) $proposal['job_budget']) ?></span>
                     </div>
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100 bg-purple-50 px-2">
-                        <span class="text-xs text-gray-500">Savings</span>
+                    <div class="flex items-center justify-between py-2.5 border-b border-slate-100 px-1">
+                        <span class="text-xs text-slate-400 font-medium">Savings</span>
                         <span class="text-sm font-bold <?= $diff >= 0 ? 'text-emerald-600' : 'text-red-500' ?>">
                             <?= $diff >= 0 ? format_currency($diff) : 'Over budget' ?>
                         </span>
                     </div>
-                    <div class="flex items-center justify-between py-2">
-                        <span class="text-xs text-gray-500">Status</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-md <?= $proposalColors[$proposal['status']] ?? '' ?>">
+                    <div class="flex items-center justify-between py-2.5 px-1">
+                        <span class="text-xs text-slate-400 font-medium">Status</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 <?= match($proposal['status']) { 'pending' => 'bg-amber-50 text-amber-700 ring-amber-600/20', 'accepted' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', 'rejected' => 'bg-red-50 text-red-700 ring-red-600/20', 'withdrawn' => 'bg-slate-100 text-slate-600 ring-slate-500/20', default => 'bg-slate-100 text-slate-600 ring-slate-500/20' } ?>">
                             <?= ucfirst(sanitize_string($proposal['status'])) ?>
                         </span>
                     </div>
                 </div>
             </div>
 
-            <a href="proposals.php" class="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 rounded-xl text-sm font-semibold transition-all">
+            <a href="proposals.php" class="flex items-center justify-center gap-2 w-full py-3 bg-white border border-slate-200/80 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-sm font-semibold transition-all shadow-sm">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Proposals
             </a>
         </div>

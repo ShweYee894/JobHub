@@ -93,6 +93,15 @@ if ($stmt->affected_rows > 0) {
         $log_stmt->close();
     }
 
+    // Send password changed security alert
+    require_once __DIR__ . '/../shared/notification_helper.php';
+    $user_stmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+    $user_stmt->bind_param('i', $user_id);
+    $user_stmt->execute();
+    $user_name = $user_stmt->get_result()->fetch_assoc()['name'] ?? '';
+    $user_stmt->close();
+    notifyPasswordChanged($user_id, $user_name);
+
     set_flash('success', 'Your password has been reset successfully. You can now sign in.');
     header('Location: login.php');
     exit;

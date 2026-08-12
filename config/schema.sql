@@ -311,6 +311,10 @@ CREATE TABLE IF NOT EXISTS `dispute_tickets` (
     `status` ENUM('open', 'investigating', 'resolved', 'dismissed', 'escalated') DEFAULT 'open',
     `resolution` TEXT NULL,
     `resolved_by` INT UNSIGNED NULL COMMENT 'admin user_id',
+    `evidence_files` JSON NULL COMMENT 'JSON array of file metadata',
+    `evidence_request_note` TEXT NULL COMMENT 'admin evidence request message',
+    `evidence_request_target` INT UNSIGNED NULL COMMENT 'user_id being asked for evidence',
+    `evidence_request_fulfilled` TINYINT(1) DEFAULT 0 COMMENT '1 = party responded to evidence request',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE,
@@ -318,6 +322,7 @@ CREATE TABLE IF NOT EXISTS `dispute_tickets` (
     FOREIGN KEY (`raised_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
     FOREIGN KEY (`against`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
     FOREIGN KEY (`resolved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`evidence_request_target`) REFERENCES `users` (`id`) ON DELETE SET NULL,
     INDEX `idx_dispute_status` (`status`),
     INDEX `idx_dispute_contract` (`contract_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

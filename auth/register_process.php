@@ -21,20 +21,12 @@ $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 $confirm_password = $_POST['confirm_password'] ?? '';
 $role = $_POST['role'] ?? '';
-$company_name = trim($_POST['company_name'] ?? '');
-$industry = trim($_POST['industry'] ?? '');
-$professional_title = trim($_POST['professional_title'] ?? '');
-$hourly_rate = $_POST['hourly_rate'] ?? '';
 
 // ── Preserve form data for redirect-back ───────────────────────────────
 $_SESSION['form_data'] = [
     'name' => $name,
     'email' => $email,
     'role' => $role,
-    'company_name' => $company_name,
-    'industry' => $industry,
-    'professional_title' => $professional_title,
-    'hourly_rate' => $hourly_rate,
 ];
 
 // ── Validation ──────────────────────────────────────────────────────────
@@ -67,16 +59,6 @@ if (empty($password)) {
 
 if ($password !== $confirm_password) {
     $errors[] = 'Passwords do not match.';
-}
-
-// Role-specific validation
-if ($role === 'freelancer') {
-    if (empty($professional_title) || strlen($professional_title) < 3) {
-        $errors[] = 'Professional title is required (min. 3 characters).';
-    }
-    if (empty($hourly_rate) || $hourly_rate < 1 || $hourly_rate > 5000) {
-        $errors[] = 'Hourly rate must be between $1 and $5,000.';
-    }
 }
 
 // Bail early if validation failed
@@ -133,14 +115,14 @@ try {
     // 2. Insert into role-specific table
     if ($role === 'client') {
         $stmt = $conn->prepare(
-            'INSERT INTO clients (client_id, company_name, industry, total_spent, created_at)
-             VALUES (?, ?, ?, 0.00, NOW())'
+            'INSERT INTO clients (client_id, company_name, industry, company_size, total_spent, created_at)
+             VALUES (?, ?, ?, NULL, 0.00, NOW())'
         );
         if (!$stmt) {
             throw new RuntimeException('Clients insert failed: ' . $conn->error);
         }
-        $cn = !empty($company_name) ? $company_name : null;
-        $ind = !empty($industry) ? $industry : null;
+        $cn = null;
+        $ind = null;
         $stmt->bind_param('iss', $user_id, $cn, $ind);
         $stmt->execute();
         $stmt->close();
@@ -152,8 +134,9 @@ try {
         if (!$stmt) {
             throw new RuntimeException('Freelancers insert failed: ' . $conn->error);
         }
-        $hr = (float) $hourly_rate;
-        $stmt->bind_param('isd', $user_id, $professional_title, $hr);
+        $title = '';
+        $hr = 0.0;
+        $stmt->bind_param('isd', $user_id, $title, $hr);
         $stmt->execute();
         $stmt->close();
     }
@@ -172,6 +155,14 @@ try {
 
     // ── Commit ───────────────────────────────────────────────────────────
     $conn->commit();
+
+    // ── Send welcome email (non-blocking) ─────────────────────────────────
+    try {
+        require_once __DIR__ . '/../shared/notification_helper.php';
+        notifyWelcomeEmail($user_id, $name, $role);
+    } catch (Exception $emailErr) {
+        error_log('[JobHub] Welcome email failed: ' . $emailErr->getMessage());
+    }
 
     // ── Set session variables ─────────────────────────────────────────────
     $_SESSION['user_id'] = $user_id;

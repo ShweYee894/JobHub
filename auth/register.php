@@ -22,10 +22,6 @@ unset($_SESSION['errors']);
 $old_name = htmlspecialchars($_SESSION['form_data']['name'] ?? '');
 $old_email = htmlspecialchars($_SESSION['form_data']['email'] ?? '');
 $old_role = $_SESSION['form_data']['role'] ?? 'freelancer';
-$old_company = htmlspecialchars($_SESSION['form_data']['company_name'] ?? '');
-$old_industry = htmlspecialchars($_SESSION['form_data']['industry'] ?? '');
-$old_title = htmlspecialchars($_SESSION['form_data']['professional_title'] ?? '');
-$old_rate = htmlspecialchars($_SESSION['form_data']['hourly_rate'] ?? '');
 unset($_SESSION['form_data']);
 ?>
 <!DOCTYPE html>
@@ -115,7 +111,7 @@ unset($_SESSION['form_data']);
   <?php include __DIR__ . '/../includes/auth_navbar.php'; ?>
 
   <!-- MAIN CONTENT -->
-  <main class="relative z-10 flex items-center justify-center px-4 py-12 min-h-[calc(100vh-57px)]">
+  <main class="relative z-10 flex items-center justify-center px-4 pt-[72px] pb-12 min-h-screen">
 
     <div class="w-full max-w-[550px] fade-up">
 
@@ -132,7 +128,7 @@ unset($_SESSION['form_data']);
       <?php if (!empty($errors)): ?>
       <div class="mb-5 rounded-xl p-3 bg-red-50 border border-red-200 shake">
         <div class="flex items-start gap-2.5">
-          <i data-lucide="circle-alert" class="w-4 h-4 text-red-500 mt-0.5"></i>
+          <i data-lucide="alert-circle" class="w-4 h-4 text-red-500 mt-0.5"></i>
           <div>
             <?php foreach ($errors as $e): ?>
             <p class="text-red-600 text-xs"><?= sanitize_string($e) ?></p>
@@ -305,14 +301,7 @@ function setRole(role) {
     }
   });
 
-  document.getElementById('client-fields').classList.toggle('hidden', role !== 'client');
-  document.getElementById('freelancer-fields').classList.toggle('hidden', role !== 'freelancer');
 
-  // Clear error messages for hidden fields
-  ['title-err','rate-err'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('hidden');
-  });
 }
 
 function togglePwd(fieldId, eyeId) {
@@ -434,25 +423,6 @@ document.getElementById('reg-form').addEventListener('submit', function(e) {
     emailErr.classList.remove('hidden');
     valid = false;
   } else { emailErr.classList.add('hidden'); }
-
-  // Freelancer fields
-  if (currentRole === 'freelancer') {
-    const title = document.getElementById('professional_title').value.trim();
-    const titleErr = document.getElementById('title-err');
-    if (!title || title.length < 3) {
-      titleErr.textContent = 'Professional title is required (min. 3 characters).';
-      titleErr.classList.remove('hidden');
-      valid = false;
-    } else { titleErr.classList.add('hidden'); }
-
-    const rate = document.getElementById('hourly_rate').value;
-    const rateErr = document.getElementById('rate-err');
-    if (!rate || rate < 1 || rate > 5000) {
-      rateErr.textContent = 'Hourly rate must be between $1 and $5,000.';
-      rateErr.classList.remove('hidden');
-      valid = false;
-    } else { rateErr.classList.add('hidden'); }
-  }
 
   // Password
   const pwd = document.getElementById('password').value;

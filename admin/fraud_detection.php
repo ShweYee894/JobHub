@@ -310,7 +310,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             <p class="text-2xl font-extrabold text-gray-900 dark:text-white mt-1" id="countHigh"><?= $counts['high_risk'] ?></p>
         </div>
         <span class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style="background:#FEE2E2">
-            <i data-lucide="circle-alert" class="text-sm" style="color:#991B1B"></i>
+            <i data-lucide="alert-circle" class="text-sm" style="color:#991B1B"></i>
         </span>
     </div>
 
@@ -321,7 +321,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             <p class="text-2xl font-extrabold text-gray-900 dark:text-white mt-1" id="countMedium"><?= $counts['medium_risk'] ?></p>
         </div>
         <span class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style="background:#FEF3C7">
-            <i data-lucide="triangle-alert" class="text-sm" style="color:#92400E"></i>
+            <i data-lucide="alert-triangle" class="text-sm" style="color:#92400E"></i>
         </span>
     </div>
 
@@ -512,51 +512,66 @@ require_once __DIR__ . '/../components/layout_start.php';
 
     <!-- Unified Filter Toolbar -->
     <div class="px-5 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50/70 dark:bg-slate-700/20">
-        <form method="GET" id="filterForm" class="flex items-center gap-3 flex-wrap">
+        <form method="GET" id="filterForm" class="flex items-center gap-2 flex-wrap">
             <!-- Search Input -->
-            <div class="relative flex-1 min-w-[220px]">
+            <div class="relative flex-1 min-w-[180px]">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-xs"><i data-lucide="search"></i></span>
                 <input type="text" name="filter_search" value="<?= sanitize_string($_GET['filter_search'] ?? '') ?>"
-                       placeholder="Search by user, IP address, or action..."
-                       class="w-full pl-8 pr-3 py-2 text-xs bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                       placeholder="Search by user, IP, or action..."
+                       class="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
             </div>
 
             <!-- Action Type Filter Pills -->
-            <div class="flex items-center gap-1.5 flex-wrap">
+            <div class="flex items-center gap-1 flex-wrap">
                 <a href="/jobhub/admin/fraud_detection.php<?= !empty($filterDate) ? '?filter_date='.urlencode($filterDate) : '' ?>"
-                   class="pill-filter inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold border border-gray-200 dark:border-slate-600 <?= empty($filterAction) ? 'active' : 'text-gray-600 dark:text-slate-400' ?>">
+                   class="pill-filter inline-flex px-2 py-0.5 rounded text-[10px] font-semibold border border-gray-200 dark:border-slate-600 <?= empty($filterAction) ? 'active' : 'text-gray-600 dark:text-slate-400' ?>">
                     All
                 </a>
                 <?php
                 $pillColors = [
-                    'login_failed'     => 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400',
-                    'spam'             => 'border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400',
-                    'phishing'         => 'border-red-300 text-red-700 dark:border-red-700 dark:text-red-300',
-                    'fake_review'      => 'border-amber-200 text-amber-600 dark:border-amber-800 dark:text-amber-400',
-                    'proposal_submit'  => 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400',
-                    'wallet_topup'     => 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400',
+                    'login_failed'        => 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400',
+                    'spam'                => 'border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400',
+                    'phishing'            => 'border-red-300 text-red-700 dark:border-red-700 dark:text-red-300',
+                    'fake_review'         => 'border-amber-200 text-amber-600 dark:border-amber-800 dark:text-amber-400',
+                    'proposal_submit'     => 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400',
+                    'wallet_topup'        => 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400',
+                    'payment_fraud'       => 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400',
+                    'account_takeover'    => 'border-red-200 text-red-700 dark:border-red-700 dark:text-red-300',
+                    'suspicious_download' => 'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400',
                 ];
-                $fixedPills = ['login_failed','fake_review','phishing','proposal_submit','spam','wallet_topup'];
+                $pillLabels = [
+                    'login_failed'        => 'Login Fail',
+                    'spam'                => 'Spam',
+                    'phishing'            => 'Phishing',
+                    'fake_review'         => 'Fake Review',
+                    'proposal_submit'     => 'Proposal',
+                    'wallet_topup'        => 'Wallet Topup',
+                    'payment_fraud'       => 'Payment Fraud',
+                    'account_takeover'    => 'Acct Takeover',
+                    'suspicious_download' => 'Susp Download',
+                ];
+                $fixedPills = ['login_failed','fake_review','phishing','proposal_submit','spam','wallet_topup','payment_fraud','account_takeover','suspicious_download'];
                 foreach ($fixedPills as $pill):
                     $pillHref = '/jobhub/admin/fraud_detection.php?filter_action=' . urlencode($pill) . (!empty($filterDate) ? '&filter_date=' . urlencode($filterDate) : '');
                     $pillCls = $pillColors[$pill] ?? 'border-gray-200 text-gray-600 dark:border-slate-600 dark:text-slate-400';
                     $activeCls = ($filterAction === $pill) ? 'active' : '';
+                    $label = $pillLabels[$pill] ?? $pill;
                 ?>
                     <a href="<?= $pillHref ?>"
-                       class="pill-filter inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold border <?= $pillCls ?> <?= $activeCls ?>">
-                        <?= sanitize_string($pill) ?>
+                       class="pill-filter inline-flex px-2 py-0.5 rounded text-[10px] font-semibold border <?= $pillCls ?> <?= $activeCls ?>">
+                        <?= sanitize_string($label) ?>
                     </a>
                 <?php endforeach; ?>
             </div>
 
-            <!-- Date Range + Buttons -->
-            <div class="flex items-center gap-2 ml-auto">
+            <!-- Date + Buttons -->
+            <div class="flex items-center gap-1.5">
                 <input type="date" name="filter_date" value="<?= sanitize_string($filterDate) ?>"
-                       class="text-xs border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                <button type="submit" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm">
-                    <i data-lucide="filter" class="mr-1"></i> Filter
+                       class="text-xs border border-gray-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <button type="submit" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm">
+                    Filter
                 </button>
-                <a href="/jobhub/admin/fraud_detection.php" class="px-3 py-2 text-gray-500 dark:text-slate-400 text-xs font-medium hover:text-gray-700 dark:hover:text-slate-200 border border-gray-200 dark:border-slate-600 rounded-lg transition hover:bg-gray-50 dark:hover:bg-slate-700">
+                <a href="/jobhub/admin/fraud_detection.php" class="px-2.5 py-1.5 text-gray-500 dark:text-slate-400 text-xs font-medium hover:text-gray-700 dark:hover:text-slate-200 border border-gray-200 dark:border-slate-600 rounded-lg transition hover:bg-gray-50 dark:hover:bg-slate-700">
                     Clear
                 </a>
             </div>
@@ -736,7 +751,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             <!-- ── Risk Factor Breakdown ──────────────────────────────────── -->
             <div>
                 <h4 class="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-3 flex items-center gap-1.5">
-                    <i data-lucide="triangle-alert" class="text-amber-500 text-[10px]"></i> Risk Factor Breakdown
+                    <i data-lucide="alert-triangle" class="text-amber-500 text-[10px]"></i> Risk Factor Breakdown
                 </h4>
                 <div id="drawerRiskFactors" class="rounded-xl border border-gray-100 dark:border-slate-700 divide-y divide-gray-50 dark:divide-slate-700/50 overflow-hidden">
                     <!-- Populated by JS -->

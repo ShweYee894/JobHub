@@ -74,6 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success = true;
                 $walletBalance = $newBalance;
                 set_flash('success', 'Withdrawal of ' . format_currency($amount) . ' processed successfully.');
+
+                // Send withdrawal completed email
+                require_once __DIR__ . '/../shared/notification_helper.php';
+                notifyWithdrawalCompleted($userId, $amount);
             } catch (Exception $e) {
                 $conn->rollback();
                 $errors[] = 'Failed to process withdrawal. Please try again.';

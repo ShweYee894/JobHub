@@ -684,10 +684,16 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         <div class="flex flex-col sm:flex-row items-start gap-5">
             <!-- Avatar -->
             <div class="pe-avatar-wrap flex-shrink-0">
+                <?php $_peHasImage = !empty($profile['profile_image']) && file_exists(__DIR__ . '/../assets/upload/profiles/' . basename($profile['profile_image'])); ?>
                 <img id="avatarPreview"
-                    src="<?= get_profile_image($profile['profile_image']) . '?v=' . time() ?>"
+                    src="<?= $_peHasImage ? get_profile_image($profile['profile_image']) . '?v=' . time() : '' ?>"
                     alt="<?= sanitize_string($profile['name']) ?>"
-                    class="pe-avatar-img">
+                    class="pe-avatar-img"<?= $_peHasImage ? '' : ' style="display:none"' ?>>
+                <?php if (!$_peHasImage): ?>
+                <div id="avatarPlaceholder" class="pe-avatar-img bg-[#E8EDFF] flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                </div>
+                <?php endif; ?>
                 <label for="profileImageInput" class="pe-avatar-edit" title="Change photo">
                     <i data-lucide="pencil" class="w-3 h-3"></i>
                 </label>
@@ -1449,6 +1455,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
             }
         }
         closeModal('skillsModal');
+        isDirty = false;
         form.submit();
     }
 
@@ -1564,7 +1571,11 @@ require_once __DIR__ . '/../components/freelancer_header.php';
         }
         const reader = new FileReader();
         reader.onload = function(ev) {
-            document.getElementById('avatarPreview').src = ev.target.result;
+            var ap = document.getElementById('avatarPreview');
+            ap.src = ev.target.result;
+            ap.style.display = '';
+            var ph = document.getElementById('avatarPlaceholder');
+            if (ph) ph.style.display = 'none';
         };
         reader.readAsDataURL(file);
         markDirty();
@@ -1578,6 +1589,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
     }
 
     document.getElementById('profileForm').addEventListener('submit', function(e) {
+        isDirty = false;
         const btn = document.querySelector('.pe-btn-primary:last-of-type');
         if (btn && !btn.disabled) {
             btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Saving...';

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  * Freelancer Home – Modern Landing Page
@@ -362,13 +362,12 @@ $earningsData = array_column($earningsChart, 'earnings');
 // ── Unread messages ────────────────────────────────────────────
 $unreadMessages = get_unread_message_count($userId, 'freelancer');
 
-$conn->close();
-
 $pageTitle = 'Home';
 $activePage = 'home';
 $userData = ['name' => $freelancerName, 'profile_image' => $user['profile_image'] ?? null];
 $unreadCount = $unreadMessages;
 require_once __DIR__ . '/../components/freelancer_header.php';
+$conn->close();
 ?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
@@ -447,23 +446,23 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-2 mb-1">
                                 <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-[15px] font-bold text-[#1A1A2E] hover:text-[#108A00] transition-colors">
-                                    <?= htmlspecialchars($job['title']) ?>
+                                    <?= htmlspecialchars(decode_entities($job['title']), ENT_QUOTES, 'UTF-8') ?>
                                 </a>
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#F0FDF4] text-[#16A34A] text-[11px] font-bold rounded-full">
                                     <i data-lucide="circle-check" class="text-[8px]"></i> <?= $matchPct ?>% Match
                                 </span>
                             </div>
                             <div class="flex items-center gap-2 text-xs text-[#9CA3AF] mb-2.5">
-                                <span class="font-medium text-[#6B7280]"><?= htmlspecialchars($job['client_name']) ?></span>
+                                <span class="font-medium text-[#6B7280]"><?= htmlspecialchars(decode_entities($job['client_name']), ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="w-1 h-1 rounded-full bg-[#D1D5DB]"></span>
                                 <span><?= time_ago($job['created_at']) ?></span>
                             </div>
-                            <p class="text-sm text-[#6B7280] leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(mb_strimwidth($job['description'] ?? '', 0, 150, '...')) ?></p>
+                            <p class="text-sm text-[#6B7280] leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(decode_entities(mb_strimwidth($job['description'] ?? '', 0, 150, '...')), ENT_QUOTES, 'UTF-8') ?></p>
                             <?php if (!empty($job['skills'])): ?>
                             <div class="flex flex-wrap gap-1.5 mb-3">
                                 <?php foreach (array_slice($job['skills'], 0, 5) as $sk): ?>
                                     <span class="inline-flex items-center px-2.5 py-1 bg-[#F0FDF4] text-[#16A34A] text-xs font-medium rounded-lg">
-                                        <?= htmlspecialchars($sk['skill_name']) ?>
+                                        <?= htmlspecialchars(decode_entities($sk['skill_name']), ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                 <?php endforeach; ?>
                                 <?php if (count($job['skills']) > 5): ?>
@@ -486,7 +485,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                 class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-[#E5E8EB] text-[#6B7280] hover:border-[#108A00] hover:text-[#108A00] text-xs font-semibold rounded-[10px] transition-all">
                                 <i data-lucide="eye" class="text-xs"></i> View Details
                             </a>
-                            <button onclick="openProposalModal(<?= $job['id'] ?>, '<?= htmlspecialchars(addslashes($job['title'])) ?>', <?= $job['budget'] ?>)"
+                            <button onclick="openProposalModal(<?= $job['id'] ?>, '<?= htmlspecialchars(addslashes(decode_entities($job['title'])), ENT_QUOTES, 'UTF-8') ?>', <?= $job['budget'] ?>)"
                                 class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-semibold rounded-[10px] transition-all">
                                 <i data-lucide="send" class="text-xs"></i> Apply Now
                             </button>
@@ -518,15 +517,15 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-2 mb-1">
                                 <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-[15px] font-bold text-[#1A1A2E] hover:text-[#108A00] transition-colors">
-                                    <?= htmlspecialchars($job['title']) ?>
+                                    <?= htmlspecialchars(decode_entities($job['title']), ENT_QUOTES, 'UTF-8') ?>
                                 </a>
                             </div>
                             <div class="flex items-center gap-2 text-xs text-[#9CA3AF] mb-2.5">
-                                <span class="font-medium text-[#6B7280]"><?= htmlspecialchars($job['client_name']) ?></span>
+                                <span class="font-medium text-[#6B7280]"><?= htmlspecialchars(decode_entities($job['client_name']), ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="w-1 h-1 rounded-full bg-[#D1D5DB]"></span>
                                 <span><?= time_ago($job['created_at']) ?></span>
                             </div>
-                            <p class="text-sm text-[#6B7280] leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(mb_strimwidth($job['description'] ?? '', 0, 150, '...')) ?></p>
+                            <p class="text-sm text-[#6B7280] leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(decode_entities(mb_strimwidth($job['description'] ?? '', 0, 150, '...')), ENT_QUOTES, 'UTF-8') ?></p>
                             <div class="flex flex-wrap items-center gap-4 text-xs text-[#9CA3AF]">
                                 <span class="font-bold text-[#1A1A2E]"><?= format_currency($job['budget']) ?></span>
                                 <span class="w-1 h-1 rounded-full bg-[#D1D5DB]"></span>
@@ -535,7 +534,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         </div>
                         <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:flex-col lg:items-stretch lg:min-w-[140px]">
                             <a href="job_detail.php?id=<?= $job['id'] ?>" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-[#E5E8EB] text-[#6B7280] hover:border-[#108A00] hover:text-[#108A00] text-xs font-semibold rounded-[10px] transition-all"><i data-lucide="eye" class="text-xs"></i> View Details</a>
-                            <button onclick="openProposalModal(<?= $job['id'] ?>, '<?= htmlspecialchars(addslashes($job['title'])) ?>', <?= $job['budget'] ?>)" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-semibold rounded-[10px] transition-all"><i data-lucide="send" class="text-xs"></i> Apply Now</button>
+                            <button onclick="openProposalModal(<?= $job['id'] ?>, '<?= htmlspecialchars(addslashes(decode_entities($job['title'])), ENT_QUOTES, 'UTF-8') ?>', <?= $job['budget'] ?>)" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-semibold rounded-[10px] transition-all"><i data-lucide="send" class="text-xs"></i> Apply Now</button>
                         </div>
                     </div>
                 </div>
@@ -559,7 +558,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-2 mb-1">
                                 <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-[15px] font-bold text-[#1A1A2E] hover:text-[#108A00] transition-colors">
-                                    <?= htmlspecialchars($job['title']) ?>
+                                    <?= htmlspecialchars(decode_entities($job['title']), ENT_QUOTES, 'UTF-8') ?>
                                 </a>
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#F5F3FF] text-[#7C3AED] text-[11px] font-bold rounded-full">
                                     <i data-lucide="user" class="text-[8px]"></i> Invitation
@@ -572,13 +571,13 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                             </div>
                             <?php if ($client): ?>
                             <div class="flex items-center gap-2 text-xs text-[#9CA3AF] mb-2.5">
-                                <span class="font-medium text-[#6B7280]"><?= htmlspecialchars($client['name']) ?></span>
+                                <span class="font-medium text-[#6B7280]"><?= htmlspecialchars(decode_entities($client['name']), ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="w-1 h-1 rounded-full bg-[#D1D5DB]"></span>
                                 <span><?= time_ago($inv['created_at']) ?></span>
                             </div>
                             <?php endif; ?>
                             <?php if (!empty($job['description'])): ?>
-                            <p class="text-sm text-[#6B7280] leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(mb_strimwidth($job['description'], 0, 150, '...')) ?></p>
+                            <p class="text-sm text-[#6B7280] leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(decode_entities(mb_strimwidth($job['description'], 0, 150, '...')), ENT_QUOTES, 'UTF-8') ?></p>
                             <?php endif; ?>
                             <div class="flex flex-wrap items-center gap-4 text-xs text-[#9CA3AF]">
                                 <span class="font-bold text-[#1A1A2E]"><?= format_currency($job['budget']) ?></span>
@@ -637,7 +636,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-2 mb-1">
                                 <a href="job_detail.php?id=<?= $job['id'] ?>" class="text-[15px] font-bold text-[#1A1A2E] hover:text-[#108A00] transition-colors">
-                                    <?= htmlspecialchars($job['title']) ?>
+                                    <?= htmlspecialchars(decode_entities($job['title']), ENT_QUOTES, 'UTF-8') ?>
                                 </a>
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#FEF3C7] text-[#D97706] text-[11px] font-bold rounded-full">
                                     <i data-lucide="bookmark" class="text-[8px]"></i> Saved
@@ -649,16 +648,16 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                                 <?php endif; ?>
                             </div>
                             <div class="flex items-center gap-2 text-xs text-[#9CA3AF] mb-2.5">
-                                <span class="font-medium text-[#6B7280]"><?= htmlspecialchars($sv['client_name']) ?></span>
+                                <span class="font-medium text-[#6B7280]"><?= htmlspecialchars(decode_entities($sv['client_name']), ENT_QUOTES, 'UTF-8') ?></span>
                                 <span class="w-1 h-1 rounded-full bg-[#D1D5DB]"></span>
                                 <span><?= time_ago($job['created_at']) ?></span>
                             </div>
-                            <p class="text-sm text-[#6B7280] leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(mb_strimwidth($job['description'] ?? '', 0, 150, '...')) ?></p>
+                            <p class="text-sm text-[#6B7280] leading-relaxed mb-3 line-clamp-2"><?= htmlspecialchars(decode_entities(mb_strimwidth($job['description'] ?? '', 0, 150, '...')), ENT_QUOTES, 'UTF-8') ?></p>
                             <?php if (!empty($sv['skills'])): ?>
                             <div class="flex flex-wrap gap-1.5 mb-3">
                                 <?php foreach (array_slice($sv['skills'], 0, 5) as $sk): ?>
                                     <span class="inline-flex items-center px-2.5 py-1 bg-[#F0FDF4] text-[#16A34A] text-xs font-medium rounded-lg">
-                                        <?= htmlspecialchars($sk['skill_name']) ?>
+                                        <?= htmlspecialchars(decode_entities($sk['skill_name']), ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                 <?php endforeach; ?>
                             </div>
@@ -797,7 +796,7 @@ require_once __DIR__ . '/../components/freelancer_header.php';
                     foreach (array_slice($mySkills, 0, 10) as $sk):
                         ?>
                         <span class="inline-flex items-center px-3 py-1.5 bg-[#F0FDF4] text-[#16A34A] text-xs font-medium rounded-lg transition-all cursor-default">
-                            <?= htmlspecialchars($sk['skill_name']) ?>
+                            <?= htmlspecialchars(decode_entities($sk['skill_name']), ENT_QUOTES, 'UTF-8') ?>
                         </span>
                     <?php endforeach; ?>
                 </div>

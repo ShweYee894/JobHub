@@ -16,6 +16,14 @@ $_ctbActive = $activePage ?? 'dashboard';
 $_ctbUser = $user ?? ['name' => 'Client', 'profile_image' => ''];
 $_ctbAvatar = get_profile_image($_ctbUser['profile_image'] ?? null);
 $_ctbUnread = $unreadCount ?? 0;
+$_ctbNotifUnread = 0;
+if (isset($conn) && $conn instanceof mysqli && isset($_SESSION['user_id'])) {
+    $_ctbNStmt = $conn->prepare('SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND is_read = 0');
+    $_ctbNStmt->bind_param('i', $_SESSION['user_id']);
+    $_ctbNStmt->execute();
+    $_ctbNotifUnread = (int) ($_ctbNStmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+    $_ctbNStmt->close();
+}
 $_ctbName = $_ctbUser['name'] ?? 'Client';
 
 // Fetch wallet balance for clients
@@ -425,7 +433,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(15, 23, 42, .15);
+            box-shadow: none;
             min-width: 220px;
             z-index: 50;
             overflow: hidden;
@@ -527,6 +535,19 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
             color: #60a5fa !important;
             background: rgba(59, 130, 246, .15) !important;
         }
+
+        /* ═══ LUCIDE ICON SIZING FIX ═══════════════════════════════════════ */
+        svg[data-lucide] {
+            width: 1em !important;
+            height: 1em !important;
+            font-size: inherit !important;
+            flex-shrink: 0;
+        }
+        i[data-lucide] {
+            display: inline-flex;
+            align-items: center;
+            line-height: 0;
+        }
     </style>
 </head>
 
@@ -578,13 +599,14 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
 
                     <!-- Work Management Dropdown -->
                     <div class="relative" id="workDropdown">
-                        <button onmouseover="toggleDropdown('workDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_ctbActive, ['contracts', 'contract_detail', 'messages', 'reviews']) ? 'nav-active' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white' ?> transition-all">
+                        <button onmouseover="toggleDropdown('workDropdown')" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold <?= in_array($_ctbActive, ['contracts', 'contract_detail', 'messages', 'reviews', 'disputes']) ? 'nav-active' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white' ?> transition-all">
                             Work Management <i data-lucide="chevron-down" class="w-4 h-4 ml-0.5"></i>
                         </button>
                         <div class="dropdown-menu">
                             <a href="contracts.php" class="dropdown-item <?= $_ctbActive === 'contracts' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="file-text" class="w-4 h-4"></i> Contracts</a>
                             <a href="messages.php" class="dropdown-item <?= $_ctbActive === 'messages' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="message-circle" class="w-4 h-4"></i> Messages <?php if ($_ctbUnread > 0): ?><span class="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"><?= $_ctbUnread > 9 ? '9+' : $_ctbUnread ?></span><?php endif; ?></a>
                             <a href="reviews.php" class="dropdown-item <?= $_ctbActive === 'reviews' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="star" class="w-4 h-4"></i> Reviews</a>
+                            <a href="disputes.php" class="dropdown-item <?= $_ctbActive === 'disputes' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400' : '' ?>"><i data-lucide="shield" class="w-4 h-4"></i> Disputes</a>
                         </div>
                     </div>
 
@@ -620,9 +642,9 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
                 <?php endif; ?>
 
                 <!-- Notifications -->
-                <a href="../shared/notifications_page.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all">
+                <a href="notifications.php" class="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-all">
                     <i data-lucide="bell" class="w-4 h-4 hidden sm:inline"></i>
-                    <?php if ($_ctbUnread > 0): ?>
+                    <?php if ($_ctbNotifUnread > 0): ?>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     <?php endif; ?>
                 </a>
@@ -694,6 +716,7 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'client' && isse
             <a href="contracts.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'contracts' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="file-text" class="w-5 h-5"></i> Contracts</a>
             <a href="messages.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'messages' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="message-circle" class="w-5 h-5"></i> Messages <?php if ($_ctbUnread > 0): ?><span class="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"><?= $_ctbUnread ?></span><?php endif; ?></a>
             <a href="reviews.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'reviews' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="star" class="w-5 h-5"></i> Reviews</a>
+            <a href="disputes.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'disputes' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="shield" class="w-5 h-5"></i> Disputes</a>
 
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500 px-3 mb-2 mt-4">Finances</p>
             <a href="payment_history.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold <?= $_ctbActive === 'payment_history' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700' ?>"><i data-lucide="credit-card" class="w-5 h-5"></i> Payments</a>

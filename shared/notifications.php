@@ -133,6 +133,115 @@ class PlatformNotificationService
     }
 
     /**
+     * Mark a single notification as unread.
+     */
+    public function markUnread(int $id, int $userId): bool
+    {
+        $stmt = $this->conn->prepare(
+            'UPDATE notifications SET is_read = 0 WHERE id = ? AND user_id = ?'
+        );
+        $stmt->bind_param('ii', $id, $userId);
+        $stmt->execute();
+        $affected = $stmt->affected_rows;
+        $stmt->close();
+        return $affected > 0;
+    }
+
+    /**
+     * Delete a single notification.
+     */
+    public function delete(int $id, int $userId): bool
+    {
+        $stmt = $this->conn->prepare(
+            'DELETE FROM notifications WHERE id = ? AND user_id = ?'
+        );
+        $stmt->bind_param('ii', $id, $userId);
+        $stmt->execute();
+        $affected = $stmt->affected_rows;
+        $stmt->close();
+        return $affected > 0;
+    }
+
+    /**
+     * Get filtered notifications for a user.
+     */
+    public function getFiltered(int $userId, string $filter, int $limit = 20, int $offset = 0): array
+    {
+        $where = 'WHERE user_id = ?';
+        $params = [$userId];
+        $types = 'i';
+
+        switch ($filter) {
+            case 'unread':
+                $where .= ' AND is_read = 0';
+                break;
+            case 'messages':
+                $where .= ' AND type = ?';
+                $params[] = 'new_message';
+                $types .= 's';
+                break;
+            case 'disputes':
+                $where .= ' AND type IN (?, ?, ?, ?, ?)';
+                $params = array_merge($params, ['dispute_opened', 'dispute_resolved', 'dispute_dismissed', 'evidence_requested', 'evidence_submitted']);
+                $types .= 'sssss';
+                break;
+        }
+
+        $stmt = $this->conn->prepare(
+            "SELECT id, type, title, message, link, is_read, created_at
+             FROM notifications {$where}
+             ORDER BY created_at DESC
+             LIMIT ? OFFSET ?"
+        );
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= 'ii';
+
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $notifications = [];
+        while ($row = $result->fetch_assoc()) {
+            $notifications[] = $row;
+        }
+        $stmt->close();
+        return $notifications;
+    }
+
+    /**
+     * Get count of filtered notifications for a user.
+     */
+    public function getFilteredCount(int $userId, string $filter): int
+    {
+        $where = 'WHERE user_id = ?';
+        $params = [$userId];
+        $types = 'i';
+
+        switch ($filter) {
+            case 'unread':
+                $where .= ' AND is_read = 0';
+                break;
+            case 'messages':
+                $where .= ' AND type = ?';
+                $params[] = 'new_message';
+                $types .= 's';
+                break;
+            case 'disputes':
+                $where .= ' AND type IN (?, ?, ?, ?, ?)';
+                $params = array_merge($params, ['dispute_opened', 'dispute_resolved', 'dispute_dismissed', 'evidence_requested', 'evidence_submitted']);
+                $types .= 'sssss';
+                break;
+        }
+
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS cnt FROM notifications {$where}");
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return (int) ($row['cnt'] ?? 0);
+    }
+
+    /**
      * Delete notifications older than a given number of days.
      */
     public function deleteOld(int $days = 90): int

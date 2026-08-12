@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $page_title = 'Freelancer Profile';
 require_once '../auth/auth.php';
 require_once '../config/db.php';
@@ -384,10 +384,26 @@ if ($viewerRole === 'client') {
     <div class="profile-header-card mb-8 fade-in">
         <div class="flex flex-col lg:flex-row lg:items-center gap-8">
             <!-- Left: Avatar -->
-            <div class="flex-shrink-0">
-                <img src="<?= get_profile_image($profile['profile_image']) . '?v=' . time() ?>"
-                    alt="<?= sanitize_string($profile['name']) ?>"
-                    class="profile-avatar-lg mx-auto lg:mx-0">
+            <div class="flex-shrink-0 relative">
+                <?php
+                $_pfHasImage = !empty($profile['profile_image']) && file_exists(__DIR__ . '/../assets/upload/profiles/' . basename($profile['profile_image']));
+                $_pfName = $profile['name'] ?? '';
+                $_pfInitials = strtoupper(mb_substr($_pfName, 0, 1));
+                if (str_contains($_pfName, ' ')) {
+                    $_pfParts = explode(' ', $_pfName);
+                    $_pfInitials = strtoupper(mb_substr($_pfParts[0], 0, 1) . mb_substr(end($_pfParts), 0, 1));
+                }
+                ?>
+                <?php if ($_pfHasImage): ?>
+                    <img src="<?= get_profile_image($profile['profile_image']) . '?v=' . time() ?>"
+                        alt="<?= sanitize_string($profile['name']) ?>"
+                        class="profile-avatar-lg mx-auto lg:mx-0">
+                <?php else: ?>
+                    <div class="profile-avatar-lg mx-auto lg:mx-0 bg-[#E8EDFF] flex items-center justify-center">
+                        <span class="text-[#4338CA] font-extrabold text-3xl"><?= htmlspecialchars($_pfInitials) ?></span>
+                    </div>
+                <?php endif; ?>
+                <!--  -->
             </div>
 
             <!-- Center: Name, Title, Buttons -->
@@ -400,8 +416,8 @@ if ($viewerRole === 'client') {
                     <p class="text-sm text-gray-500 mb-1"><?= sanitize_string($profile['title']) ?></p>
                 <?php endif; ?>
                 <div class="flex items-center gap-2 justify-center lg:justify-start mb-5">
-                    <div class="w-5 h-5 rounded bg-indigo-500 flex items-center justify-center">
-                        <i data-lucide="briefcase" class="w-3 h-3 text-white"></i>
+                    <div class="w-5 h-5 rounded  flex items-center justify-center">
+                        <i data-lucide="briefcase" class="w-3 h-3 text-indigo-600"></i>
                     </div>
                     <span class="text-sm font-medium text-indigo-600">JobHub Freelancer</span>
                 </div>

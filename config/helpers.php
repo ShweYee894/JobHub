@@ -149,6 +149,17 @@ function format_currency(float $amount): string
     return '$' . number_format($amount, 2);
 }
 
+// ── Decode Multi-Encoded HTML Entities ────────────────────────────────────
+function decode_entities(string $str): string
+{
+    $decoded = html_entity_decode($str, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    while ($decoded !== $str) {
+        $str = $decoded;
+        $decoded = html_entity_decode($str, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    return $decoded;
+}
+
 // // ── Profile Image URL ──────────────────────────────────────────────────
 function get_profile_image(?string $filename): string
 {

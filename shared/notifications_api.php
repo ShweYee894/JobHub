@@ -60,6 +60,22 @@ switch ($action) {
         echo json_encode(['success' => true]);
         break;
 
+    case 'mark_unread':
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $ns->markUnread($id, $userId);
+        }
+        echo json_encode(['success' => true]);
+        break;
+
+    case 'delete':
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $ns->delete($id, $userId);
+        }
+        echo json_encode(['success' => true]);
+        break;
+
     case 'unread_count':
         echo json_encode(['unread_count' => $ns->getUnreadCount($userId)]);
         break;

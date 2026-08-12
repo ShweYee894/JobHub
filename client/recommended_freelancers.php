@@ -39,7 +39,6 @@ if ($job_id) {
         $embedding = json_decode($job['embedding_vector'] ?? '{}', true) ?: [];
 
         if (empty($embedding)) {
-            // Generate embedding on the fly using ai_engine
             $s2 = $conn->prepare('SELECT skill_id FROM job_skills WHERE job_id = ?');
             $s2->bind_param('i', $job_id);
             $s2->execute();
@@ -55,7 +54,6 @@ if ($job_id) {
 
         $job_budget = (float) $job['budget'];
 
-        // Match freelancers using ai_engine scoring (cosine similarity when dense vectors exist)
         $fl_stmt = $conn->prepare('
             SELECT f.id, f.user_id, f.title, f.skills_vector, f.hourly_rate, f.years_of_experience, f.availability,
                    u.name, u.profile_image
@@ -70,7 +68,6 @@ if ($job_id) {
             $vector = json_decode($fl['skills_vector'] ?? '{}', true) ?: [];
 
             if (empty($vector)) {
-                // Generate vector on the fly using ai_engine
                 $s3 = $conn->prepare('
                     SELECT fs.skill_id, s.skill_name
                     FROM freelancer_skills fs
@@ -99,7 +96,6 @@ if ($job_id) {
                 $vector = json_decode($flVectorJson, true);
             }
 
-            // Score using ai_engine
             $scoreResult = ai_score_freelancer_for_job($embedding, $vector, $job_budget);
 
             if ($scoreResult['total_score'] <= 0) continue;
@@ -132,127 +128,322 @@ $unreadCount = get_unread_message_count($userId, 'client');
 $profileLink = 'profile.php';
 require_once __DIR__ . '/../includes/client_topbar.php';
 ?>
+
+<style>
+    /* ── Premium Recommended Freelancers ──────────────────────── */
+    .job-selector-bar {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .dark .job-selector-bar {
+        background: #1e293b;
+        border-color: rgba(255,255,255,0.06);
+    }
+
+    .match-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .match-card:hover {
+        border-color: rgba(99,102,241,0.2);
+        box-shadow: 0 8px 32px -4px rgba(99,102,241,0.08);
+        transform: translateY(-2px);
+    }
+    .dark .match-card {
+        background: #1e293b;
+        border-color: rgba(255,255,255,0.06);
+    }
+    .dark .match-card:hover {
+        border-color: rgba(99,102,241,0.3);
+        box-shadow: 0 8px 32px -4px rgba(99,102,241,0.15);
+    }
+
+    /* Match score ring */
+    .match-score-ring {
+        position: relative;
+        width: 64px;
+        height: 64px;
+    }
+    .match-score-ring svg {
+        transform: rotate(-90deg);
+    }
+    .match-score-ring .ring-bg {
+        stroke: #e2e8f0;
+    }
+    .match-score-ring .ring-fill {
+        transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dark .match-score-ring .ring-bg {
+        stroke: #334155;
+    }
+
+    /* Progress bars */
+    .progress-track {
+        height: 4px;
+        border-radius: 2px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+    .dark .progress-track {
+        background: #334155;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Skill badges */
+    .skill-badge {
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #eef2ff;
+        color: #4f46e5;
+        border: 1px solid rgba(99,102,241,0.1);
+        transition: all 0.15s ease;
+    }
+    .skill-badge:hover {
+        background: #e0e7ff;
+        border-color: rgba(99,102,241,0.2);
+    }
+    .dark .skill-badge {
+        background: rgba(99,102,241,0.1);
+        color: #818cf8;
+        border-color: rgba(99,102,241,0.15);
+    }
+
+    /* Availability dot */
+    .avail-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .avail-dot.available {
+        background: #10b981;
+        box-shadow: 0 0 6px rgba(16,185,129,0.4);
+    }
+    .avail-dot.busy {
+        background: #f59e0b;
+        box-shadow: 0 0 6px rgba(245,158,11,0.4);
+    }
+
+    /* Empty state */
+    .empty-state-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .dark .empty-state-card {
+        background: #1e293b;
+        border-color: rgba(255,255,255,0.06);
+    }
+</style>
+
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
-    <!-- Job Selector -->
-    <div class="">
-        <h2 class="text-lg font-bold text-gray-900 mb-3">Select a Job</h2>
-        <p class="text-sm text-gray-400 mb-4">Choose a job to see AI-recommended freelancers matched to its requirements.</p>
-        <form method="GET" class="flex items-center gap-3">
-            <select name="job_id" class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                <option value="">Select your job...</option>
-                <?php while ($j = $client_jobs->fetch_assoc()): ?>
-                    <option value="<?= $j['id'] ?>" <?= $j['id'] == $job_id ? 'selected' : '' ?>>
-                        <?= decode_over_encoded($j['title']) ?> (#<?= $j['id'] ?>)
-                    </option>
-                <?php endwhile; ?>
-            </select>
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2 whitespace-nowrap">
-                <i data-lucide="search" class="w-4 h-4"></i> Find Matches
-            </button>
-        </form>
+
+    <!-- ═══════════════ Job Selector Bar ═══════════════ -->
+    <div class="job-selector-bar rounded-2xl px-6 py-5 fade-in">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i>
+                    <h2 class="text-base font-bold text-gray-900 dark:text-white m-0">AI Job Matching</h2>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-slate-500 m-0">Select a job to discover top AI-matched freelancers</p>
+            </div>
+            <form method="GET" class="flex items-center gap-3 flex-1 sm:flex-initial">
+                <div class="relative flex-1 sm:flex-initial">
+                    <i data-lucide="briefcase" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    <select name="job_id" class="w-full sm:w-72 pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-gray-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">
+                        <option value="">Select your job...</option>
+                        <?php while ($j = $client_jobs->fetch_assoc()): ?>
+                            <option value="<?= $j['id'] ?>" <?= $j['id'] == $job_id ? 'selected' : '' ?>>
+                                <?= decode_over_encoded($j['title']) ?> (#<?= $j['id'] ?>)
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                </div>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:shadow-indigo-600/30 active:scale-[0.97] transition-all whitespace-nowrap">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Find Matches
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- Results -->
+    <!-- ═══════════════ Results ═══════════════ -->
     <?php if ($job_id && empty($recommended)): ?>
-        <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
-            <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="user-x" class="w-8 h-8 text-gray-400"></i>
+        <div class="empty-state-card rounded-2xl p-16 text-center fade-in">
+            <div class="w-20 h-20 rounded-2xl bg-gray-50 dark:bg-slate-700/50 flex items-center justify-center mx-auto mb-5">
+                <i data-lucide="user-x" class="w-10 h-10 text-gray-300 dark:text-slate-500"></i>
             </div>
-            <p class="text-gray-500 text-sm mb-2">No matching freelancers found</p>
-            <p class="text-gray-400 text-xs">Try posting a job with different requirements or skills.</p>
+            <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">No matching freelancers found</h3>
+            <p class="text-sm text-gray-400 dark:text-slate-500 max-w-sm mx-auto">Try selecting a different job or adjusting your requirements to find better matches.</p>
         </div>
+
     <?php elseif ($job_id && !empty($recommended)): ?>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            <?php foreach ($recommended as $match): ?>
+        <!-- Results Count -->
+        <div class="flex items-center justify-between">
+            <p class="text-sm text-gray-500 dark:text-slate-400 m-0">
+                <span class="font-bold text-gray-900 dark:text-white"><?= count($recommended) ?></span> freelancer<?= count($recommended) !== 1 ? 's' : '' ?> matched
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <?php foreach ($recommended as $idx => $match): ?>
                 <?php
-                $scoreColor = ($match['total_score'] >= 60)
-                    ? 'text-emerald-600'
-                    : (($match['total_score'] >= 40)
-                        ? 'text-blue-600'
-                        : (($match['total_score'] >= 20) ? 'text-amber-600' : 'text-gray-600'));
-                $scoreBg = ($match['total_score'] >= 60)
-                    ? 'bg-emerald-50 border-emerald-200'
-                    : (($match['total_score'] >= 40)
-                        ? 'bg-blue-50 border-blue-200'
-                        : (($match['total_score'] >= 20) ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'));
+                $score = round($match['total_score']);
+                $scoreColor = $score >= 60 ? '#10b981' : ($score >= 40 ? '#4f46e5' : ($score >= 20 ? '#f59e0b' : '#94a3b8'));
+                $scoreTextColor = $score >= 60 ? 'text-emerald-600 dark:text-emerald-400' : ($score >= 40 ? 'text-indigo-600 dark:text-indigo-400' : ($score >= 20 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400'));
+                $scoreLabel = $score >= 60 ? 'Excellent' : ($score >= 40 ? 'Strong' : ($score >= 20 ? 'Fair' : 'Low'));
+                $ringDash = 2 * M_PI * 26;
+                $ringOffset = $ringDash - ($score / 100) * $ringDash;
                 ?>
-                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                    <div class="flex items-start gap-4 mb-4">
-                        <img src="<?= get_profile_image($match['profile_image']) ?>" class="w-14 h-14 rounded-full object-cover border-2 border-gray-100 flex-shrink-0">
-                        <div class="flex-1 min-w-0">
-                            <p class="font-bold text-gray-900 text-sm"><?= sanitize_string($match['name']) ?></p>
-                            <p class="text-xs text-gray-400"><?= sanitize_string($match['title'] ?? 'Freelancer') ?></p>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-xs text-gray-500"><i data-lucide="clock" class="w-4 h-4 mr-1"></i><?= $match['years_of_experience'] ?>yr</span>
-                                <span class="text-xs <?= $match['availability'] === 'Available' ? 'text-emerald-600' : 'text-amber-600' ?>">
-                                    <i data-lucide="circle" class="w-2 h-2 mr-1"></i><?= $match['availability'] ?>
-                                </span>
+                <div class="match-card rounded-2xl overflow-hidden fade-in" style="animation-delay: <?= $idx * 0.05 ?>s">
+                    <!-- Card Header -->
+                    <div class="px-5 pt-5 pb-4">
+                        <div class="flex items-start gap-4">
+                            <!-- Avatar -->
+                            <div class="relative flex-shrink-0">
+                                <img src="<?= get_profile_image($match['profile_image']) ?>" class="w-14 h-14 rounded-2xl object-cover border-2 border-gray-100 dark:border-slate-600" alt="<?= sanitize_string($match['name']) ?>">
+                                <?php if ($match['availability'] === 'Available'): ?>
+                                    <span class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
+                                <?php endif; ?>
                             </div>
-                        </div>
-                        <div class="flex-shrink-0">
-                            <div class="px-3 py-1.5 rounded-xl border <?= $scoreBg ?> text-center">
-                                <p class="text-lg font-black <?= $scoreColor ?>"><?= round($match['total_score']) ?>%</p>
-                                <p class="text-[9px] font-semibold text-gray-400 uppercase">Match</p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="flex flex-wrap gap-1 mb-3">
-                        <?php foreach (array_slice($match['skill_names'], 0, 5) as $skill): ?>
-                            <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold"><?= sanitize_string($skill) ?></span>
-                        <?php endforeach; ?>
-                        <?php if (count($match['skill_names']) > 5): ?>
-                            <span class="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-semibold">+<?= count($match['skill_names']) - 5 ?></span>
-                        <?php endif; ?>
-                        <!--  REMOVED: $conn->close(); statement from here to prevent crash -->
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2 text-[11px] mb-4">
-                        <div class="bg-gray-50 rounded-lg p-2">
-                            <span class="text-gray-400">Skill Match</span>
-                            <div class="flex items-center gap-1 mt-1">
-                                <div class="flex-1 bg-gray-200 rounded-full h-1.5">
-                                    <div class="bg-blue-500 h-1.5 rounded-full" style="width:<?= min(100, $match['breakdown']['skill_match'] / 50 * 100) ?>%"></div>
+                            <!-- Info -->
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-bold text-gray-900 dark:text-white m-0 truncate"><?= sanitize_string($match['name']) ?></p>
+                                <p class="text-xs text-gray-400 dark:text-slate-500 m-0 mt-0.5 truncate"><?= sanitize_string($match['title'] ?? 'Freelancer') ?></p>
+                                <div class="flex items-center gap-3 mt-2">
+                                    <span class="flex items-center gap-1 text-[11px] text-gray-500 dark:text-slate-400">
+                                        <i data-lucide="clock" class="w-3 h-3"></i>
+                                        <?= $match['years_of_experience'] ?>yr exp
+                                    </span>
+                                    <span class="flex items-center gap-1 text-[11px] <?= $match['availability'] === 'Available' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' ?>">
+                                        <span class="avail-dot <?= $match['availability'] === 'Available' ? 'available' : 'busy' ?>"></span>
+                                        <?= $match['availability'] ?>
+                                    </span>
                                 </div>
-                                <span class="font-bold text-gray-600"><?= $match['breakdown']['skill_match'] ?>/50</span>
                             </div>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-2">
-                            <span class="text-gray-400">Rate Fit</span>
-                            <p class="font-bold <?= $match['breakdown']['rate_fit'] >= 20 ? 'text-emerald-600' : ($match['breakdown']['rate_fit'] >= 10 ? 'text-amber-600' : 'text-gray-400') ?> mt-1"><?= $match['breakdown']['rate_fit'] ?>/20</p>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-2">
-                            <span class="text-gray-400">Experience</span>
-                            <p class="font-bold text-gray-600 mt-1"><?= $match['breakdown']['experience'] ?>/15</p>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-2">
-                            <span class="text-gray-400">Availability</span>
-                            <p class="font-bold <?= $match['breakdown']['availability'] >= 15 ? 'text-emerald-600' : 'text-gray-400' ?> mt-1"><?= $match['breakdown']['availability'] ?>/15</p>
+
+                            <!-- Match Score Ring -->
+                            <div class="flex-shrink-0">
+                                <div class="match-score-ring">
+                                    <svg width="64" height="64" viewBox="0 0 64 64">
+                                        <circle cx="32" cy="32" r="26" fill="none" stroke-width="5" class="ring-bg" />
+                                        <circle cx="32" cy="32" r="26" fill="none" stroke-width="5" class="ring-fill"
+                                            stroke="<?= $scoreColor ?>"
+                                            stroke-linecap="round"
+                                            stroke-dasharray="<?= $ringDash ?>"
+                                            stroke-dashoffset="<?= $ringOffset ?>" />
+                                    </svg>
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span class="text-sm font-black <?= $scoreTextColor ?> leading-none"><?= $score ?>%</span>
+                                        <span class="text-[8px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-0.5"><?= $scoreLabel ?></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-sm font-bold text-gray-900"><?= format_currency($match['hourly_rate']) ?><span class="text-xs font-normal text-gray-400">/hr</span></span>
+                    <!-- Skills -->
+                    <?php if (!empty($match['skill_names'])): ?>
+                    <div class="px-5 pb-4">
+                        <div class="flex flex-wrap gap-1.5">
+                            <?php foreach (array_slice($match['skill_names'], 0, 4) as $skill): ?>
+                                <span class="skill-badge"><?= sanitize_string($skill) ?></span>
+                            <?php endforeach; ?>
+                            <?php if (count($match['skill_names']) > 4): ?>
+                                <span class="skill-badge bg-gray-100 dark:bg-slate-600 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-500">+<?= count($match['skill_names']) - 4 ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
-                        <!--  FIXED: Changed $row['freelancer_id'] to $match['freelancer_id'] and styled beautifully -->
-                        <a href="/jobhub/freelancer/profile.php?id=<?= $match['user_id'] ?>"
-                            class="text-xs text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-1 transition-colors">
-                            View Profile <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                        </a>
+                    <!-- Score Breakdown -->
+                    <div class="px-5 pb-4">
+                        <div class="space-y-2.5">
+                            <!-- Skill Match -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-[11px] font-semibold text-gray-500 dark:text-slate-400">Skill Match</span>
+                                    <span class="text-[11px] font-bold text-gray-700 dark:text-slate-300"><?= $match['breakdown']['skill_match'] ?>/50</span>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill bg-indigo-500" style="width: <?= min(100, $match['breakdown']['skill_match'] / 50 * 100) ?>%"></div>
+                                </div>
+                            </div>
+                            <!-- Rate Fit -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-[11px] font-semibold text-gray-500 dark:text-slate-400">Rate Fit</span>
+                                    <span class="text-[11px] font-bold <?= $match['breakdown']['rate_fit'] >= 15 ? 'text-emerald-600 dark:text-emerald-400' : ($match['breakdown']['rate_fit'] >= 10 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-slate-400') ?>"><?= $match['breakdown']['rate_fit'] ?>/20</span>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill <?= $match['breakdown']['rate_fit'] >= 15 ? 'bg-emerald-500' : ($match['breakdown']['rate_fit'] >= 10 ? 'bg-amber-500' : 'bg-gray-300 dark:bg-slate-600') ?>" style="width: <?= min(100, $match['breakdown']['rate_fit'] / 20 * 100) ?>%"></div>
+                                </div>
+                            </div>
+                            <!-- Experience -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-[11px] font-semibold text-gray-500 dark:text-slate-400">Experience</span>
+                                    <span class="text-[11px] font-bold text-gray-700 dark:text-slate-300"><?= $match['breakdown']['experience'] ?>/15</span>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill bg-blue-500" style="width: <?= min(100, $match['breakdown']['experience'] / 15 * 100) ?>%"></div>
+                                </div>
+                            </div>
+                            <!-- Availability -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-[11px] font-semibold text-gray-500 dark:text-slate-400">Availability</span>
+                                    <span class="text-[11px] font-bold <?= $match['breakdown']['availability'] >= 10 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-slate-400' ?>"><?= $match['breakdown']['availability'] ?>/15</span>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill <?= $match['breakdown']['availability'] >= 10 ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-slate-600' ?>" style="width: <?= min(100, $match['breakdown']['availability'] / 15 * 100) ?>%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="px-5 py-4 border-t border-gray-100 dark:border-slate-700/50 flex items-center justify-between">
+                        <div>
+                            <span class="text-lg font-black text-gray-900 dark:text-white"><?= format_currency($match['hourly_rate']) ?></span>
+                            <span class="text-xs font-normal text-gray-400 dark:text-slate-500">/hr</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="/jobhub/freelancer/profile.php?id=<?= $match['user_id'] ?>"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-xs font-semibold rounded-lg transition-all">
+                                Profile <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </a>
+                            <a href="/jobhub/client/invite_jobs.php?freelancer_id=<?= $match['freelancer_id'] ?>&job_id=<?= $job_id ?>"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm shadow-indigo-600/20 transition-all">
+                                <i data-lucide="send" class="w-3 h-3"></i> Invite
+                            </a>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
 
     <?php elseif (!$job_id): ?>
-        <div class="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
-            <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="brain" class="w-8 h-8 text-blue-400"></i>
+        <div class="empty-state-card rounded-2xl p-16 text-center fade-in">
+            <div class="w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center mx-auto mb-5">
+                <i data-lucide="brain" class="w-10 h-10 text-indigo-400 dark:text-indigo-500"></i>
             </div>
-            <p class="text-gray-500 text-sm mb-2">Select a job to see AI recommendations</p>
-            <p class="text-gray-400 text-xs">Our AI analyzes skill requirements, budget, and experience to find the best matches.</p>
+            <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">Select a job to see AI recommendations</h3>
+            <p class="text-sm text-gray-400 dark:text-slate-500 max-w-md mx-auto">Our AI analyzes skill requirements, budget, and experience to find the best matches for your project.</p>
         </div>
     <?php endif; ?>
 </main>
+
 <?php require_once __DIR__ . '/../includes/client_footer.php'; ?>

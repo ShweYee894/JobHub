@@ -74,9 +74,7 @@ require_once __DIR__ . '/../includes/client_topbar.php';
     <div class="max-w-lg mx-auto">
         <!-- Balance Card -->
         <div class="bg-white/60 border border-gray-200 rounded-2xl p-4 text-center mb-6">
-            <div class="w-10 h-10 rounded-[10px] bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
-            </div>
+            <i data-lucide="wallet" class="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-4"></i>
             <p class="text-sm text-gray-400 dark:text-slate-500 m-0">Current Balance</p>
             <p class="text-3xl font-black text-gray-900 dark:text-white m-0 mt-1" id="currentBalanceDisplay">
                 <?= wallet_format_currency($balance) ?>
@@ -137,8 +135,8 @@ require_once __DIR__ . '/../includes/client_topbar.php';
                     <a href="wallet.php" class="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-center no-underline">
                         Cancel
                     </a>
-                    <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 text-white text-sm font-bold shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all">
-                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Top Up
+                    <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition-all">
+                        <i data-lucide="plus" class="w-4 h-4 inline-block mr-1 -mt-0.5"></i>Top Up
                     </button>
                 </div>
             </form>

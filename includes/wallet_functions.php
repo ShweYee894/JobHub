@@ -548,19 +548,46 @@ function get_wallet_history(mysqli $conn, int $userId, int $limit = 20, int $off
         }
 
         $history[] = [
-            'id'          => $row['id'],
-            'label'       => $label,
-            'type'        => $type,
-            'amount'      => $amount,
-            'direction'   => $direction,
+            'id'            => $row['id'],
+            'label'         => $label,
+            'type'          => $type,
+            'amount'        => $amount,
+            'direction'     => $direction,
             'balance_after' => (float) $row['balance_after'],
-            'description' => $row['description'],
-            'icon'        => $icon,
-            'color'       => $color,
-            'date'        => $row['created_at'],
-            'source'      => 'wallet_transaction',
+            'description'   => $row['description'],
+            'reference_id'  => $row['reference_id'] ? (int) $row['reference_id'] : null,
+            'icon'          => $icon,
+            'color'         => $color,
+            'date'          => $row['created_at'],
+            'source'        => 'wallet_transaction',
         ];
     }
+
+    // Batch-fetch milestone titles for reference_type = 'milestone'
+    $milestoneIds = [];
+    foreach ($history as $h) {
+        if ($h['reference_id'] && ($h['source'] ?? '') === 'wallet_transaction') {
+            $milestoneIds[] = $h['reference_id'];
+        }
+    }
+    $milestoneTitles = [];
+    if (!empty($milestoneIds)) {
+        $ids = array_unique($milestoneIds);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $types = str_repeat('i', count($ids));
+        $stmt = $conn->prepare("SELECT id, title FROM milestones WHERE id IN ($placeholders)");
+        $stmt->bind_param($types, ...$ids);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($mRow = $result->fetch_assoc()) {
+            $milestoneTitles[(int) $mRow['id']] = $mRow['title'];
+        }
+        $stmt->close();
+    }
+    foreach ($history as &$h) {
+        $h['milestone_title'] = $h['reference_id'] ? ($milestoneTitles[$h['reference_id']] ?? null) : null;
+    }
+    unset($h);
 
     // Sort by date descending
     usort($history, function ($a, $b) {

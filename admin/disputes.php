@@ -64,7 +64,8 @@ $pagination = paginate($totalItems, $perPage, $page);
 $offset = $pagination['offset'];
 
 $querySql = "SELECT d.id, d.reason, d.description, d.status, d.resolution, d.created_at, d.updated_at,
-                    d.contract_id, d.milestone_id,
+                    d.contract_id, d.milestone_id, d.raised_by, d.against,
+                    d.evidence_files, d.evidence_request_note, d.evidence_request_target, d.evidence_request_fulfilled,
                     c.total_budget, c.status AS contract_status,
                     j.title AS job_title,
                     ru.name AS raised_by_name, ru.email AS raised_by_email, ru.profile_image AS raised_by_image,
@@ -72,7 +73,8 @@ $querySql = "SELECT d.id, d.reason, d.description, d.status, d.resolution, d.cre
                     CASE WHEN d.raised_by = c.client_id THEN 'client' ELSE 'freelancer' END AS raised_by_role,
                     CASE WHEN d.against = c.client_id THEN 'client' ELSE 'freelancer' END AS against_role,
                     m.title AS milestone_title, m.amount AS milestone_amount,
-                    rv.name AS resolved_by_name
+                    rv.name AS resolved_by_name,
+                    ert.name AS evidence_request_target_name
              FROM dispute_tickets d
              JOIN contracts c ON d.contract_id = c.id
              JOIN jobs j ON c.job_id = j.id
@@ -80,6 +82,7 @@ $querySql = "SELECT d.id, d.reason, d.description, d.status, d.resolution, d.cre
              JOIN users au ON d.against = au.id
              LEFT JOIN milestones m ON d.milestone_id = m.id
              LEFT JOIN users rv ON d.resolved_by = rv.id
+             LEFT JOIN users ert ON d.evidence_request_target = ert.id
              $whereSql
              ORDER BY FIELD(d.status, 'open', 'investigating', 'escalated', 'resolved', 'dismissed'), d.created_at DESC
              LIMIT ? OFFSET ?";
@@ -95,6 +98,8 @@ $queryStmt->close();
 
 $disputes = [];
 while ($row = $result->fetch_assoc()) {
+    $row['raised_by_image'] = get_profile_image($row['raised_by_image'] ?? null);
+    $row['against_image']   = get_profile_image($row['against_image'] ?? null);
     $disputes[] = $row;
 }
 
@@ -118,6 +123,20 @@ $reasonLabels = [
     'quality_issue' => 'Quality Issue',
     'scope_dispute' => 'Scope Dispute',
     'payment_issue' => 'Payment Issue',
+    'other'         => 'Other',
+];
+$clientReasonLabels = [
+    'non_delivery'  => 'Work Not Completed',
+    'quality_issue' => 'Quality Issue',
+    'scope_dispute' => 'Requirements Not Met',
+    'payment_issue' => 'Payment Issue',
+    'other'         => 'Other',
+];
+$freelancerReasonLabels = [
+    'non_delivery'  => 'Work Rejected Unfairly',
+    'quality_issue' => 'Additional Work Requested',
+    'scope_dispute' => 'Scope Changed',
+    'payment_issue' => 'Payment Not Released',
     'other'         => 'Other',
 ];
 $reasonColors = [
@@ -204,6 +223,9 @@ require_once __DIR__ . '/../components/layout_start.php';
     /* Evidence Grid */
     .evidence-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     @media(max-width:1024px){.evidence-grid{grid-template-columns:1fr}}
+
+    /* Scrollable response body */
+    .response-body{max-height:300px;overflow-y:auto}
 
     /* Timeline */
     .tl-item{display:flex;gap:12px;padding-bottom:20px;position:relative}
@@ -347,7 +369,14 @@ require_once __DIR__ . '/../components/layout_start.php';
                                 <span class="text-[10px] text-gray-400 dark:text-slate-500 flex-shrink-0"><?= time_ago($d['created_at']) ?></span>
                             </div>
                             <p class="text-[10px] font-semibold text-gray-400 dark:text-slate-500 mb-1">
-                                <span class="<?= $reasonColors[$d['reason']] ?? '' ?> px-1.5 py-0.5 rounded text-[9px]"><?= $reasonLabels[$d['reason']] ?? $d['reason'] ?></span>
+                                <span class="<?= $reasonColors[$d['reason']] ?? '' ?> px-1.5 py-0.5 rounded text-[9px]"><?php
+                                    $reasonKey = $d['reason'];
+                                    if ($d['raised_by_role'] === 'client') {
+                                        echo $clientReasonLabels[$reasonKey] ?? $reasonLabels[$reasonKey] ?? $reasonKey;
+                                    } else {
+                                        echo $freelancerReasonLabels[$reasonKey] ?? $reasonLabels[$reasonKey] ?? $reasonKey;
+                                    }
+                                ?></span>
                             </p>
                             <p class="text-sm font-semibold text-gray-900 dark:text-white truncate mb-1"><?= sanitize_string($d['job_title']) ?></p>
                             <div class="flex items-center justify-between">
@@ -426,11 +455,74 @@ require_once __DIR__ . '/../components/layout_start.php';
                                     </div>
                                     <span class="ml-auto text-[9px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">Against</span>
                                 </div>
-                                <p class="text-sm text-gray-700 dark:text-slate-300 leading-relaxed italic">
+                                <div class="response-body text-sm text-gray-700 dark:text-slate-300 leading-relaxed italic">
                                     <?= !empty($d['resolution']) ? nl2br(sanitize_string($d['resolution'])) : '<span class="text-gray-400 dark:text-slate-500 not-italic">No response submitted yet.</span>' ?>
-                                </p>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Evidence Files -->
+                        <?php
+                        $evidenceFiles = json_decode($d['evidence_files'] ?? '[]', true) ?: [];
+                        $hasEvidenceRequest = !empty($d['evidence_request_note']);
+                        ?>
+                        <?php if (!empty($evidenceFiles) || $hasEvidenceRequest): ?>
+                        <div class="ds-card mb-4">
+                            <p class="ds-label mb-3">Evidence & Attachments (<?= count($evidenceFiles) ?>)</p>
+                            <?php if ($hasEvidenceRequest): ?>
+                            <div class="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="mail" class="w-4 h-4 text-blue-500"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-bold text-blue-700 dark:text-blue-400">Evidence Request</p>
+                                    <p class="text-sm text-gray-700 dark:text-slate-300 mt-1"><?= nl2br(sanitize_string($d['evidence_request_note'])) ?></p>
+                                    <div class="flex items-center gap-2 mt-1.5">
+                                        <span class="text-[10px] text-gray-400 dark:text-slate-500">To: <?= sanitize_string($d['evidence_request_target_name'] ?? 'User #' . $d['evidence_request_target']) ?></span>
+                                        <?php if ($d['evidence_request_fulfilled']): ?>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                                                <i data-lucide="check" class="text-[8px]"></i> Fulfilled
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                                                <i data-lucide="clock" class="text-[8px]"></i> Pending
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($evidenceFiles)): ?>
+                            <div class="space-y-2">
+                                <?php foreach ($evidenceFiles as $idx => $ev): ?>
+                                <div class="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600">
+                                    <?php
+                                    $ext = strtolower(pathinfo($ev['original_filename'] ?? '', PATHINFO_EXTENSION));
+                                    $isImage = in_array($ext, ['png', 'jpg', 'jpeg', 'gif']);
+                                    ?>
+                                    <?php if ($isImage): ?>
+                                        <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 dark:border-slate-600">
+                                            <img src="/jobhub/assets/upload/disputes/<?= sanitize_string($ev['stored_filename']) ?>" class="w-full h-full object-cover" alt="">
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                                            <i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="min-w-0 flex-1">
+                                        <a href="/jobhub/api/dispute_api.php?action=download_evidence&id=<?= $d['id'] ?>&index=<?= $idx ?>" class="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate block"><?= sanitize_string($ev['original_filename']) ?></a>
+                                        <p class="text-[10px] text-gray-400 dark:text-slate-500">
+                                            <?= number_format(($ev['file_size'] ?? 0) / 1024, 1) ?>KB
+                                            <?php if (!empty($ev['uploaded_at'])): ?> &middot; <?= time_ago($ev['uploaded_at']) ?><?php endif; ?>
+                                            <?php if (!empty($ev['context'])): ?> &middot; <span class="capitalize"><?= str_replace('_', ' ', $ev['context']) ?></span><?php endif; ?>
+                                        </p>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
 
                         <!-- Milestone & Reason -->
                         <div class="grid grid-cols-2 gap-4 mb-4">
@@ -444,7 +536,14 @@ require_once __DIR__ . '/../components/layout_start.php';
                             <div class="ds-card">
                                 <p class="ds-label">Dispute Reason</p>
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold <?= $reasonColors[$d['reason']] ?? '' ?> border border-current/10">
-                                    <?= $reasonLabels[$d['reason']] ?? $d['reason'] ?>
+                                    <?php
+                                    $reasonKey = $d['reason'];
+                                    if ($d['raised_by_role'] === 'client') {
+                                        echo $clientReasonLabels[$reasonKey] ?? $reasonLabels[$reasonKey] ?? $reasonKey;
+                                    } else {
+                                        echo $freelancerReasonLabels[$reasonKey] ?? $reasonLabels[$reasonKey] ?? $reasonKey;
+                                    }
+                                    ?>
                                 </span>
                             </div>
                         </div>
@@ -521,7 +620,7 @@ require_once __DIR__ . '/../components/layout_start.php';
                                 <button onclick="openActionModal(<?= $did ?>, 'resolve')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">
                                     <i data-lucide="divide" class="text-[10px]"></i> Split Escrow
                                 </button>
-                                <button onclick="changeStatus(<?= $did ?>, 'investigating')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">
+                                <button onclick="openEvidenceRequestModal(<?= $did ?>, <?= $d['raised_by'] ?>, '<?= sanitize_string(addslashes($d['raised_by_name'])) ?>', <?= $d['against'] ?>, '<?= sanitize_string(addslashes($d['against_name'])) ?>')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">
                                     <i data-lucide="mail" class="text-[10px]"></i> Request Info
                                 </button>
                             </div>
@@ -582,6 +681,51 @@ require_once __DIR__ . '/../components/layout_start.php';
         </div>
     </div>
 
+    <!-- ═══ EVIDENCE REQUEST MODAL ════════════════════════════════════ -->
+    <div id="evidenceRequestModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeEvidenceRequestModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg relative z-10 overflow-hidden">
+                <div class="px-6 py-5 border-b border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-900/10">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                <i data-lucide="file-search" class="text-blue-600 dark:text-blue-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Request Evidence</h3>
+                                <p class="text-xs text-gray-400 dark:text-slate-500" id="erSubtitle">Dispute #--</p>
+                            </div>
+                        </div>
+                        <button onclick="closeEvidenceRequestModal()" class="w-8 h-8 rounded-lg bg-white/80 dark:bg-slate-700 flex items-center justify-center text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors">
+                            <i data-lucide="x" class="text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <form id="evidenceRequestForm" onsubmit="return submitEvidenceRequest(event)">
+                    <div class="p-6 space-y-4">
+                        <input type="hidden" name="action" value="request_evidence">
+                        <input type="hidden" name="dispute_id" id="erDisputeId">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">Request Evidence From</label>
+                            <select name="target_user_id" id="erTargetUser" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all">
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">Request Message</label>
+                            <textarea name="note" id="erNote" required rows="4" minlength="10" placeholder="Describe what evidence you need (e.g., screenshots, chat logs, deliverables)..." class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 resize-none transition-all"></textarea>
+                            <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1">Minimum 10 characters</p>
+                        </div>
+                    </div>
+                    <div class="px-6 pb-6 flex gap-3">
+                        <button type="button" onclick="closeEvidenceRequestModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">Cancel</button>
+                        <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 transition-colors">Send Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
     var CSRF_TOKEN = '<?= generate_csrf_token() ?>';
     var disputesData = <?= json_encode($disputes) ?>;
@@ -604,6 +748,8 @@ require_once __DIR__ . '/../components/layout_start.php';
         var statusColors = <?= json_encode($statusColors) ?>;
         var statusIcons = <?= json_encode($statusIcons) ?>;
         var reasonLabels = <?= json_encode($reasonLabels) ?>;
+        var clientReasonLabels = <?= json_encode($clientReasonLabels) ?>;
+        var freelancerReasonLabels = <?= json_encode($freelancerReasonLabels) ?>;
         var reasonColors = <?= json_encode($reasonColors) ?>;
         var sClr = statusColors[d.status] || '';
         var sIcn = statusIcons[d.status] || 'circle';
@@ -620,7 +766,12 @@ require_once __DIR__ . '/../components/layout_start.php';
         if (currentIdx === -1) currentIdx = 0;
 
         var msAmount = parseFloat(d.milestone_amount) || 0;
-        var reasonLabel = reasonLabels[d.reason] || d.reason;
+        var reasonLabel;
+        if (d.raised_by_role === 'client') {
+            reasonLabel = clientReasonLabels[d.reason] || reasonLabels[d.reason] || d.reason;
+        } else {
+            reasonLabel = freelancerReasonLabels[d.reason] || reasonLabels[d.reason] || d.reason;
+        }
         var reasonClr = reasonColors[d.reason] || 'bg-gray-50 text-gray-500';
 
         // Timeline HTML
@@ -655,23 +806,68 @@ require_once __DIR__ . '/../components/layout_start.php';
 
         // Evidence grid
         html += '<div class="evidence-grid mb-4">';
-        // Client claim
-        html += '<div class="ds-card"><div class="flex items-center gap-2 mb-3"><div class="w-2 h-2 rounded-full bg-blue-500"></div><p class="ds-label mb-0">Client Claim</p></div>';
+        // Raised by party (dynamic label)
+        var raisedLabel = d.raised_by_role === 'client' ? 'Client Claim' : 'Freelancer Claim';
+        html += '<div class="ds-card"><div class="flex items-center gap-2 mb-3"><div class="w-2 h-2 rounded-full bg-blue-500"></div><p class="ds-label mb-0">' + raisedLabel + '</p></div>';
         html += '<div class="flex items-center gap-3 mb-3 pb-3 border-b border-gray-100 dark:border-slate-600/50">';
         html += '<img src="' + d.raised_by_image + '" class="w-9 h-9 rounded-full object-cover border-2 border-gray-100 dark:border-slate-600 flex-shrink-0">';
         html += '<div class="min-w-0"><p class="text-sm font-semibold text-gray-900 dark:text-white truncate">' + escHtml(d.raised_by_name) + '</p><p class="text-[11px] text-gray-400 dark:text-slate-500 truncate">' + escHtml(d.raised_by_email) + '</p></div>';
         html += '<span class="ml-auto text-[9px] font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex-shrink-0">Raised Dispute</span>';
         html += '</div>';
         html += '<p class="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">' + escHtml(d.description || '-') + '</p></div>';
-        // Freelancer response
-        html += '<div class="ds-card"><div class="flex items-center gap-2 mb-3"><div class="w-2 h-2 rounded-full bg-emerald-500"></div><p class="ds-label mb-0">Freelancer Response</p></div>';
+        // Against party (dynamic label)
+        var againstLabel = d.against_role === 'freelancer' ? 'Freelancer Response' : 'Client Response';
+        html += '<div class="ds-card"><div class="flex items-center gap-2 mb-3"><div class="w-2 h-2 rounded-full bg-emerald-500"></div><p class="ds-label mb-0">' + againstLabel + '</p></div>';
         html += '<div class="flex items-center gap-3 mb-3 pb-3 border-b border-gray-100 dark:border-slate-600/50">';
         html += '<img src="' + d.against_image + '" class="w-9 h-9 rounded-full object-cover border-2 border-gray-100 dark:border-slate-600 flex-shrink-0">';
         html += '<div class="min-w-0"><p class="text-sm font-semibold text-gray-900 dark:text-white truncate">' + escHtml(d.against_name) + '</p><p class="text-[11px] text-gray-400 dark:text-slate-500 truncate">' + escHtml(d.against_email) + '</p></div>';
         html += '<span class="ml-auto text-[9px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">Against</span>';
         html += '</div>';
-        html += '<p class="text-sm text-gray-700 dark:text-slate-300 leading-relaxed italic">' + (d.resolution ? escHtml(d.resolution) : '<span class="text-gray-400 dark:text-slate-500 not-italic">No response submitted yet.</span>') + '</p></div>';
+        html += '<div class="response-body text-sm text-gray-700 dark:text-slate-300 leading-relaxed italic">' + (d.resolution ? escHtml(d.resolution) : '<span class="text-gray-400 dark:text-slate-500 not-italic">No response submitted yet.</span>') + '</div></div>';
         html += '</div>';
+
+        // Evidence files
+        var evidenceFiles = [];
+        try { evidenceFiles = JSON.parse(d.evidence_files || '[]'); } catch(e) {}
+        var hasEvidenceRequest = !!d.evidence_request_note;
+        if (evidenceFiles.length > 0 || hasEvidenceRequest) {
+            html += '<div class="ds-card mb-4"><p class="ds-label mb-3">Evidence & Attachments (' + evidenceFiles.length + ')</p>';
+            if (hasEvidenceRequest) {
+                html += '<div class="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 mb-3">';
+                html += '<div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center flex-shrink-0"><i data-lucide="mail" class="w-4 h-4 text-blue-500"></i></div>';
+                html += '<div class="min-w-0 flex-1"><p class="text-xs font-bold text-blue-700 dark:text-blue-400">Evidence Request</p>';
+                html += '<p class="text-sm text-gray-700 dark:text-slate-300 mt-1">' + escHtml(d.evidence_request_note) + '</p>';
+                html += '<div class="flex items-center gap-2 mt-1.5">';
+                html += '<span class="text-[10px] text-gray-400 dark:text-slate-500">To: ' + escHtml(d.evidence_request_target_name || 'User #' + d.evidence_request_target) + '</span>';
+                if (d.evidence_request_fulfilled == 1) {
+                    html += '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold"><i data-lucide="check" class="text-[8px]"></i> Fulfilled</span>';
+                } else {
+                    html += '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-bold"><i data-lucide="clock" class="text-[8px]"></i> Pending</span>';
+                }
+                html += '</div></div></div>';
+            }
+            if (evidenceFiles.length > 0) {
+                html += '<div class="space-y-2">';
+                for (var ei = 0; ei < evidenceFiles.length; ei++) {
+                    var ev = evidenceFiles[ei];
+                    var ext = (ev.original_filename || '').split('.').pop().toLowerCase();
+                    var isImg = ['png','jpg','jpeg','gif'].indexOf(ext) !== -1;
+                    html += '<div class="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-600">';
+                    if (isImg) {
+                        html += '<div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 dark:border-slate-600"><img src="/jobhub/assets/upload/disputes/' + escHtml(ev.stored_filename) + '" class="w-full h-full object-cover"></div>';
+                    } else {
+                        html += '<div class="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0"><i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i></div>';
+                    }
+                    html += '<div class="min-w-0 flex-1"><a href="/jobhub/api/dispute_api.php?action=download_evidence&id=' + d.id + '&index=' + ei + '" class="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate block">' + escHtml(ev.original_filename) + '</a>';
+                    html += '<p class="text-[10px] text-gray-400 dark:text-slate-500">' + (ev.file_size ? (ev.file_size / 1024).toFixed(1) + 'KB' : '');
+                    if (ev.uploaded_at) html += ' &middot; ' + timeAgo(ev.uploaded_at);
+                    if (ev.context) html += ' &middot; ' + escHtml(ev.context.replace(/_/g, ' '));
+                    html += '</p></div></div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+        }
 
         // Milestone & Reason
         html += '<div class="grid grid-cols-2 gap-4 mb-4">';
@@ -701,7 +897,7 @@ require_once __DIR__ . '/../components/layout_start.php';
             html += '<button onclick="openActionModal(' + d.id + ',\'resolve\')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors shadow-sm"><i data-lucide="check" class="text-[10px]"></i> Release to Freelancer</button>';
             html += '<button onclick="openActionModal(' + d.id + ',\'dismiss\')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-colors shadow-sm"><i data-lucide="undo" class="text-[10px]"></i> Refund Client</button>';
             html += '<button onclick="openActionModal(' + d.id + ',\'resolve\')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"><i data-lucide="divide" class="text-[10px]"></i> Split Escrow</button>';
-            html += '<button onclick="changeStatus(' + d.id + ',\'investigating\')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"><i data-lucide="mail" class="text-[10px]"></i> Request Info</button>';
+            html += '<button onclick="openEvidenceRequestModal(' + d.id + ',' + d.raised_by + ',\'' + escHtml(d.raised_by_name).replace(/'/g, "\\'") + '\',' + d.against + ',\'' + escHtml(d.against_name).replace(/'/g, "\\'") + '\')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"><i data-lucide="mail" class="text-[10px]"></i> Request Info</button>';
             html += '</div></div>';
         }
 
@@ -806,8 +1002,40 @@ require_once __DIR__ . '/../components/layout_start.php';
     }
 
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeActionModal();
+        if (e.key === 'Escape') { closeActionModal(); closeEvidenceRequestModal(); }
     });
+
+    // ── Evidence Request Modal ───────────────────────────────────────
+    function openEvidenceRequestModal(disputeId, raisedId, raisedName, againstId, againstName) {
+        document.getElementById('erDisputeId').value = disputeId;
+        document.getElementById('erSubtitle').textContent = 'Dispute #' + disputeId;
+        var select = document.getElementById('erTargetUser');
+        select.innerHTML = '<option value="' + raisedId + '">' + escHtml(raisedName) + '</option>' +
+                           '<option value="' + againstId + '">' + escHtml(againstName) + '</option>';
+        document.getElementById('erNote').value = '';
+        document.getElementById('evidenceRequestModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        lucide.createIcons();
+    }
+
+    function closeEvidenceRequestModal() {
+        document.getElementById('evidenceRequestModal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    async function submitEvidenceRequest(e) {
+        e.preventDefault();
+        var note = document.getElementById('erNote').value.trim();
+        if (note.length < 10) { alert('Request note must be at least 10 characters.'); return false; }
+        try {
+            var fd = new FormData(document.getElementById('evidenceRequestForm'));
+            fd.append('csrf_token', CSRF_TOKEN);
+            var r = await fetch('/jobhub/api/dispute_api.php', { method: 'POST', body: fd });
+            var j = await r.json();
+            if (j.success) { closeEvidenceRequestModal(); location.reload(); } else { alert('Error: ' + j.message); }
+        } catch (err) { alert('Network error.'); }
+        return false;
+    }
     </script>
 
 <?php require_once __DIR__ . '/../components/layout_end.php'; ?>
